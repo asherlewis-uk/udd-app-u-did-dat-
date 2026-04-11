@@ -15,7 +15,9 @@ const logger = createLogger('host-agent');
 const WORKER_HOST = process.env['WORKER_HOST'] ?? 'localhost';
 const WORKER_MANAGER_URL = config.services.workerManagerBaseUrl();
 
-async function postSnapshot(snapshot: Awaited<ReturnType<typeof collectCapacitySnapshot>>): Promise<void> {
+async function postSnapshot(
+  snapshot: Awaited<ReturnType<typeof collectCapacitySnapshot>>,
+): Promise<void> {
   const url = `${WORKER_MANAGER_URL}/internal/capacity-snapshot`;
   const res = await fetch(url, {
     method: 'POST',

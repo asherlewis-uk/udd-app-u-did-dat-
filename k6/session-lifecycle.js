@@ -19,32 +19,31 @@ import { Rate, Counter } from 'k6/metrics';
 
 if (__ENV.TARGET_ENV === 'production') {
   throw new Error(
-    '[k6] Refusing to run load test against TARGET_ENV=production. ' +
-    'Use dev or staging only.',
+    '[k6] Refusing to run load test against TARGET_ENV=production. ' + 'Use dev or staging only.',
   );
 }
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
-const BASE_URL   = __ENV.API_BASE_URL ?? 'http://localhost:3001';
-const AUTH_TOKEN = __ENV.AUTH_TOKEN   ?? '';
+const BASE_URL = __ENV.API_BASE_URL ?? 'http://localhost:3001';
+const AUTH_TOKEN = __ENV.AUTH_TOKEN ?? '';
 
 // Workspace / project IDs that must exist in the target environment.
 const WORKSPACE_ID = __ENV.WORKSPACE_ID ?? '00000000-0000-0000-0000-000000000001';
-const PROJECT_ID   = __ENV.PROJECT_ID   ?? '00000000-0000-0000-0000-000000000002';
+const PROJECT_ID = __ENV.PROJECT_ID ?? '00000000-0000-0000-0000-000000000002';
 
 // ─── Thresholds & VU ramp ─────────────────────────────────────────────────────
 
 export const options = {
   stages: [
-    { duration: '10s', target: 10  },  // ramp up
-    { duration: '40s', target: 50  },  // sustained load
-    { duration: '10s', target: 0   },  // ramp down
+    { duration: '10s', target: 10 }, // ramp up
+    { duration: '40s', target: 50 }, // sustained load
+    { duration: '10s', target: 0 }, // ramp down
   ],
   thresholds: {
-    http_req_failed:   ['rate<0.01'],          // <1% error rate
-    http_req_duration: ['p(95)<2000'],         // p95 latency < 2s
-    session_errors:    ['count<5'],            // hard cap on unexpected errors
+    http_req_failed: ['rate<0.01'], // <1% error rate
+    http_req_duration: ['p(95)<2000'], // p95 latency < 2s
+    session_errors: ['count<5'], // hard cap on unexpected errors
   },
 };
 
@@ -55,8 +54,8 @@ const sessionSuccess = new Rate('session_lifecycle_success');
 
 function authHeaders() {
   return {
-    'Authorization': `Bearer ${AUTH_TOKEN}`,
-    'Content-Type':  'application/json',
+    Authorization: `Bearer ${AUTH_TOKEN}`,
+    'Content-Type': 'application/json',
   };
 }
 
@@ -74,7 +73,7 @@ export default function () {
 
   const createOk = check(createRes, {
     'create session: status 201': (r) => r.status === 201,
-    'create session: has id':     (r) => !!r.json('data.id'),
+    'create session: has id': (r) => !!r.json('data.id'),
   });
 
   if (!createOk) {
@@ -92,7 +91,7 @@ export default function () {
     `${BASE_URL}/sessions/${sessionId}/start`,
     JSON.stringify({
       workerHost: '10.0.0.1',
-      hostPort:   32100,
+      hostPort: 32100,
     }),
     { headers },
   );
@@ -104,11 +103,7 @@ export default function () {
   sleep(0.5);
 
   // 3. Stop session
-  const stopRes = http.post(
-    `${BASE_URL}/sessions/${sessionId}/stop`,
-    null,
-    { headers },
-  );
+  const stopRes = http.post(`${BASE_URL}/sessions/${sessionId}/stop`, null, { headers });
 
   const stopOk = check(stopRes, {
     'stop session: status 200 or 204': (r) => r.status === 200 || r.status === 204,

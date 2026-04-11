@@ -55,17 +55,12 @@ describe('Session lifecycle', () => {
     });
 
     // Start the session
-    const running = await sessions.updateState(
-      session.id,
-      'running',
-      session.version,
-      {
-        workerHost: '10.0.0.1',
-        hostPort: 32100,
-        startedAt: new Date().toISOString(),
-        lastActivityAt: new Date().toISOString(),
-      },
-    );
+    const running = await sessions.updateState(session.id, 'running', session.version, {
+      workerHost: '10.0.0.1',
+      hostPort: 32100,
+      startedAt: new Date().toISOString(),
+      lastActivityAt: new Date().toISOString(),
+    });
     expect(running.state).toBe('running');
     expect(running.workerHost).toBe('10.0.0.1');
     expect(running.hostPort).toBe(32100);

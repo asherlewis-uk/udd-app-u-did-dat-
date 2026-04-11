@@ -1,22 +1,12 @@
 import { createLogger } from '@udd/observability';
-import {
-  PgSessionRepository,
-  PgSandboxLeaseRepository,
-  closePool,
-} from '@udd/database';
+import { PgSessionRepository, PgSandboxLeaseRepository, closePool } from '@udd/database';
 import { createEventPublisher } from '@udd/events';
 import type { PlatformEvent } from '@udd/contracts';
 
 const logger = createLogger('session-reaper');
 
-const IDLE_THRESHOLD_SECONDS = parseInt(
-  process.env['IDLE_THRESHOLD_SECONDS'] ?? '1800',
-  10,
-);
-const SCAN_INTERVAL_MS = parseInt(
-  process.env['SCAN_INTERVAL_MS'] ?? '60000',
-  10,
-);
+const IDLE_THRESHOLD_SECONDS = parseInt(process.env['IDLE_THRESHOLD_SECONDS'] ?? '1800', 10);
+const SCAN_INTERVAL_MS = parseInt(process.env['SCAN_INTERVAL_MS'] ?? '60000', 10);
 
 const sessions = new PgSessionRepository();
 const leases = new PgSandboxLeaseRepository();

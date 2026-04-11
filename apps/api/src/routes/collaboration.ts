@@ -9,37 +9,34 @@ const router = Router();
 // Threads + comments scoped to a project
 // -------------------------------------------------------
 
-router.get(
-  '/projects/:id/comments',
-  requirePermission('comment.read'),
-  async (req, res, next) => {
-    try {
-      const ctx = getContext();
+router.get('/projects/:id/comments', requirePermission('comment.read'), async (req, res, next) => {
+  try {
+    const ctx = getContext();
 
-      const project = await ctx.projects.findById(req.params['id']!);
-      if (!project) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+    const project = await ctx.projects.findById(req.params['id']!);
+    if (!project) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
 
-      const membership = await ctx.memberships.findByUserAndWorkspace(
-        req.auth!.userId,
-        project.workspaceId,
-      );
-      if (!membership) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+    const membership = await ctx.memberships.findByUserAndWorkspace(
+      req.auth!.userId,
+      project.workspaceId,
+    );
+    if (!membership) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
 
-      const cursor = req.query['cursor'] as string | undefined;
-      const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
-      if (limit !== undefined && isNaN(limit)) return next(createAppError('limit must be a positive integer', 400, 'VALIDATION_ERROR'));
-      const page = await ctx.comments.findThreadsByProjectId(project.id, { cursor, limit });
+    const cursor = req.query['cursor'] as string | undefined;
+    const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
+    if (limit !== undefined && isNaN(limit))
+      return next(createAppError('limit must be a positive integer', 400, 'VALIDATION_ERROR'));
+    const page = await ctx.comments.findThreadsByProjectId(project.id, { cursor, limit });
 
-      return res.json({
-        data: page.items,
-        meta: { nextCursor: page.nextCursor, hasMore: page.hasMore },
-        correlationId: req.correlationId,
-      });
-    } catch (err) {
-      return next(err);
-    }
-  },
-);
+    return res.json({
+      data: page.items,
+      meta: { nextCursor: page.nextCursor, hasMore: page.hasMore },
+      correlationId: req.correlationId,
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
 
 router.post(
   '/projects/:id/comments',

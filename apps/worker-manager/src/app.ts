@@ -28,7 +28,9 @@ export function createApp(): express.Application {
       !Array.isArray(body.availablePorts) ||
       typeof body.healthy !== 'boolean'
     ) {
-      return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'Invalid snapshot payload' });
+      return res
+        .status(400)
+        .json({ code: 'VALIDATION_ERROR', message: 'Invalid snapshot payload' });
     }
 
     const snapshot: WorkerCapacitySnapshot = {
