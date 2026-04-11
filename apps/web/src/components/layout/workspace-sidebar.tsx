@@ -3,14 +3,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  FolderOpen,
-  Cpu,
-  Users,
-  Settings,
-  LogOut,
-  ChevronDown,
-} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { FolderOpen, Cpu, Users, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/contexts/auth-context';
 import { useWorkspace } from '@/hooks/use-workspaces';
@@ -26,7 +20,7 @@ import {
 interface NavItem {
   label: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   matchPrefix?: boolean;
 }
 
@@ -113,7 +107,7 @@ export function WorkspaceSidebar({ workspaceId }: WorkspaceSidebarProps) {
             return (
               <li key={item.href}>
                 <Link
-                  href={item.href}
+                  href={item.href as never}
                   className={cn(
                     'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
                     active
@@ -121,7 +115,12 @@ export function WorkspaceSidebar({ workspaceId }: WorkspaceSidebarProps) {
                       : 'text-[#a1a1aa] hover:bg-white/[0.04] hover:text-[#fafafa]',
                   )}
                 >
-                  <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-indigo-400' : 'text-[#71717a]')} />
+                  <Icon
+                    className={cn(
+                      'h-4 w-4 shrink-0',
+                      active ? 'text-indigo-400' : 'text-[#71717a]',
+                    )}
+                  />
                   {item.label}
                 </Link>
               </li>
@@ -138,9 +137,7 @@ export function WorkspaceSidebar({ workspaceId }: WorkspaceSidebarProps) {
               <Avatar className="h-6 w-6 shrink-0">
                 <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
               </Avatar>
-              <span className="flex-1 truncate text-left text-sm text-[#a1a1aa]">
-                My account
-              </span>
+              <span className="flex-1 truncate text-left text-sm text-[#a1a1aa]">My account</span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" side="top" className="w-48">

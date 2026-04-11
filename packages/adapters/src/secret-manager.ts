@@ -141,9 +141,10 @@ export class GCPSecretManagerProvider implements SecretManagerProvider {
 
 export class InMemorySecretManagerProvider implements SecretManagerProvider {
   private readonly store = new Map<string, string>();
+  private counter = 0;
 
   async createSecret(name: string, value: string): Promise<string> {
-    const ref = `mem://${name}/${Date.now()}`;
+    const ref = `mem://${name}/${Date.now()}-${this.counter++}`;
     this.store.set(ref, value);
     return ref;
   }
@@ -156,7 +157,7 @@ export class InMemorySecretManagerProvider implements SecretManagerProvider {
 
   async rotateSecret(currentRef: string, newValue: string): Promise<string> {
     const name = currentRef.split('/')[2] ?? 'secret';
-    const newRef = `mem://${name}/${Date.now()}`;
+    const newRef = `mem://${name}/${Date.now()}-${this.counter++}`;
     this.store.set(newRef, newValue);
     this.store.delete(currentRef);
     return newRef;

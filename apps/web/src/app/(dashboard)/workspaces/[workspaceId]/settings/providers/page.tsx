@@ -3,15 +3,7 @@
 import * as React from 'react';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
-import {
-  Plus,
-  Trash2,
-  RefreshCw,
-  Key,
-  Settings,
-  Cpu,
-  Shield,
-} from 'lucide-react';
+import { Plus, Trash2, RefreshCw, Key, Settings, Cpu, Shield } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/contexts/auth-context';
 import { useWorkspace } from '@/hooks/use-workspaces';
@@ -45,7 +37,7 @@ import type { ProviderConfig, ProviderType, AuthScheme, ModelCatalogMode } from 
 /*  Reuse SettingsNav from the parent settings page                    */
 /* ------------------------------------------------------------------ */
 
-import { SettingsNav } from '../page';
+import { SettingsNav } from '../settings-nav';
 
 const NAV_ITEMS = [
   { label: 'General', href: '/settings', icon: <Settings className="h-4 w-4" /> },
@@ -130,9 +122,7 @@ function AddProviderDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add AI Provider</DialogTitle>
-          <DialogDescription>
-            Configure a new AI provider for this workspace.
-          </DialogDescription>
+          <DialogDescription>Configure a new AI provider for this workspace.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -196,12 +186,7 @@ function AddProviderDialog({
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button
@@ -243,20 +228,15 @@ function DeleteDialog({
         <DialogHeader>
           <DialogTitle>Delete Provider</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete <strong>{providerName}</strong>? This
-            action cannot be undone. Any pipelines using this provider will fail.
+            Are you sure you want to delete <strong>{providerName}</strong>? This action cannot be
+            undone. Any pipelines using this provider will fail.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            loading={isDeleting}
-            onClick={onConfirm}
-          >
+          <Button variant="destructive" size="sm" loading={isDeleting} onClick={onConfirm}>
             <Trash2 className="h-3.5 w-3.5" />
             Delete
           </Button>
@@ -289,11 +269,7 @@ export default function ProvidersPage() {
     [token],
   );
 
-  const {
-    data,
-    isLoading,
-    mutate,
-  } = useSWR<{ data: ProviderConfig[] }>(
+  const { data, isLoading, mutate } = useSWR<{ data: ProviderConfig[] }>(
     token ? `${API_BASE}/workspaces/${workspaceId}/ai/providers` : null,
     fetcher,
   );
@@ -393,9 +369,7 @@ export default function ProvidersPage() {
                     )}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-[#fafafa]">
-                      {prov.name}
-                    </p>
+                    <p className="truncate text-sm font-medium text-[#fafafa]">{prov.name}</p>
                     <p className="mt-0.5 text-xs text-[#71717a]">
                       {prov.endpointUrl} &middot; {formatRelativeTime(prov.createdAt)}
                     </p>
@@ -405,10 +379,7 @@ export default function ProvidersPage() {
                   <Badge variant="outline" size="sm">
                     {prov.providerType}
                   </Badge>
-                  <Badge
-                    variant={prov.isActive ? 'success' : 'default'}
-                    size="sm"
-                  >
+                  <Badge variant={prov.isActive ? 'success' : 'default'} size="sm">
                     {prov.isActive ? 'Active' : 'Inactive'}
                   </Badge>
 
@@ -423,10 +394,7 @@ export default function ProvidersPage() {
                       title="Rotate API key"
                     >
                       <RefreshCw
-                        className={cn(
-                          'h-3.5 w-3.5',
-                          rotatingId === prov.id && 'animate-spin',
-                        )}
+                        className={cn('h-3.5 w-3.5', rotatingId === prov.id && 'animate-spin')}
                       />
                     </Button>
                     <Button

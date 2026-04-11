@@ -24,9 +24,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import type { AgentRole } from '@udd/contracts';
+import type { AgentRole, CreateAgentRoleRequest } from '@udd/contracts';
 
-import { SettingsNav } from '../page';
+import { SettingsNav } from '../settings-nav';
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -74,13 +74,14 @@ function NewRoleDialog({
 
     setIsSubmitting(true);
     try {
-      await apiClient.createRole(workspaceId, {
+      const req: CreateAgentRoleRequest = {
         name: name.trim(),
-        description: description.trim() || undefined,
         providerConfigId: providerConfigId.trim(),
         modelIdentifier: modelIdentifier.trim(),
-        systemInstructions: systemInstructions.trim() || undefined,
-      });
+      };
+      if (description.trim()) req.description = description.trim();
+      if (systemInstructions.trim()) req.systemInstructions = systemInstructions.trim();
+      await apiClient.createRole(workspaceId, req);
       reset();
       onOpenChange(false);
       onSuccess();
@@ -149,12 +150,7 @@ function NewRoleDialog({
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button
@@ -226,11 +222,7 @@ export default function RolesPage() {
       />
 
       <div className="flex gap-8 p-6">
-        <SettingsNav
-          items={NAV_ITEMS}
-          currentPath="/settings/roles"
-          workspaceId={workspaceId}
-        />
+        <SettingsNav items={NAV_ITEMS} currentPath="/settings/roles" workspaceId={workspaceId} />
 
         <div className="min-w-0 flex-1">
           {isLoading ? (
@@ -245,11 +237,7 @@ export default function RolesPage() {
               title="No roles defined"
               description="Create agent roles to control which model and instructions AI agents use."
               action={
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setDialogOpen(true)}
-                >
+                <Button variant="primary" size="sm" onClick={() => setDialogOpen(true)}>
                   <Plus className="h-3.5 w-3.5" />
                   New Role
                 </Button>
@@ -267,9 +255,7 @@ export default function RolesPage() {
                       <Shield className="h-4 w-4 text-[#6366f1]" />
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[#fafafa]">
-                        {role.name}
-                      </p>
+                      <p className="truncate text-sm font-semibold text-[#fafafa]">{role.name}</p>
                       {role.description && (
                         <p className="mt-0.5 line-clamp-2 text-xs text-[#71717a]">
                           {role.description}
@@ -282,10 +268,7 @@ export default function RolesPage() {
                     <Badge variant="outline" size="sm">
                       {role.modelIdentifier}
                     </Badge>
-                    <Badge
-                      variant={role.isActive ? 'success' : 'default'}
-                      size="sm"
-                    >
+                    <Badge variant={role.isActive ? 'success' : 'default'} size="sm">
                       {role.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>

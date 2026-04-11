@@ -55,9 +55,7 @@ const FILE_TREE: TreeEntry[] = [
       {
         name: 'utils',
         type: 'folder',
-        children: [
-          { name: 'helpers.ts', type: 'file', language: 'typescript' },
-        ],
+        children: [{ name: 'helpers.ts', type: 'file', language: 'typescript' }],
       },
     ],
   },
@@ -163,9 +161,7 @@ export default function EditorPage() {
   const { sessions, mutate } = useProjectSessions(token, projectId);
 
   // Active session = first running or idle session
-  const activeSession = sessions.find(
-    (s) => s.state === 'running' || s.state === 'idle',
-  );
+  const activeSession = sessions.find((s) => s.state === 'running' || s.state === 'idle');
 
   const [selectedFile, setSelectedFile] = React.useState('index.ts');
   const [editorValue, setEditorValue] = React.useState(SAMPLE_CODE);
@@ -177,7 +173,7 @@ export default function EditorPage() {
     // In a real app this would fetch file content from the session
   }
 
-  const backHref = `/workspaces/${workspaceId}/projects/${projectId}`;
+  const backHref = `/workspaces/${workspaceId}/projects/${projectId}` as const;
 
   return (
     <div className="flex h-full flex-col bg-[#09090b]">
@@ -204,9 +200,7 @@ export default function EditorPage() {
           </>
         )}
 
-        <div className="ml-auto text-[10px] text-[#52525b] font-mono">
-          {selectedFile}
-        </div>
+        <div className="ml-auto text-[10px] text-[#52525b] font-mono">{selectedFile}</div>
       </header>
 
       {/* ── No-session banner ── */}
@@ -214,14 +208,10 @@ export default function EditorPage() {
         <div className="flex items-center gap-3 border-b border-amber-500/20 bg-amber-500/[0.06] px-4 py-2.5">
           <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
           <span className="text-xs text-amber-300">
-            No active session — start a session to enable the terminal and
-            preview
+            No active session — start a session to enable the terminal and preview
           </span>
           <div className="ml-auto">
-            <SessionActions
-              projectId={projectId}
-              onRefresh={() => void mutate()}
-            />
+            <SessionActions projectId={projectId} onRefresh={() => void mutate()} />
           </div>
         </div>
       )}
@@ -292,11 +282,9 @@ export default function EditorPage() {
 
             <TabsContent value="preview" className="mt-0 flex-1 overflow-hidden">
               <PreviewFrame
-                url={
-                  activeSession && activeSession.workerHost && activeSession.hostPort
-                    ? `https://${activeSession.workerHost}:${activeSession.hostPort}`
-                    : undefined
-                }
+                {...(activeSession && activeSession.workerHost && activeSession.hostPort
+                  ? { url: `https://${activeSession.workerHost}:${activeSession.hostPort}` }
+                  : {})}
               />
             </TabsContent>
           </Tabs>

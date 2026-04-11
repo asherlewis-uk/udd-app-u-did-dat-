@@ -1,10 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Settings, Cpu, Shield, Copy, Check, CalendarDays, Users, Sparkles } from 'lucide-react';
-import { cn } from '@/lib/cn';
 import { useAuth } from '@/contexts/auth-context';
 import { useWorkspace } from '@/hooks/use-workspaces';
 import { PageHeader } from '@/components/layout/page-header';
@@ -13,51 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { formatDateTime } from '@/lib/format';
-
-/* ------------------------------------------------------------------ */
-/*  Settings navigation                                                */
-/* ------------------------------------------------------------------ */
-
-interface SettingsNavItem {
-  label: string;
-  href: string;
-  icon: React.ReactNode;
-}
-
-function SettingsNav({
-  items,
-  currentPath,
-  workspaceId,
-}: {
-  items: SettingsNavItem[];
-  currentPath: string;
-  workspaceId: string;
-}) {
-  return (
-    <nav className="w-[200px] shrink-0 space-y-0.5">
-      {items.map((item) => {
-        const isActive = currentPath === item.href;
-        return (
-          <Link
-            key={item.href}
-            href={`/workspaces/${workspaceId}${item.href}`}
-            className={cn(
-              'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
-              isActive
-                ? 'bg-white/[0.06] text-[#fafafa] font-medium'
-                : 'text-[#71717a] hover:bg-white/[0.04] hover:text-[#a1a1aa]',
-            )}
-          >
-            {item.icon}
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
-export { SettingsNav };
+import { SettingsNav } from './settings-nav';
+import type { SettingsNavItem } from './settings-nav';
 
 const NAV_ITEMS: SettingsNavItem[] = [
   { label: 'General', href: '/settings', icon: <Settings className="h-4 w-4" /> },
@@ -145,9 +100,7 @@ export default function SettingsPage() {
                   icon={<Settings className="h-3.5 w-3.5" />}
                   label="Workspace Name"
                   value={
-                    <span className="font-medium text-[#fafafa]">
-                      {workspace?.name ?? '—'}
-                    </span>
+                    <span className="font-medium text-[#fafafa]">{workspace?.name ?? '—'}</span>
                   }
                 />
 
@@ -156,16 +109,9 @@ export default function SettingsPage() {
                 <InfoRow
                   icon={<Copy className="h-3.5 w-3.5" />}
                   label="Workspace ID"
-                  value={
-                    <code className="font-mono text-xs text-[#71717a]">{workspaceId}</code>
-                  }
+                  value={<code className="font-mono text-xs text-[#71717a]">{workspaceId}</code>}
                   action={
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCopyId}
-                      className="h-7"
-                    >
+                    <Button variant="ghost" size="sm" onClick={handleCopyId} className="h-7">
                       {copied ? (
                         <Check className="h-3 w-3 text-emerald-400" />
                       ) : (
@@ -186,11 +132,7 @@ export default function SettingsPage() {
 
                 <Separator className="bg-white/[0.07]" />
 
-                <InfoRow
-                  icon={<Users className="h-3.5 w-3.5" />}
-                  label="Members"
-                  value="—"
-                />
+                <InfoRow icon={<Users className="h-3.5 w-3.5" />} label="Members" value="—" />
 
                 <Separator className="bg-white/[0.07]" />
 

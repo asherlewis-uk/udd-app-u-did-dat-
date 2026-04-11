@@ -5,9 +5,7 @@ import type { OnMount } from '@monaco-editor/react';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
-  loading: () => (
-    <div className="h-full w-full animate-pulse bg-[#18181b]" />
-  ),
+  loading: () => <div className="h-full w-full animate-pulse bg-[#18181b]" />,
 });
 
 interface CodeEditorProps {
@@ -50,7 +48,7 @@ export function CodeEditor({
       height={height}
       language={language}
       value={value}
-      onChange={onChange}
+      {...(onChange ? { onChange } : {})}
       onMount={handleMount}
       options={{
         theme: 'udd-dark',

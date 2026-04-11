@@ -3,13 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import {
-  Layers,
-  TerminalSquare,
-  CalendarDays,
-  Code2,
-  AlignLeft,
-} from 'lucide-react';
+import { Layers, TerminalSquare, CalendarDays, Code2, AlignLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProject, useProjectSessions } from '@/hooks/use-projects';
 import { useWorkspace } from '@/hooks/use-workspaces';
@@ -59,7 +53,7 @@ export default function ProjectPage() {
     { label: project?.name ?? projectId },
   ];
 
-  const editorHref = `/workspaces/${workspaceId}/projects/${projectId}/editor`;
+  const editorHref = `/workspaces/${workspaceId}/projects/${projectId}/editor` as const;
 
   return (
     <div className="flex flex-col">
@@ -95,21 +89,12 @@ export default function ProjectPage() {
               icon={<TerminalSquare className="h-5 w-5" />}
               title="No sessions yet"
               description="Create a session to spin up a cloud container for this project."
-              action={
-                <SessionActions
-                  projectId={projectId}
-                  onRefresh={() => void mutate()}
-                />
-              }
+              action={<SessionActions projectId={projectId} onRefresh={() => void mutate()} />}
             />
           ) : (
             <div className="space-y-3">
               {sessions.map((session) => (
-                <SessionCard
-                  key={session.id}
-                  session={session}
-                  onRefresh={() => void mutate()}
-                />
+                <SessionCard key={session.id} session={session} onRefresh={() => void mutate()} />
               ))}
             </div>
           )}

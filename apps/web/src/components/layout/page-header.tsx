@@ -31,7 +31,7 @@ export function PageHeader({
             <React.Fragment key={i}>
               {i > 0 && <ChevronRight className="h-3 w-3 shrink-0" />}
               {crumb.href ? (
-                <Link href={crumb.href} className="hover:text-[#a1a1aa] transition-colors">
+                <Link href={crumb.href as never} className="hover:text-[#a1a1aa] transition-colors">
                   {crumb.label}
                 </Link>
               ) : (
@@ -44,9 +44,7 @@ export function PageHeader({
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold text-[#fafafa]">{title}</h1>
-          {description && (
-            <p className="mt-0.5 text-sm text-[#a1a1aa]">{description}</p>
-          )}
+          {description && <p className="mt-0.5 text-sm text-[#a1a1aa]">{description}</p>}
         </div>
         {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
       </div>

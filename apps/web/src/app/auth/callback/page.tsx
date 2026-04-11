@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from '@/hooks/use-toast';
 
-export default function AuthCallbackPage() {
+function AuthCallbackInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { exchangeCode } = useAuth();
@@ -59,5 +59,20 @@ export default function AuthCallbackPage() {
       <div className="h-6 w-6 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
       <p className="text-sm text-[#a1a1aa]">Completing sign-in…</p>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[#09090b]">
+          <div className="h-6 w-6 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+          <p className="text-sm text-[#a1a1aa]">Completing sign-in…</p>
+        </div>
+      }
+    >
+      <AuthCallbackInner />
+    </React.Suspense>
   );
 }

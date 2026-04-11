@@ -4,6 +4,10 @@ const nextConfig = {
   experimental: {
     typedRoutes: true,
   },
+  eslint: {
+    // Lint is enforced via `pnpm lint`; avoid duplicating during build.
+    ignoreDuringBuilds: true,
+  },
   webpack: (config, { isServer }) => {
     // Monaco Editor requires its workers to be available on the client
     if (!isServer) {
