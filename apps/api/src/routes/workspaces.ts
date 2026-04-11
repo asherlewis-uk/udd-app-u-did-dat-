@@ -104,6 +104,7 @@ router.get(
 
       const cursor = req.query['cursor'] as string | undefined;
       const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
+      if (limit !== undefined && isNaN(limit)) return next(createAppError('limit must be a positive integer', 400, 'VALIDATION_ERROR'));
       const page = await ctx.memberships.findByWorkspaceId(req.params['id']!, { cursor, limit });
 
       return res.json({ data: page.items, meta: { nextCursor: page.nextCursor, hasMore: page.hasMore }, correlationId: req.correlationId });

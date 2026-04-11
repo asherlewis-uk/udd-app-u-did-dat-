@@ -7,51 +7,152 @@ on:
       - release/* # → staging + prod (with manual gate)
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository }}
+  REGISTRY: gcr.io
+  GCP_REGION: europe-west1
+  SERVICES: api gateway orchestrator collaboration ai-orchestration worker-manager session-reaper usage-meter
 
 jobs:
-  deploy-dev:
-    name: Deploy → dev
+  build-and-push:
+    name: Build & push images
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    environment: dev
-    needs: []
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Authenticate to GCP (Workload Identity)
+        uses: google-github-actions/auth@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_CI_SERVICE_ACCOUNT }}
 
-      - name: Deploy services to ECS (dev)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      - name: Export image tag
+        id: meta
+        run: echo "sha=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push all service images
         env:
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ steps.meta.outputs.sha }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         run: |
-          echo "Deploying image tag: $IMAGE_TAG to dev"
-          # Phase 2: aws ecs update-service per service
+          for svc in $SERVICES; do
+            IMAGE="${REGISTRY}/${GCP_PROJECT_ID}/udd-${svc}:${IMAGE_TAG}"
+            docker buildx build \
+              --platform linux/amd64 \
+              --file "apps/${svc}/Dockerfile" \
+              --tag "${IMAGE}" \
+              --push \
+              .
+          done
+
+  deploy-dev:
+    name: Deploy → dev
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    if: github.ref == 'refs/heads/main'
+    environment: dev
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP (Workload Identity)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_CI_SERVICE_ACCOUNT }}
+
+      - name: Deploy services to Cloud Run (dev)
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          NAME_PREFIX: udd-dev
+        run: |
+          for svc in $SERVICES; do
+            IMAGE="${REGISTRY}/${GCP_PROJECT_ID}/udd-${svc}:${IMAGE_TAG}"
+            gcloud run deploy "${NAME_PREFIX}-${svc}" \
+              --image "${IMAGE}" \
+              --region "${GCP_REGION}" \
+              --project "${GCP_PROJECT_ID}" \
+              --platform managed \
+              --quiet
+          done
 
   deploy-staging:
     name: Deploy → staging
     runs-on: ubuntu-latest
+    needs: [build-and-push, deploy-dev]
     if: startsWith(github.ref, 'refs/heads/release/')
     environment: staging
-    needs: [deploy-dev]
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to staging
-        run: echo "Deploy to staging — Phase 2"
+
+      - name: Authenticate to GCP (Workload Identity)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_CI_SERVICE_ACCOUNT }}
+
+      - name: Deploy services to Cloud Run (staging)
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          NAME_PREFIX: udd-staging
+        run: |
+          for svc in $SERVICES; do
+            IMAGE="${REGISTRY}/${GCP_PROJECT_ID}/udd-${svc}:${IMAGE_TAG}"
+            gcloud run deploy "${NAME_PREFIX}-${svc}" \
+              --image "${IMAGE}" \
+              --region "${GCP_REGION}" \
+              --project "${GCP_PROJECT_ID}" \
+              --platform managed \
+              --quiet
+          done
 
   deploy-prod:
     name: Deploy → prod
     runs-on: ubuntu-latest
+    needs: [build-and-push, deploy-staging]
     if: startsWith(github.ref, 'refs/heads/release/')
     environment: prod  # has manual approval gate configured in GitHub
-    needs: [deploy-staging]
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to production
-        run: echo "Deploy to prod — Phase 2"
+
+      - name: Authenticate to GCP (Workload Identity)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_CI_SERVICE_ACCOUNT }}
+
+      - name: Deploy services to Cloud Run (prod)
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          NAME_PREFIX: udd-prod
+        run: |
+          for svc in $SERVICES; do
+            IMAGE="${REGISTRY}/${GCP_PROJECT_ID}/udd-${svc}:${IMAGE_TAG}"
+            gcloud run deploy "${NAME_PREFIX}-${svc}" \
+              --image "${IMAGE}" \
+              --region "${GCP_REGION}" \
+              --project "${GCP_PROJECT_ID}" \
+              --platform managed \
+              --quiet
+          done
+

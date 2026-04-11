@@ -15,15 +15,30 @@ const logger = createLogger('host-agent');
 const WORKER_HOST = process.env['WORKER_HOST'] ?? 'localhost';
 const WORKER_MANAGER_URL = config.services.workerManagerBaseUrl();
 
+async function postSnapshot(snapshot: Awaited<ReturnType<typeof collectCapacitySnapshot>>): Promise<void> {
+  const url = `${WORKER_MANAGER_URL}/internal/capacity-snapshot`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(snapshot),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`worker-manager responded ${res.status}: ${text}`);
+  }
+}
+
 export async function registerHost(): Promise<void> {
   logger.info('Registering host with worker manager', { workerHost: WORKER_HOST });
-  // Phase 2: POST to WORKER_MANAGER_URL/internal/register
+  const snapshot = await collectCapacitySnapshot();
+  await postSnapshot(snapshot);
 }
 
 export async function publishHeartbeat(): Promise<void> {
   const snapshot = await collectCapacitySnapshot();
   logger.debug('Publishing heartbeat', { workerHost: WORKER_HOST, snapshot });
-  // Phase 2: POST snapshot to worker-manager
+  await postSnapshot(snapshot);
 }
 
 export async function collectCapacitySnapshot(): Promise<{

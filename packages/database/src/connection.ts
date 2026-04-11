@@ -13,10 +13,7 @@ export function getPool(): Pool {
       max: parseInt(process.env['DATABASE_POOL_MAX'] ?? '10', 10),
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
-      ssl:
-        process.env['DATABASE_SSL'] === 'true'
-          ? { rejectUnauthorized: true }
-          : undefined,
+      ssl: process.env['DATABASE_SSL'] === 'true' ? { rejectUnauthorized: true } : undefined,
     });
     pool.on('error', (err) => {
       console.error('[database] unexpected pool error:', err);
@@ -74,19 +71,32 @@ export async function queryMany<T extends QueryResultRow>(
 // Transaction helper
 // -------------------------------------------------------
 
-export async function withTransaction<T>(
-  fn: (client: PoolClient) => Promise<T>,
-): Promise<T> {
-  const client = await getPool().connect();
-  try {
-    await client.query('BEGIN');
-    const result = await fn(client);
-    await client.query('COMMIT');
-    return result;
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
+/** PostgreSQL SQLSTATE for serialization failure — retryable under SERIALIZABLE isolation. */
+const SERIALIZATION_FAILURE_CODE = '40001';
+const TRANSACTION_MAX_RETRIES = 3;
+
+export async function withTransaction<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
+  let attempt = 0;
+  while (true) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN ISOLATION LEVEL SERIALIZABLE');
+      const result = await fn(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      if (
+        attempt < TRANSACTION_MAX_RETRIES - 1 &&
+        (err as { code?: string }).code === SERIALIZATION_FAILURE_CODE
+      ) {
+        attempt++;
+        await new Promise<void>((resolve) => setTimeout(resolve, attempt * 30));
+        continue;
+      }
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 }

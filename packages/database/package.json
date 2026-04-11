@@ -14,13 +14,15 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "migrate": "node dist/migrate.js",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "pg": "^8.12.0"
   },
   "devDependencies": {
     "@types/pg": "^8.11.0",
-    "typescript": "*"
+    "typescript": "*",
+    "vitest": "^2.0.0"
   }
 }

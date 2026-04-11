@@ -4,7 +4,7 @@ import {
   PgSandboxLeaseRepository,
   closePool,
 } from '@udd/database';
-import { NoopEventPublisher } from '@udd/events';
+import { createEventPublisher } from '@udd/events';
 import type { PlatformEvent } from '@udd/contracts';
 
 const logger = createLogger('session-reaper');
@@ -20,7 +20,7 @@ const SCAN_INTERVAL_MS = parseInt(
 
 const sessions = new PgSessionRepository();
 const leases = new PgSandboxLeaseRepository();
-const events = new NoopEventPublisher(); // Phase 3: PubSubEventPublisher
+const events = createEventPublisher();
 
 // ============================================================
 // Session reaper — periodic job

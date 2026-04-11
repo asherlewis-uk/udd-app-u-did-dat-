@@ -16,7 +16,7 @@ import type {
   AuditLogRepository,
   CommentRepository,
 } from '@udd/database';
-import { NoopEventPublisher } from '@udd/events';
+import { createEventPublisher } from '@udd/events';
 import type { EventPublisher } from '@udd/events';
 import { WorkOSAuthProvider } from '@udd/adapters';
 
@@ -48,7 +48,7 @@ export function getContext(): ApiContext {
       previewRoutes: new PgPreviewRouteRepository(),
       auditLogs: new PgAuditLogRepository(),
       comments: new PgCommentRepository(),
-      events: new NoopEventPublisher(), // Phase 3: swap for PubSubEventPublisher
+      events: createEventPublisher(),
       auth: new WorkOSAuthProvider(),
     };
   }

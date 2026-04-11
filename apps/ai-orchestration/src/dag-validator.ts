@@ -29,9 +29,9 @@ export async function validateDag(
     return { valid: false, errors };
   }
 
-  // Rule 2: maximum size limits
-  const MAX_NODES = 500;
-  const MAX_EDGES = 5000;
+  // Rule 2: maximum size limits (configurable via env; lower-bound guard prevents 0)
+  const MAX_NODES = Math.max(1, parseInt(process.env['PIPELINE_MAX_NODES'] ?? '500', 10) || 500);
+  const MAX_EDGES = Math.max(1, parseInt(process.env['PIPELINE_MAX_EDGES'] ?? '5000', 10) || 5000);
 
   if (nodes.length > MAX_NODES) {
     errors.push(`Pipeline exceeds the maximum of ${MAX_NODES} nodes (got ${nodes.length})`);

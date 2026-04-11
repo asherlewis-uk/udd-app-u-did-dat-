@@ -1,8 +1,20 @@
 import { Router } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import { randomBytes, createHash } from 'crypto';
 import { signSessionToken } from '@udd/auth';
 import { getContext } from '../context.js';
 import { createAppError } from '../middleware/error.js';
+
+// Strict rate limiter for auth endpoints — prevents brute-force against
+// PKCE state and authorization code exchange.  20 requests per IP per
+// 15-minute window is generous for legitimate auth flows.
+const authRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { code: 'RATE_LIMITED', message: 'Too many requests, please try again later.' },
+});
 
 const router = Router();
 
@@ -54,7 +66,7 @@ function generateState(): string {
 // /auth/session/exchange.
 // ============================================================
 
-router.post('/auth/session/pkce-init', (_req, res) => {
+router.post('/auth/session/pkce-init', authRateLimit, (_req, res) => {
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = generateCodeChallenge(codeVerifier);
@@ -82,7 +94,7 @@ router.post('/auth/session/pkce-init', (_req, res) => {
 // authenticated requests.
 // ============================================================
 
-router.post('/auth/session/exchange', async (req, res, next) => {
+router.post('/auth/session/exchange', authRateLimit, async (req, res, next) => {
   try {
     const { code, state } = req.body as { code?: string; state?: string };
 
@@ -109,10 +121,6 @@ router.post('/auth/session/exchange', async (req, res, next) => {
     // One-time use — delete before calling WorkOS to prevent replay
     pkceStore.delete(state);
     const { codeVerifier } = pkceEntry;
-
-    // Rate-limit: authorization codes are single-use at WorkOS, but we should
-    // still prevent brute-force attempts against this endpoint.
-    // TODO: add rate limiting middleware before GA.
 
     const ctx = getContext();
 

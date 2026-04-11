@@ -26,3 +26,13 @@ variable "ssl_domains" {
   description = "Domains for the Google-managed SSL certificate"
   default     = ["udd.example.com", "www.udd.example.com"]
 }
+
+variable "alert_notification_email" {
+  type        = string
+  description = "Email address to receive monitoring alert notifications"
+}
+
+variable "cloud_run_url_suffix" {
+  type        = string
+  description = "The unique URL suffix appended by Cloud Run (e.g. abc123-ew.a.run.app)"
+}

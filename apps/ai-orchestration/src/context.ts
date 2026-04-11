@@ -14,7 +14,7 @@ import type {
   MembershipRepository,
   AuditLogRepository,
 } from '@udd/database';
-import { NoopEventPublisher } from '@udd/events';
+import { createEventPublisher } from '@udd/events';
 import type { EventPublisher } from '@udd/events';
 import { InMemorySecretManagerProvider, GCPSecretManagerProvider } from '@udd/adapters';
 import type { SecretManagerProvider } from '@udd/adapters';
@@ -49,7 +49,7 @@ export function getContext(): AiOrchestratorContext {
       pipelineRuns: new PgPipelineRunRepository(),
       memberships: new PgMembershipRepository(),
       auditLogs: new PgAuditLogRepository(),
-      events: new NoopEventPublisher(),
+      events: createEventPublisher(),
       secrets,
       resolveAdapter: resolveAdapterForConfig,
     };

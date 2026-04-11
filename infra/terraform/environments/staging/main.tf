@@ -170,3 +170,26 @@ module "loadbalancer" {
 
   depends_on = [module.compute]
 }
+
+# ============================================================
+# Monitoring — uptime checks + alert policies
+# ============================================================
+
+module "monitoring" {
+  source      = "../../modules/monitoring"
+  project_id  = var.project_id
+  name_prefix = local.name_prefix
+  region      = var.region
+  labels      = local.common_labels
+
+  notification_email   = var.alert_notification_email
+  error_rate_threshold = 0.02
+
+  http_services = {
+    api          = "https://${local.name_prefix}-api-${var.cloud_run_url_suffix}"
+    gateway      = "https://${local.name_prefix}-gateway-${var.cloud_run_url_suffix}"
+    orchestrator = "https://${local.name_prefix}-orchestrator-${var.cloud_run_url_suffix}"
+  }
+
+  depends_on = [module.compute]
+}

@@ -92,6 +92,7 @@ router.get('/workspaces/:id/ai/runs', requirePermission('ai.run.read'), async (r
     }
     const cursor = req.query['cursor'] as string | undefined;
     const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
+    if (limit !== undefined && isNaN(limit)) return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'limit must be a positive integer', correlationId: req.correlationId });
     const page = await ctx.pipelineRuns.findByWorkspaceId(req.params['id']!, { cursor, limit });
     return res.json({ data: page.items, meta: { nextCursor: page.nextCursor, hasMore: page.hasMore }, correlationId: req.correlationId });
   } catch (err) { return next(err); }

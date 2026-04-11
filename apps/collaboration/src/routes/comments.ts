@@ -23,6 +23,7 @@ router.get('/projects/:id/comments', requirePermission('comment.read'), async (r
 
     const cursor = req.query['cursor'] as string | undefined;
     const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
+    if (limit !== undefined && isNaN(limit)) return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'limit must be a positive integer', correlationId: req.correlationId });
     const page = await comments.findThreadsByProjectId(project.id, { cursor, limit });
 
     return res.json({
