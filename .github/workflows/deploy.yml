@@ -1,0 +1,57 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main      # → dev
+      - release/* # → staging + prod (with manual gate)
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+jobs:
+  deploy-dev:
+    name: Deploy → dev
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: dev
+    needs: []
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy services to ECS (dev)
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "Deploying image tag: $IMAGE_TAG to dev"
+          # Phase 2: aws ecs update-service per service
+
+  deploy-staging:
+    name: Deploy → staging
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/release/')
+    environment: staging
+    needs: [deploy-dev]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to staging
+        run: echo "Deploy to staging — Phase 2"
+
+  deploy-prod:
+    name: Deploy → prod
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/release/')
+    environment: prod  # has manual approval gate configured in GitHub
+    needs: [deploy-staging]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to production
+        run: echo "Deploy to prod — Phase 2"

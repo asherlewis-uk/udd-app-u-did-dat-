@@ -1,0 +1,85 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build --filter="./packages/*"
+      - run: pnpm test:unit
+
+  contract-tests:
+    name: Contract Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: udd_test
+          POSTGRES_USER: uddtest
+          POSTGRES_PASSWORD: uddtest
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build --filter="./packages/*"
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql://uddtest:uddtest@localhost:5432/udd_test
+        run: pnpm --filter="@udd/database" migrate
+
+      - name: Run contract tests
+        env:
+          DATABASE_URL: postgresql://uddtest:uddtest@localhost:5432/udd_test
+        run: pnpm test:integration
+
+  migration-check:
+    name: Migration Schema Check
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: udd_migrate_check
+          POSTGRES_USER: uddcheck
+          POSTGRES_PASSWORD: uddcheck
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build --filter="@udd/database"
+
+      - name: Verify migrations apply cleanly
+        env:
+          DATABASE_URL: postgresql://uddcheck:uddcheck@localhost:5432/udd_migrate_check
+        run: pnpm --filter="@udd/database" migrate

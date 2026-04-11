@@ -1,0 +1,28 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  transpilePackages: ['@udd/contracts'],
+  experimental: {
+    typedRoutes: true,
+  },
+  webpack: (config, { isServer }) => {
+    // Monaco Editor requires its workers to be available on the client
+    if (!isServer) {
+      config.resolve = config.resolve ?? {};
+      config.resolve.fallback = {
+        ...(config.resolve.fallback ?? {}),
+        fs: false,
+      };
+    }
+    return config;
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/preview/:path*',
+        destination: `${process.env.GATEWAY_URL ?? 'http://localhost:3000'}/preview/:path*`,
+      },
+    ];
+  },
+};
+
+module.exports = nextConfig;

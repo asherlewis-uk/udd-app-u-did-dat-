@@ -1,0 +1,100 @@
+// ============================================================
+// Environment variable schema and access helpers
+// All service configuration must go through this module.
+// ============================================================
+
+function required(key: string): string {
+  const val = process.env[key];
+  if (!val) throw new Error(`Missing required environment variable: ${key}`);
+  return val;
+}
+
+function optional(key: string, fallback: string): string {
+  return process.env[key] ?? fallback;
+}
+
+function optionalInt(key: string, fallback: number): number {
+  const val = process.env[key];
+  if (!val) return fallback;
+  const parsed = parseInt(val, 10);
+  if (isNaN(parsed)) throw new Error(`Environment variable ${key} must be an integer`);
+  return parsed;
+}
+
+function flag(key: string, fallback: boolean): boolean {
+  const val = process.env[key];
+  if (!val) return fallback;
+  return val === 'true' || val === '1';
+}
+
+// ============================================================
+// Shared config accessors — call at startup, not in hot paths
+// ============================================================
+
+export const config = {
+  env: optional('NODE_ENV', 'development') as 'development' | 'staging' | 'production' | 'test',
+
+  database: {
+    url: () => required('DATABASE_URL'),
+    poolMax: () => optionalInt('DATABASE_POOL_MAX', 10),
+    ssl: () => flag('DATABASE_SSL', false),
+  },
+
+  redis: {
+    url: () => required('REDIS_URL'),
+  },
+
+  auth: {
+    jwtSecret: () => required('JWT_SECRET'),
+    jwtExpiresInSeconds: () => optionalInt('JWT_EXPIRES_IN_SECONDS', 86_400),
+    workosApiKey: () => required('WORKOS_API_KEY'),
+    workosClientId: () => required('WORKOS_CLIENT_ID'),
+    workosWebhookSecret: () => required('WORKOS_WEBHOOK_SECRET'),
+  },
+
+  secrets: {
+    provider: () => optional('SECRET_MANAGER_PROVIDER', 'aws'),
+    awsRegion: () => optional('AWS_REGION', 'us-east-1'),
+    awsSecretsPrefix: () => optional('AWS_SECRETS_PREFIX', '/udd/'),
+  },
+
+  storage: {
+    provider: () => optional('OBJECT_STORAGE_PROVIDER', 'aws'),
+    bucket: () => required('OBJECT_STORAGE_BUCKET'),
+    awsRegion: () => optional('AWS_REGION', 'us-east-1'),
+  },
+
+  queue: {
+    provider: () => optional('QUEUE_PROVIDER', 'sqs'),
+    awsRegion: () => optional('AWS_REGION', 'us-east-1'),
+    queueUrlPrefix: () => optional('SQS_QUEUE_URL_PREFIX', ''),
+  },
+
+  telemetry: {
+    otlpEndpoint: () => optional('OTLP_ENDPOINT', ''),
+    serviceName: () => optional('OTEL_SERVICE_NAME', 'udd-service'),
+    logLevel: () => optional('LOG_LEVEL', 'info') as 'debug' | 'info' | 'warn' | 'error',
+  },
+
+  services: {
+    apiBaseUrl: () => optional('API_BASE_URL', 'http://localhost:3001'),
+    orchestratorBaseUrl: () => optional('ORCHESTRATOR_BASE_URL', 'http://localhost:3002'),
+    collaborationBaseUrl: () => optional('COLLABORATION_BASE_URL', 'http://localhost:3003'),
+    aiOrchestrationBaseUrl: () => optional('AI_ORCHESTRATION_BASE_URL', 'http://localhost:3004'),
+    workerManagerBaseUrl: () => optional('WORKER_MANAGER_BASE_URL', 'http://localhost:3005'),
+    gatewayBaseUrl: () => optional('GATEWAY_BASE_URL', 'http://localhost:3000'),
+  },
+
+  worker: {
+    heartbeatIntervalMs: () => optionalInt('WORKER_HEARTBEAT_INTERVAL_MS', 30_000),
+    idleSessionScanIntervalMs: () => optionalInt('IDLE_SESSION_SCAN_INTERVAL_MS', 60_000),
+    stuckRunTimeoutMs: () => optionalInt('STUCK_RUN_TIMEOUT_MS', 300_000),
+  },
+
+  preview: {
+    domain: () => optional('PREVIEW_DOMAIN', 'localhost:3000'),
+    ttlSeconds: () => optionalInt('PREVIEW_DEFAULT_TTL_SECONDS', 3600),
+  },
+} as const;
+
+export type Config = typeof config;

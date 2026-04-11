@@ -1,0 +1,27 @@
+{
+  "name": "@udd/usage-meter",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@udd/config": "workspace:*",
+    "@udd/contracts": "workspace:*",
+    "@udd/database": "workspace:*",
+    "@udd/events": "workspace:*",
+    "@udd/observability": "workspace:*",
+    "express": "^4.19.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "tsx": "^4.16.0",
+    "typescript": "*",
+    "vitest": "^2.0.0"
+  }
+}

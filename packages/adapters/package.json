@@ -1,0 +1,31 @@
+{
+  "name": "@udd/adapters",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@udd/contracts": "workspace:*",
+    "@udd/observability": "workspace:*",
+    "@google-cloud/secret-manager": "^5.6.0",
+    "@workos-inc/node": "^8.0.0"
+  },
+  "devDependencies": {
+    "@udd/testing": "workspace:*",
+    "typescript": "*",
+    "vitest": "^2.0.0"
+  }
+}

@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   UDD Platform Design Tokens
+   ============================================================ */
+
+:root {
+  /* Background layers */
+  --color-bg: #09090b;
+  --color-surface: #18181b;
+  --color-surface-2: #27272a;
+  --color-surface-3: #3f3f46;
+
+  /* Brand / Primary */
+  --color-primary: #6366f1;
+  --color-primary-hover: #818cf8;
+  --color-primary-fg: #ffffff;
+  --color-primary-subtle: rgba(99, 102, 241, 0.12);
+
+  /* Text */
+  --color-text: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+
+  /* Borders */
+  --color-border: rgba(255, 255, 255, 0.07);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Session state colors */
+  --color-state-creating: #f59e0b;
+  --color-state-starting: #f59e0b;
+  --color-state-running: #10b981;
+  --color-state-idle: #3b82f6;
+  --color-state-stopping: #f97316;
+  --color-state-stopped: #71717a;
+  --color-state-failed: #ef4444;
+
+  /* Pipeline run status */
+  --color-run-queued: #71717a;
+  --color-run-preparing: #f59e0b;
+  --color-run-running: #10b981;
+  --color-run-succeeded: #10b981;
+  --color-run-failed: #ef4444;
+  --color-run-canceled: #71717a;
+}
+
+/* ============================================================
+   Base Styles
+   ============================================================ */
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-bg text-text font-sans;
+    min-height: 100vh;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Focus ring */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-bg;
+  }
+}
+
+/* ============================================================
+   Component utilities
+   ============================================================ */
+
+@layer utilities {
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface) 25%,
+      var(--color-surface-2) 50%,
+      var(--color-surface) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+}
