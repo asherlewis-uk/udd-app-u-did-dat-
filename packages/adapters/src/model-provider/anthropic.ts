@@ -80,10 +80,12 @@ export class AnthropicModelProviderAdapter extends BaseModelProviderAdapter {
       };
     }
 
-    return {
-      providerMessageId: body['id'] as string | undefined,
+    const result: { providerMessageId?: string | null; status: 'completed'; output: Record<string, unknown> } = {
       status: 'completed',
       output: body,
     };
+    const msgId = body['id'] as string | undefined;
+    result.providerMessageId = msgId ?? null;
+    return result;
   }
 }

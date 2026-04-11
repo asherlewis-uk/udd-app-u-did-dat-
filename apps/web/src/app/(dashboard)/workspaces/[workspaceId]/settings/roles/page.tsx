@@ -4,7 +4,6 @@ import * as React from 'react';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { Plus, Shield, Settings, Cpu, ShieldCheck } from 'lucide-react';
-import { cn } from '@/lib/cn';
 import { useAuth } from '@/contexts/auth-context';
 import { useWorkspace } from '@/hooks/use-workspaces';
 import { apiClient } from '@/lib/api-client';
@@ -39,78 +38,6 @@ const NAV_ITEMS = [
   { label: 'Agent Roles', href: '/settings/roles', icon: <Shield className="h-4 w-4" /> },
 ];
 
-const ALL_PERMISSIONS = [
-  'read:sessions',
-  'write:sessions',
-  'read:projects',
-  'write:projects',
-  'read:pipelines',
-  'run:pipelines',
-  'manage:providers',
-  'manage:members',
-] as const;
-
-type Permission = (typeof ALL_PERMISSIONS)[number];
-
-/* ------------------------------------------------------------------ */
-/*  Permission checkbox list                                           */
-/* ------------------------------------------------------------------ */
-
-function PermissionCheckboxes({
-  selected,
-  onChange,
-}: {
-  selected: Set<Permission>;
-  onChange: (perm: Permission, checked: boolean) => void;
-}) {
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      {ALL_PERMISSIONS.map((perm) => {
-        const checked = selected.has(perm);
-        return (
-          <label
-            key={perm}
-            className={cn(
-              'flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-xs transition-colors',
-              checked
-                ? 'border-[#6366f1]/40 bg-[#6366f1]/[0.06] text-[#c7d2fe]'
-                : 'border-white/[0.07] bg-transparent text-[#71717a] hover:border-white/[0.12] hover:text-[#a1a1aa]',
-            )}
-          >
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={(e) => onChange(perm, e.target.checked)}
-              className="sr-only"
-            />
-            <span
-              className={cn(
-                'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
-                checked
-                  ? 'border-[#6366f1] bg-[#6366f1]'
-                  : 'border-white/[0.2] bg-transparent',
-              )}
-            >
-              {checked && (
-                <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none">
-                  <path
-                    d="M2.5 6L5 8.5L9.5 3.5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </span>
-            <span className="font-mono">{perm}</span>
-          </label>
-        );
-      })}
-    </div>
-  );
-}
-
 /* ------------------------------------------------------------------ */
 /*  New Role Dialog                                                    */
 /* ------------------------------------------------------------------ */
@@ -128,35 +55,32 @@ function NewRoleDialog({
 }) {
   const [name, setName] = React.useState('');
   const [description, setDescription] = React.useState('');
-  const [permissions, setPermissions] = React.useState<Set<Permission>>(new Set());
+  const [providerConfigId, setProviderConfigId] = React.useState('');
+  const [modelIdentifier, setModelIdentifier] = React.useState('');
+  const [systemInstructions, setSystemInstructions] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   function reset() {
     setName('');
     setDescription('');
-    setPermissions(new Set());
-  }
-
-  function handlePermToggle(perm: Permission, checked: boolean) {
-    setPermissions((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(perm);
-      else next.delete(perm);
-      return next;
-    });
+    setProviderConfigId('');
+    setModelIdentifier('');
+    setSystemInstructions('');
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || permissions.size === 0) return;
+    if (!name.trim() || !providerConfigId.trim() || !modelIdentifier.trim()) return;
 
     setIsSubmitting(true);
     try {
       await apiClient.createRole(workspaceId, {
         name: name.trim(),
         description: description.trim() || undefined,
-        permissions: [...permissions],
-      } as never);
+        providerConfigId: providerConfigId.trim(),
+        modelIdentifier: modelIdentifier.trim(),
+        systemInstructions: systemInstructions.trim() || undefined,
+      });
       reset();
       onOpenChange(false);
       onSuccess();
@@ -171,7 +95,7 @@ function NewRoleDialog({
         <DialogHeader>
           <DialogTitle>New Agent Role</DialogTitle>
           <DialogDescription>
-            Define a role with specific permissions for AI agents.
+            Define a role that binds an AI provider to a model with optional instructions.
           </DialogDescription>
         </DialogHeader>
 
@@ -197,10 +121,30 @@ function NewRoleDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label required>Permissions</Label>
-            <PermissionCheckboxes
-              selected={permissions}
-              onChange={handlePermToggle}
+            <Label required>Provider Config ID</Label>
+            <Input
+              placeholder="UUID of the provider config"
+              value={providerConfigId}
+              onChange={(e) => setProviderConfigId(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label required>Model Identifier</Label>
+            <Input
+              placeholder="e.g. gpt-4o, claude-opus-4-5"
+              value={modelIdentifier}
+              onChange={(e) => setModelIdentifier(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>System Instructions</Label>
+            <Textarea
+              placeholder="Optional system prompt for the agent..."
+              value={systemInstructions}
+              onChange={(e) => setSystemInstructions(e.target.value)}
+              rows={3}
             />
           </div>
 
@@ -218,7 +162,7 @@ function NewRoleDialog({
               variant="primary"
               size="sm"
               loading={isSubmitting}
-              disabled={!name.trim() || permissions.size === 0}
+              disabled={!name.trim() || !providerConfigId.trim() || !modelIdentifier.trim()}
             >
               Create Role
             </Button>
@@ -271,7 +215,7 @@ export default function RolesPage() {
     <div className="flex flex-col">
       <PageHeader
         title="Agent Roles"
-        description="Define roles and permissions for AI agents."
+        description="Define agent roles that bind providers to models with system instructions."
         breadcrumbs={breadcrumbs}
         actions={
           <Button variant="primary" size="sm" onClick={() => setDialogOpen(true)}>
@@ -299,7 +243,7 @@ export default function RolesPage() {
             <EmptyState
               icon={<ShieldCheck className="h-5 w-5" />}
               title="No roles defined"
-              description="Create agent roles to control what AI agents can do in your workspace."
+              description="Create agent roles to control which model and instructions AI agents use."
               action={
                 <Button
                   variant="primary"
@@ -335,11 +279,15 @@ export default function RolesPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">
-                    {role.permissions.map((perm) => (
-                      <Badge key={perm} variant="outline" size="sm">
-                        {perm}
-                      </Badge>
-                    ))}
+                    <Badge variant="outline" size="sm">
+                      {role.modelIdentifier}
+                    </Badge>
+                    <Badge
+                      variant={role.isActive ? 'success' : 'default'}
+                      size="sm"
+                    >
+                      {role.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
                   </div>
 
                   <p className="mt-auto text-[10px] text-[#52525b]">

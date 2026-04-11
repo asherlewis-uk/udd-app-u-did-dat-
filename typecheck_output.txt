@@ -1,0 +1,157 @@
+
+> udd-platform@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)
+> turbo run typecheck
+
+ΓÇó turbo 2.9.6
+
+   ΓÇó Packages in scope: @udd/adapters, @udd/ai-orchestration, @udd/api, @udd/auth, @udd/collaboration, @udd/config, @udd/contracts, @udd/database, @udd/events, @udd/gateway, @udd/host-agent, @udd/observability, @udd/orchestrator, @udd/session-reaper, @udd/testing, @udd/usage-meter, @udd/web, @udd/worker-manager
+   ΓÇó Running typecheck in 18 packages
+   ΓÇó Remote caching disabled
+
+@udd/contracts:typecheck: cache hit, replaying logs 93b96e372a2be4a0
+@udd/contracts:typecheck: 
+@udd/contracts:typecheck: > @udd/contracts@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\contracts
+@udd/contracts:typecheck: > tsc --noEmit
+@udd/contracts:typecheck: 
+@udd/observability:typecheck: cache hit, replaying logs 45683097d7f6ee46
+@udd/observability:typecheck: 
+@udd/observability:typecheck: > @udd/observability@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\observability
+@udd/observability:typecheck: > tsc --noEmit
+@udd/observability:typecheck: 
+@udd/contracts:build: cache hit, replaying logs 666b845925d3630c
+@udd/contracts:build: 
+@udd/contracts:build: > @udd/contracts@0.0.1 build C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\contracts
+@udd/contracts:build: > tsc
+@udd/contracts:build: 
+@udd/config:build: cache hit, replaying logs 9625629ab8c2fdbb
+@udd/config:build: 
+@udd/config:build: > @udd/config@0.0.1 build C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\config
+@udd/config:build: > tsc
+@udd/config:build: 
+@udd/observability:build: cache hit, replaying logs b57558379d151349
+@udd/config:typecheck: cache hit, replaying logs 02327d971369dc7f
+@udd/observability:build: 
+@udd/observability:build: > @udd/observability@0.0.1 build C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\observability
+@udd/observability:build: > tsc
+@udd/observability:build: 
+@udd/config:typecheck: 
+@udd/config:typecheck: > @udd/config@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\config
+@udd/config:typecheck: > tsc --noEmit
+@udd/config:typecheck: 
+@udd/database:typecheck: cache hit, replaying logs ab708d4a52743093
+@udd/database:typecheck: 
+@udd/database:typecheck: > @udd/database@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\database
+@udd/database:typecheck: > tsc --noEmit
+@udd/database:typecheck: 
+@udd/events:typecheck: cache hit, replaying logs 2ce9f9fd07ccaf97
+@udd/events:typecheck: 
+@udd/events:typecheck: > @udd/events@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\events
+@udd/events:typecheck: > tsc --noEmit
+@udd/events:typecheck: 
+@udd/events:build: cache hit, replaying logs 205e3431d8a94e5d
+@udd/events:build: 
+@udd/events:build: > @udd/events@0.0.1 build C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\events
+@udd/events:build: > tsc
+@udd/events:build: 
+@udd/auth:typecheck: cache hit, replaying logs 1c3dcf055aa531b4
+@udd/auth:typecheck: 
+@udd/auth:typecheck: > @udd/auth@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\auth
+@udd/auth:typecheck: > tsc --noEmit
+@udd/auth:typecheck: 
+@udd/web:typecheck: cache miss, executing e89ac89ca667bb91
+@udd/testing:build: cache hit, replaying logs 2838648962c50635
+@udd/auth:build: cache hit, replaying logs 24b4f53d9cbdfe33
+@udd/testing:build: 
+@udd/testing:build: > @udd/testing@0.0.1 build C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\testing
+@udd/testing:build: > tsc
+@udd/testing:build: 
+@udd/host-agent:typecheck: cache hit, replaying logs 65a4ff9b343cd0db
+@udd/auth:build: 
+@udd/auth:build: > @udd/auth@0.0.1 build C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\auth
+@udd/auth:build: > tsc
+@udd/auth:build: 
+@udd/host-agent:typecheck: 
+@udd/host-agent:typecheck: > @udd/host-agent@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\apps\host-agent
+@udd/host-agent:typecheck: > tsc --noEmit
+@udd/host-agent:typecheck: 
+@udd/testing:typecheck: cache hit, replaying logs 0408ce6b2bfa33c3
+@udd/testing:typecheck: 
+@udd/testing:typecheck: > @udd/testing@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\testing
+@udd/testing:typecheck: > tsc --noEmit
+@udd/testing:typecheck: 
+@udd/adapters:typecheck: cache hit, replaying logs 1490a15413fa29d0
+@udd/adapters:typecheck: 
+@udd/adapters:typecheck: > @udd/adapters@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\adapters
+@udd/adapters:typecheck: > tsc --noEmit
+@udd/adapters:typecheck: 
+@udd/database:build: cache hit, replaying logs b957341ffaa29857
+@udd/database:build: 
+@udd/database:build: > @udd/database@0.0.1 build C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\database
+@udd/database:build: > tsc
+@udd/database:build: 
+@udd/worker-manager:typecheck: cache hit, replaying logs 934f7b746172df1e
+@udd/worker-manager:typecheck: 
+@udd/worker-manager:typecheck: > @udd/worker-manager@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\apps\worker-manager
+@udd/worker-manager:typecheck: > tsc --noEmit
+@udd/worker-manager:typecheck: 
+@udd/session-reaper:typecheck: cache hit, replaying logs 6de19cd232556b13
+@udd/session-reaper:typecheck: 
+@udd/session-reaper:typecheck: > @udd/session-reaper@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\apps\session-reaper
+@udd/session-reaper:typecheck: > tsc --noEmit
+@udd/session-reaper:typecheck: 
+@udd/collaboration:typecheck: cache hit, replaying logs 5998555565f6d54c
+@udd/collaboration:typecheck: 
+@udd/collaboration:typecheck: > @udd/collaboration@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\apps\collaboration
+@udd/collaboration:typecheck: > tsc --noEmit
+@udd/collaboration:typecheck: 
+@udd/orchestrator:typecheck: cache hit, replaying logs 3c6c39209623f0f8
+@udd/orchestrator:typecheck: 
+@udd/orchestrator:typecheck: > @udd/orchestrator@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\apps\orchestrator
+@udd/orchestrator:typecheck: > tsc --noEmit
+@udd/orchestrator:typecheck: 
+@udd/gateway:typecheck: cache hit, replaying logs fd3fc6c6fe0e19a8
+@udd/gateway:typecheck: 
+@udd/gateway:typecheck: > @udd/gateway@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\apps\gateway
+@udd/gateway:typecheck: > tsc --noEmit
+@udd/gateway:typecheck: 
+@udd/usage-meter:typecheck: cache hit, replaying logs 57e39eb9f13b060c
+@udd/usage-meter:typecheck: 
+@udd/usage-meter:typecheck: > @udd/usage-meter@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\apps\usage-meter
+@udd/usage-meter:typecheck: > tsc --noEmit
+@udd/usage-meter:typecheck: 
+@udd/adapters:build: cache hit, replaying logs 1bad2ca0b34f590a
+@udd/adapters:build: 
+@udd/adapters:build: > @udd/adapters@0.0.1 build C:\Users\asher\PROJECTS\udd-app(u-did-dat)\packages\adapters
+@udd/adapters:build: > tsc
+@udd/adapters:build: 
+@udd/api:typecheck: cache miss, executing 48bc830d29bb9bee
+@udd/ai-orchestration:typecheck: cache miss, executing 11244a61c6cf7927
+@udd/api:typecheck: 
+@udd/api:typecheck: > @udd/api@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\apps\api
+@udd/api:typecheck: > tsc --noEmit
+@udd/api:typecheck: 
+@udd/web:typecheck: 
+@udd/web:typecheck: > @udd/web@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\apps\web
+@udd/web:typecheck: > tsc --noEmit
+@udd/web:typecheck: 
+@udd/ai-orchestration:typecheck: 
+@udd/ai-orchestration:typecheck: > @udd/ai-orchestration@0.0.1 typecheck C:\Users\asher\PROJECTS\udd-app(u-did-dat)\apps\ai-orchestration
+@udd/ai-orchestration:typecheck: > tsc --noEmit
+@udd/ai-orchestration:typecheck: 
+@udd/api:typecheck: src/routes/auth.ts(19,7): error TS2742: The inferred type of 'router' cannot be named without a reference to '.pnpm/@types+express-serve-static-core@4.19.8/node_modules/@types/express-serve-static-core'. This is likely not portable. A type annotation is necessary.
+@udd/api:typecheck: src/routes/collaboration.ts(6,7): error TS2742: The inferred type of 'router' cannot be named without a reference to '.pnpm/@types+express-serve-static-core@4.19.8/node_modules/@types/express-serve-static-core'. This is likely not portable. A type annotation is necessary.
+@udd/api:typecheck: src/routes/index.ts(10,7): error TS2742: The inferred type of 'router' cannot be named without a reference to '.pnpm/@types+express-serve-static-core@4.19.8/node_modules/@types/express-serve-static-core'. This is likely not portable. A type annotation is necessary.
+@udd/api:typecheck: src/routes/previews.ts(9,7): error TS2742: The inferred type of 'router' cannot be named without a reference to '.pnpm/@types+express-serve-static-core@4.19.8/node_modules/@types/express-serve-static-core'. This is likely not portable. A type annotation is necessary.
+@udd/api:typecheck: src/routes/projects.ts(8,7): error TS2742: The inferred type of 'router' cannot be named without a reference to '.pnpm/@types+express-serve-static-core@4.19.8/node_modules/@types/express-serve-static-core'. This is likely not portable. A type annotation is necessary.
+@udd/api:typecheck: src/routes/sessions.ts(9,7): error TS2742: The inferred type of 'router' cannot be named without a reference to '.pnpm/@types+express-serve-static-core@4.19.8/node_modules/@types/express-serve-static-core'. This is likely not portable. A type annotation is necessary.
+@udd/api:typecheck: src/routes/workspaces.ts(8,7): error TS2742: The inferred type of 'router' cannot be named without a reference to '.pnpm/@types+express-serve-static-core@4.19.8/node_modules/@types/express-serve-static-core'. This is likely not portable. A type annotation is necessary.
+@udd/api:typecheck: ΓÇëELIFECYCLEΓÇë Command failed with exit code 2.
+ ERROR  @udd/api#typecheck: command (C:\Users\asher\PROJECTS\udd-app(u-did-dat)\apps\api) C:\Users\asher\AppData\Local\pnpm\.tools\pnpm\9.12.0\bin\pnpm.CMD run typecheck exited (2)
+
+ Tasks:    23 successful, 26 total
+Cached:    23 cached, 26 total
+  Time:    1.722s 
+Failed:    @udd/api#typecheck
+
+ ERROR  run failed: command  exited (2)
+ΓÇëELIFECYCLEΓÇë Command failed with exit code 2.

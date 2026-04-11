@@ -34,7 +34,7 @@ export default function PipelineDetailPage() {
   async function handleTriggerRun() {
     setIsTriggering(true);
     try {
-      await apiClient.createRun(workspaceId, pipelineId, { input: {} } as never);
+      await apiClient.createRun(workspaceId, pipelineId, { sourceType: 'manual', inputPayload: {} });
       void mutateRuns();
     } finally {
       setIsTriggering(false);
@@ -115,7 +115,7 @@ export default function PipelineDetailPage() {
         {/* DAG Graph */}
         <section>
           <h2 className="mb-3 text-sm font-semibold text-[#fafafa]">Pipeline Graph</h2>
-          <PipelineGraph nodes={pipeline.nodes} edges={pipeline.edges} />
+          <PipelineGraph nodes={pipeline.pipelineDefinitionJson.nodes} edges={pipeline.pipelineDefinitionJson.edges} />
         </section>
 
         {/* Recent Runs */}

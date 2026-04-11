@@ -6,10 +6,9 @@
  * In CI the `contract-tests` job provides a postgres service container.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { closePool } from '../connection.js';
-import { PgSessionRepository } from './pg/session.js';
-import { PgPreviewRouteRepository } from './pg/preview-route.js';
-import { withTransaction } from '../connection.js';
+import { closePool, withTransaction } from './connection.js';
+import { PgSessionRepository } from './repositories/pg/session.js';
+import { PgPreviewRouteRepository } from './repositories/pg/preview-route.js';
 
 const TEST_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
 const TEST_PROJECT_ID = '00000000-0000-0000-0000-000000000002';
@@ -38,16 +37,16 @@ describe('Session lifecycle', () => {
     });
 
     expect(session.id).toBeTruthy();
-    expect(session.state).toBe('pending');
+    expect(session.state).toBe('creating');
     expect(session.workspaceId).toBe(TEST_WORKSPACE_ID);
 
     const found = await sessions.findById(session.id);
     expect(found).not.toBeNull();
     expect(found!.id).toBe(session.id);
-    expect(found!.state).toBe('pending');
+    expect(found!.state).toBe('creating');
   });
 
-  it('transitions a session pending → running → stopping atomically', async () => {
+  it('transitions a session creating → running → stopping atomically', async () => {
     const session = await sessions.create({
       projectId: TEST_PROJECT_ID,
       workspaceId: TEST_WORKSPACE_ID,
@@ -100,7 +99,7 @@ describe('Session lifecycle', () => {
     });
 
     // Second update with same (now stale) version must fail
-    const { OptimisticConcurrencyError } = await import('./pg/session.js');
+    const { OptimisticConcurrencyError } = await import('./repositories/pg/session.js');
     await expect(
       sessions.updateState(session.id, 'running', session.version, {}),
     ).rejects.toBeInstanceOf(OptimisticConcurrencyError);

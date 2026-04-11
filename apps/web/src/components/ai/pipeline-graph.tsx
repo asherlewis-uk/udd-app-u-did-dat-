@@ -3,39 +3,21 @@
 import * as React from 'react';
 import { GitBranch } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import type { DagNode, DagEdge } from '@udd/contracts';
+import type { PipelineNode, PipelineEdge } from '@udd/contracts';
 
 interface PipelineGraphProps {
-  nodes: DagNode[];
-  edges: DagEdge[];
+  nodes: PipelineNode[];
+  edges: PipelineEdge[];
 }
 
-type NodeTypeColor = 'llm' | 'tool' | 'input' | 'output' | 'default';
+type NodeKindColor = 'role_step' | 'default';
 
-const nodeColorClasses: Record<NodeTypeColor, { bg: string; border: string; text: string; dot: string }> = {
-  llm: {
+const nodeColorClasses: Record<NodeKindColor, { bg: string; border: string; text: string; dot: string }> = {
+  role_step: {
     bg: 'bg-indigo-500/10',
     border: 'border-indigo-500/30',
     text: 'text-indigo-300',
     dot: 'bg-indigo-400',
-  },
-  tool: {
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/30',
-    text: 'text-emerald-300',
-    dot: 'bg-emerald-400',
-  },
-  input: {
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/30',
-    text: 'text-blue-300',
-    dot: 'bg-blue-400',
-  },
-  output: {
-    bg: 'bg-purple-500/10',
-    border: 'border-purple-500/30',
-    text: 'text-purple-300',
-    dot: 'bg-purple-400',
   },
   default: {
     bg: 'bg-zinc-800/60',
@@ -45,10 +27,8 @@ const nodeColorClasses: Record<NodeTypeColor, { bg: string; border: string; text
   },
 };
 
-function getNodeColors(type: string) {
-  const key = ['llm', 'tool', 'input', 'output'].includes(type)
-    ? (type as NodeTypeColor)
-    : 'default';
+function getNodeColors(kind: string) {
+  const key = kind === 'role_step' ? 'role_step' : 'default';
   return nodeColorClasses[key];
 }
 
@@ -56,7 +36,7 @@ function getNodeColors(type: string) {
  * Kahn's topological sort — returns node IDs grouped into levels.
  * Each level can be rendered as a column.
  */
-function topoLevels(nodes: DagNode[], edges: DagEdge[]): string[][] {
+function topoLevels(nodes: PipelineNode[], edges: PipelineEdge[]): string[][] {
   const nodeIds = new Set(nodes.map((n) => n.id));
   const inDegree = new Map<string, number>();
   const adjList = new Map<string, string[]>();
@@ -97,11 +77,11 @@ function topoLevels(nodes: DagNode[], edges: DagEdge[]): string[][] {
 }
 
 interface NodeBoxProps {
-  node: DagNode;
+  node: PipelineNode;
 }
 
 function NodeBox({ node }: NodeBoxProps) {
-  const colors = getNodeColors(node.type);
+  const colors = getNodeColors(node.kind);
   return (
     <div
       className={cn(
@@ -113,11 +93,11 @@ function NodeBox({ node }: NodeBoxProps) {
       <div className="flex items-center gap-1.5">
         <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', colors.dot)} />
         <span className={cn('truncate text-[10px] font-medium uppercase tracking-wider', colors.text)}>
-          {node.type}
+          {node.kind}
         </span>
       </div>
       <p className="truncate text-xs font-medium text-[#fafafa]">
-        {node.label ?? node.id}
+        {node.id}
       </p>
     </div>
   );

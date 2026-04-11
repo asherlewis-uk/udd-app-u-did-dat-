@@ -1,9 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { getPool, closePool } from './connection.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function migrate(): Promise<void> {
   const pool = getPool();

@@ -3,7 +3,7 @@ import { authMiddleware, requirePermission } from '@udd/auth';
 import type { ProviderConfig, PlatformEvent } from '@udd/contracts';
 import { getContext } from '../context.js';
 
-const router = Router();
+const router: Router = Router();
 router.use(authMiddleware);
 
 function assertMember(ctx: ReturnType<typeof getContext>, userId: string, workspaceId: string) {
@@ -45,16 +45,14 @@ router.get(
       const cursor = req.query['cursor'] as string | undefined;
       const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
       if (limit !== undefined && isNaN(limit))
-        return res
-          .status(400)
-          .json({
-            code: 'VALIDATION_ERROR',
-            message: 'limit must be a positive integer',
-            correlationId: req.correlationId,
-          });
+        return res.status(400).json({
+          code: 'VALIDATION_ERROR',
+          message: 'limit must be a positive integer',
+          correlationId: req.correlationId,
+        });
       const page = await ctx.providerConfigs.findByWorkspaceId(req.params['id']!, {
-        cursor,
-        limit,
+        ...(cursor !== undefined && { cursor }),
+        ...(limit !== undefined && { limit }),
       });
 
       return res.json({
@@ -97,13 +95,11 @@ router.post(
         !body.authScheme ||
         !body.credential
       ) {
-        return res
-          .status(400)
-          .json({
-            code: 'VALIDATION_ERROR',
-            message: 'name, providerType, endpointUrl, authScheme, credential are required',
-            correlationId: req.correlationId,
-          });
+        return res.status(400).json({
+          code: 'VALIDATION_ERROR',
+          message: 'name, providerType, endpointUrl, authScheme, credential are required',
+          correlationId: req.correlationId,
+        });
       }
 
       // Validate the adapter config before storing
@@ -114,13 +110,11 @@ router.post(
         authScheme: body.authScheme,
       });
       if (!validation.valid) {
-        return res
-          .status(400)
-          .json({
-            code: 'VALIDATION_ERROR',
-            message: validation.errors.join('; '),
-            correlationId: req.correlationId,
-          });
+        return res.status(400).json({
+          code: 'VALIDATION_ERROR',
+          message: validation.errors.join('; '),
+          correlationId: req.correlationId,
+        });
       }
 
       // Store credential in secret manager — NEVER in DB
@@ -135,7 +129,7 @@ router.post(
         name: body.name,
         providerType: body.providerType,
         endpointUrl: body.endpointUrl,
-        modelCatalogMode: body.modelCatalogMode ?? 'static',
+        modelCatalogMode: body.modelCatalogMode ?? 'manual',
         authScheme: body.authScheme,
         credentialSecretRef: secretRef,
         isActive: true,
@@ -156,7 +150,7 @@ router.post(
         payload: { providerConfigId: config.id, workspaceId: config.workspaceId },
         correlationId: req.correlationId ?? 'unknown',
         timestamp: new Date().toISOString(),
-      } as PlatformEvent);
+      } as unknown as PlatformEvent);
 
       return res.status(201).json({ data: toView(config), correlationId: req.correlationId });
     } catch (err) {
@@ -229,10 +223,10 @@ router.patch(
       }
 
       const updated = await ctx.providerConfigs.update(config.id, {
-        name,
-        endpointUrl,
-        modelCatalogMode,
-        isActive,
+        ...(name !== undefined && { name }),
+        ...(endpointUrl !== undefined && { endpointUrl }),
+        ...(modelCatalogMode !== undefined && { modelCatalogMode }),
+        ...(isActive !== undefined && { isActive }),
       });
 
       await ctx.auditLogs.append({
@@ -303,13 +297,11 @@ router.post(
 
       const { credential } = req.body as { credential?: string };
       if (!credential) {
-        return res
-          .status(400)
-          .json({
-            code: 'VALIDATION_ERROR',
-            message: 'credential is required',
-            correlationId: req.correlationId,
-          });
+        return res.status(400).json({
+          code: 'VALIDATION_ERROR',
+          message: 'credential is required',
+          correlationId: req.correlationId,
+        });
       }
 
       // Rotate in secret manager, get new ref

@@ -4,7 +4,7 @@ import type { PipelineDefinition, PlatformEvent } from '@udd/contracts';
 import { getContext } from '../context.js';
 import { validateDag } from '../dag-validator.js';
 
-const router = Router();
+const router: Router = Router();
 router.use(authMiddleware);
 
 async function assertMember(
@@ -27,14 +27,15 @@ router.get(
       const cursor = req.query['cursor'] as string | undefined;
       const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
       if (limit !== undefined && isNaN(limit))
-        return res
-          .status(400)
-          .json({
-            code: 'VALIDATION_ERROR',
-            message: 'limit must be a positive integer',
-            correlationId: req.correlationId,
-          });
-      const page = await ctx.pipelines.findByWorkspaceId(req.params['id']!, { cursor, limit });
+        return res.status(400).json({
+          code: 'VALIDATION_ERROR',
+          message: 'limit must be a positive integer',
+          correlationId: req.correlationId,
+        });
+      const page = await ctx.pipelines.findByWorkspaceId(req.params['id']!, {
+        ...(cursor !== undefined && { cursor }),
+        ...(limit !== undefined && { limit }),
+      });
       return res.json({
         data: page.items,
         meta: { nextCursor: page.nextCursor, hasMore: page.hasMore },
@@ -65,13 +66,11 @@ router.post(
       };
 
       if (!body.name || !body.pipelineDefinitionJson) {
-        return res
-          .status(400)
-          .json({
-            code: 'VALIDATION_ERROR',
-            message: 'name and pipelineDefinitionJson are required',
-            correlationId: req.correlationId,
-          });
+        return res.status(400).json({
+          code: 'VALIDATION_ERROR',
+          message: 'name and pipelineDefinitionJson are required',
+          correlationId: req.correlationId,
+        });
       }
 
       // DAG validation — must pass before storage
@@ -81,14 +80,12 @@ router.post(
         ctx.agentRoles,
       );
       if (!dagResult.valid) {
-        return res
-          .status(400)
-          .json({
-            code: 'VALIDATION_ERROR',
-            message: dagResult.errors.join('; '),
-            errors: dagResult.errors,
-            correlationId: req.correlationId,
-          });
+        return res.status(400).json({
+          code: 'VALIDATION_ERROR',
+          message: dagResult.errors.join('; '),
+          errors: dagResult.errors,
+          correlationId: req.correlationId,
+        });
       }
 
       const pipeline = await ctx.pipelines.create({
@@ -98,8 +95,8 @@ router.post(
         name: body.name,
         description: body.description ?? null,
         pipelineDefinitionJson: body.pipelineDefinitionJson,
-        inputSchemaJson: body.inputSchemaJson,
-        outputSchemaJson: body.outputSchemaJson,
+        ...(body.inputSchemaJson !== undefined && { inputSchemaJson: body.inputSchemaJson }),
+        ...(body.outputSchemaJson !== undefined && { outputSchemaJson: body.outputSchemaJson }),
         isActive: true,
       });
 
@@ -165,22 +162,20 @@ router.patch(
           ctx.agentRoles,
         );
         if (!dagResult.valid) {
-          return res
-            .status(400)
-            .json({
-              code: 'VALIDATION_ERROR',
-              message: dagResult.errors.join('; '),
-              errors: dagResult.errors,
-              correlationId: req.correlationId,
-            });
+          return res.status(400).json({
+            code: 'VALIDATION_ERROR',
+            message: dagResult.errors.join('; '),
+            errors: dagResult.errors,
+            correlationId: req.correlationId,
+          });
         }
       }
 
       const updated = await ctx.pipelines.update(pipeline.id, {
-        name,
-        description,
-        pipelineDefinitionJson,
-        isActive,
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(pipelineDefinitionJson !== undefined && { pipelineDefinitionJson }),
+        ...(isActive !== undefined && { isActive }),
       });
 
       await ctx.auditLogs.append({

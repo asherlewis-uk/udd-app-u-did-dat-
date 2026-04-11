@@ -7,7 +7,7 @@ import sessionsRouter from './sessions.js';
 import previewsRouter from './previews.js';
 import collaborationRouter from './collaboration.js';
 
-const router = Router();
+const router: Router = Router();
 
 // -------------------------------------------------------
 // Public routes (no auth required)
@@ -61,10 +61,10 @@ for (const prefix of AI_PREFIXES) {
         method: req.method,
         headers: {
           'content-type': 'application/json',
-          'authorization': req.headers.authorization ?? '',
+          authorization: req.headers.authorization ?? '',
           'x-correlation-id': req.correlationId ?? 'unknown',
         },
-        body: ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body),
+        body: ['GET', 'HEAD'].includes(req.method) ? null : JSON.stringify(req.body),
       });
 
       const body = await proxyResp.text();

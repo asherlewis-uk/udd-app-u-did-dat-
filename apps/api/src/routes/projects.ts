@@ -1,10 +1,11 @@
+import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { requirePermission } from '@udd/auth';
 import type { PlatformEvent } from '@udd/contracts';
 import { getContext } from '../context.js';
 import { createAppError } from '../middleware/error.js';
 
-const router = Router();
+const router: Router = Router();
 
 // -------------------------------------------------------
 // Project listing within a workspace
@@ -27,7 +28,10 @@ router.get(
       const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
       if (limit !== undefined && isNaN(limit))
         return next(createAppError('limit must be a positive integer', 400, 'VALIDATION_ERROR'));
-      const page = await ctx.projects.findByWorkspaceId(req.params['id']!, { cursor, limit });
+      const pageOpts: { cursor?: string; limit?: number } = {};
+      if (cursor !== undefined) pageOpts.cursor = cursor;
+      if (limit !== undefined) pageOpts.limit = limit;
+      const page = await ctx.projects.findByWorkspaceId(req.params['id']!, pageOpts);
 
       return res.json({
         data: page.items,
@@ -62,12 +66,18 @@ router.post(
       );
       if (!membership) return next(createAppError('Workspace not found', 404, 'NOT_FOUND'));
 
-      const project = await ctx.projects.create({
+      const createProjectData: {
+        workspaceId: string;
+        name: string;
+        slug: string;
+        description?: string;
+      } = {
         workspaceId: req.params['id']!,
         name,
         slug,
-        description,
-      });
+      };
+      if (description !== undefined) createProjectData.description = description;
+      const project = await ctx.projects.create(createProjectData);
 
       await ctx.auditLogs.append({
         workspaceId: req.params['id']!,
@@ -79,11 +89,13 @@ router.post(
       });
 
       await ctx.events.publish({
+        eventId: randomUUID(),
+        schemaVersion: 1,
         topic: 'project.created',
         payload: { projectId: project.id, workspaceId: project.workspaceId },
         correlationId: req.correlationId ?? 'unknown',
         timestamp: new Date().toISOString(),
-      } as PlatformEvent);
+      } as unknown as PlatformEvent);
 
       return res.status(201).json({ data: project, correlationId: req.correlationId });
     } catch (err) {
@@ -127,7 +139,10 @@ router.patch('/projects/:id', requirePermission('project.update'), async (req, r
     if (!membership) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
 
     const { name, description } = req.body as { name?: string; description?: string };
-    const updated = await ctx.projects.update(project.id, { name, description });
+    const updateData: Partial<Pick<import('@udd/contracts').Project, 'name' | 'description'>> = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    const updated = await ctx.projects.update(project.id, updateData);
 
     await ctx.auditLogs.append({
       workspaceId: project.workspaceId,

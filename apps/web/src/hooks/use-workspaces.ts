@@ -19,7 +19,7 @@ function makeApiFetcher(token: string | null) {
       err.status = res.status;
       throw err;
     }
-    return res.json() as Promise<{ data: unknown; meta?: unknown }>;
+    return res.json();
   };
 }
 

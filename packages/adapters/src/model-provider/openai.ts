@@ -91,9 +91,11 @@ export async function invokeOpenAICompatible(
   }
 
   const choices = body['choices'] as Array<{ message: unknown }> | undefined;
-  return {
-    providerMessageId: body['id'] as string | undefined,
+  const msgId = body['id'] as string | undefined;
+  const result: { providerMessageId?: string | null; status: 'completed'; output: Record<string, unknown> } = {
     status: 'completed',
     output: { choices, usage: body['usage'] },
   };
+  result.providerMessageId = msgId ?? null;
+  return result;
 }

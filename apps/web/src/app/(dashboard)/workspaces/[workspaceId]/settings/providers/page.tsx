@@ -39,7 +39,7 @@ import {
   SelectItem,
   SelectValue,
 } from '@/components/ui/select';
-import type { ProviderConfig } from '@udd/contracts';
+import type { ProviderConfig, ProviderType, AuthScheme, ModelCatalogMode } from '@udd/contracts';
 
 /* ------------------------------------------------------------------ */
 /*  Reuse SettingsNav from the parent settings page                    */
@@ -63,10 +63,12 @@ const PROVIDER_DOT_COLORS: Record<string, string> = {
   google: 'bg-blue-400',
 };
 
-const MODEL_PLACEHOLDERS: Record<string, string> = {
-  openai: 'gpt-4o',
-  anthropic: 'claude-opus-4-5',
-  google: 'gemini-1.5-pro',
+const ENDPOINT_PLACEHOLDERS: Record<string, string> = {
+  openai: 'https://api.openai.com/v1',
+  anthropic: 'https://api.anthropic.com/v1',
+  google: 'https://generativelanguage.googleapis.com/v1beta',
+  openai_compatible: 'https://your-endpoint.example.com/v1',
+  self_hosted: 'http://localhost:8080/v1',
 };
 
 /* ------------------------------------------------------------------ */
@@ -85,30 +87,36 @@ function AddProviderDialog({
   onSuccess: () => void;
 }) {
   const [name, setName] = React.useState('');
-  const [provider, setProvider] = React.useState('openai');
-  const [model, setModel] = React.useState('');
-  const [apiKey, setApiKey] = React.useState('');
+  const [providerType, setProviderType] = React.useState<ProviderType>('openai');
+  const [endpointUrl, setEndpointUrl] = React.useState('');
+  const [authScheme, setAuthScheme] = React.useState<AuthScheme>('api_key_header');
+  const [modelCatalogMode, setModelCatalogMode] = React.useState<ModelCatalogMode>('manual');
+  const [credential, setCredential] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   function reset() {
     setName('');
-    setProvider('openai');
-    setModel('');
-    setApiKey('');
+    setProviderType('openai');
+    setEndpointUrl('');
+    setAuthScheme('api_key_header');
+    setModelCatalogMode('manual');
+    setCredential('');
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !model.trim() || !apiKey.trim()) return;
+    if (!name.trim() || !endpointUrl.trim() || !credential.trim()) return;
 
     setIsSubmitting(true);
     try {
       await apiClient.createProvider(workspaceId, {
         name: name.trim(),
-        provider,
-        model: model.trim(),
-        apiKey: apiKey.trim(),
-      } as never);
+        providerType,
+        endpointUrl: endpointUrl.trim(),
+        modelCatalogMode,
+        authScheme,
+        credential: credential.trim(),
+      });
       reset();
       onOpenChange(false);
       onSuccess();
@@ -139,8 +147,8 @@ function AddProviderDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label required>Provider</Label>
-            <Select value={provider} onValueChange={setProvider}>
+            <Label required>Provider Type</Label>
+            <Select value={providerType} onValueChange={(v) => setProviderType(v as ProviderType)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -148,26 +156,42 @@ function AddProviderDialog({
                 <SelectItem value="openai">OpenAI</SelectItem>
                 <SelectItem value="anthropic">Anthropic</SelectItem>
                 <SelectItem value="google">Google</SelectItem>
+                <SelectItem value="openai_compatible">OpenAI Compatible</SelectItem>
+                <SelectItem value="self_hosted">Self-Hosted</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-1.5">
-            <Label required>Model</Label>
+            <Label required>Endpoint URL</Label>
             <Input
-              placeholder={MODEL_PLACEHOLDERS[provider] ?? 'model-name'}
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
+              placeholder={ENDPOINT_PLACEHOLDERS[providerType] ?? 'https://...'}
+              value={endpointUrl}
+              onChange={(e) => setEndpointUrl(e.target.value)}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label required>API Key</Label>
+            <Label required>Auth Scheme</Label>
+            <Select value={authScheme} onValueChange={(v) => setAuthScheme(v as AuthScheme)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="api_key_header">API Key Header</SelectItem>
+                <SelectItem value="bearer_token">Bearer Token</SelectItem>
+                <SelectItem value="custom_header">Custom Header</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label required>Credential</Label>
             <Input
               type="password"
               placeholder="sk-..."
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              value={credential}
+              onChange={(e) => setCredential(e.target.value)}
             />
           </div>
 
@@ -185,7 +209,7 @@ function AddProviderDialog({
               variant="primary"
               size="sm"
               loading={isSubmitting}
-              disabled={!name.trim() || !model.trim() || !apiKey.trim()}
+              disabled={!name.trim() || !endpointUrl.trim() || !credential.trim()}
             >
               Add Provider
             </Button>
@@ -293,14 +317,14 @@ export default function ProvidersPage() {
     }
   }
 
-  async function handleRotate(provider: ProviderConfig) {
-    const newKey = prompt('Enter new API key:');
+  async function handleRotate(prov: ProviderConfig) {
+    const newKey = prompt('Enter new credential:');
     if (!newKey?.trim()) return;
-    setRotatingId(provider.id);
+    setRotatingId(prov.id);
     try {
-      await apiClient.rotateProviderSecret(workspaceId, provider.id, {
-        newApiKey: newKey.trim(),
-      } as never);
+      await apiClient.rotateProviderSecret(workspaceId, prov.id, {
+        newCredential: newKey.trim(),
+      });
       void mutate();
     } finally {
       setRotatingId(null);
@@ -365,7 +389,7 @@ export default function ProvidersPage() {
                   <span
                     className={cn(
                       'h-2.5 w-2.5 shrink-0 rounded-full',
-                      PROVIDER_DOT_COLORS[prov.provider] ?? 'bg-zinc-500',
+                      PROVIDER_DOT_COLORS[prov.providerType] ?? 'bg-zinc-500',
                     )}
                   />
                   <div className="min-w-0 flex-1">
@@ -373,13 +397,13 @@ export default function ProvidersPage() {
                       {prov.name}
                     </p>
                     <p className="mt-0.5 text-xs text-[#71717a]">
-                      {prov.model} &middot; {formatRelativeTime(prov.createdAt)}
+                      {prov.endpointUrl} &middot; {formatRelativeTime(prov.createdAt)}
                     </p>
                   </div>
 
                   {/* Badges */}
                   <Badge variant="outline" size="sm">
-                    {prov.provider}
+                    {prov.providerType}
                   </Badge>
                   <Badge
                     variant={prov.isActive ? 'success' : 'default'}

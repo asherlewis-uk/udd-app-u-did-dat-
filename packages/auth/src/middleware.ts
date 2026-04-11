@@ -48,14 +48,15 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     const claims = jwt.verify(token, getJwtSecret(), {
       algorithms: ['HS256'],
     }) as SessionClaims;
-    req.auth = {
+    const authCtx: AuthContext = {
       userId: claims.sub,
       email: claims.email,
       displayName: claims.displayName,
-      workspaceId: claims.workspaceId,
-      workspaceRole: claims.workspaceRole,
       grantedPermissions: claims.grantedPermissions ?? [],
     };
+    if (claims.workspaceId !== undefined) authCtx.workspaceId = claims.workspaceId;
+    if (claims.workspaceRole !== undefined) authCtx.workspaceRole = claims.workspaceRole;
+    req.auth = authCtx;
     next();
   } catch {
     res.status(401).json({

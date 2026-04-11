@@ -34,13 +34,15 @@ function getMinLevel(): LogLevel {
   return 'info';
 }
 
-function formatError(err: unknown): LogEntry['err'] {
+function formatError(err: unknown): NonNullable<LogEntry['err']> {
   if (err instanceof Error) {
-    return {
-      message: err.message,
-      code: (err as NodeJS.ErrnoException).code,
-      stack: process.env['NODE_ENV'] !== 'production' ? err.stack : undefined,
-    };
+    const result: NonNullable<LogEntry['err']> = { message: err.message };
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code !== undefined) result.code = code;
+    if (process.env['NODE_ENV'] !== 'production' && err.stack !== undefined) {
+      result.stack = err.stack;
+    }
+    return result;
   }
   return { message: String(err) };
 }
@@ -62,14 +64,14 @@ export class Logger {
     if (LEVEL_RANKS[level] < LEVEL_RANKS[this.minLevel]) return;
 
     const { err, ...rest } = extra ?? {};
-    const entry: LogEntry = {
-      ...this.ctx,
-      ...rest,
-      level,
-      message,
-      timestamp: new Date().toISOString(),
-      ...(err !== undefined ? { err: formatError(err) } : {}),
-    };
+
+    // Build entry imperatively to satisfy exactOptionalPropertyTypes
+    const entry = Object.assign(
+      { level, message, timestamp: new Date().toISOString() } satisfies Pick<LogEntry, 'level' | 'message' | 'timestamp'>,
+      this.ctx,
+      rest,
+      err !== undefined ? { err: formatError(err) } : {},
+    );
 
     // Output to stdout for log aggregator collection
     process.stdout.write(JSON.stringify(entry) + '\n');

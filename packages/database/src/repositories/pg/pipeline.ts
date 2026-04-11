@@ -4,7 +4,7 @@ import { queryOne, queryMany } from '../../connection.js';
 import { encodeCursor, decodeCursor, buildCursorClause, DEFAULT_PAGE_LIMIT } from './cursor.js';
 
 function rowToPipeline(row: Record<string, unknown>): PipelineDefinition {
-  return {
+  const result: PipelineDefinition = {
     id: row['id'] as string,
     workspaceId: row['workspace_id'] as string,
     projectId: (row['project_id'] as string | null) ?? null,
@@ -13,12 +13,15 @@ function rowToPipeline(row: Record<string, unknown>): PipelineDefinition {
     description: (row['description'] as string | null) ?? null,
     pipelineVersion: row['pipeline_version'] as number,
     pipelineDefinitionJson: row['pipeline_definition_json'] as PipelineDefinitionJson,
-    inputSchemaJson: (row['input_schema_json'] as Record<string, unknown> | null) ?? undefined,
-    outputSchemaJson: (row['output_schema_json'] as Record<string, unknown> | null) ?? undefined,
     isActive: row['is_active'] as boolean,
     createdAt: (row['created_at'] as Date).toISOString(),
     updatedAt: (row['updated_at'] as Date).toISOString(),
   };
+  const inputSchema = row['input_schema_json'] as Record<string, unknown> | null;
+  if (inputSchema != null) result.inputSchemaJson = inputSchema;
+  const outputSchema = row['output_schema_json'] as Record<string, unknown> | null;
+  if (outputSchema != null) result.outputSchemaJson = outputSchema;
+  return result;
 }
 
 export class PgPipelineRepository implements PipelineRepository {

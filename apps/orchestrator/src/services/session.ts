@@ -1,4 +1,5 @@
-import type { Session, SessionState, PlatformEvent } from '@udd/contracts';
+import { randomUUID } from 'node:crypto';
+import type { Session, SessionState, SessionCreatedEvent, SessionStateChangedEvent } from '@udd/contracts';
 import { SESSION_TRANSITIONS } from '@udd/contracts';
 import {
   PgSessionRepository,
@@ -66,12 +67,13 @@ export class PgSessionService implements SessionService {
     idleTimeoutSeconds?: number;
     correlationId: string;
   }): Promise<Session> {
-    const session = await this.sessions.create({
+    const createData: Parameters<typeof this.sessions.create>[0] = {
       projectId: params.projectId,
       workspaceId: params.workspaceId,
       userId: params.userId,
-      idleTimeoutSeconds: params.idleTimeoutSeconds,
-    });
+    };
+    if (params.idleTimeoutSeconds !== undefined) createData.idleTimeoutSeconds = params.idleTimeoutSeconds;
+    const session = await this.sessions.create(createData);
 
     await this.auditLogs.append({
       workspaceId: params.workspaceId,
@@ -82,7 +84,9 @@ export class PgSessionService implements SessionService {
       metadata: { projectId: params.projectId },
     });
 
-    await this.events.publish({
+    const createdEvt: SessionCreatedEvent = {
+      eventId: randomUUID(),
+      schemaVersion: 1,
       topic: 'session.created',
       payload: {
         sessionId: session.id,
@@ -92,7 +96,8 @@ export class PgSessionService implements SessionService {
       },
       correlationId: params.correlationId,
       timestamp: new Date().toISOString(),
-    } as PlatformEvent);
+    };
+    await this.events.publish(createdEvt);
 
     return session;
   }
@@ -170,12 +175,21 @@ export class PgSessionService implements SessionService {
       correlationId: params.correlationId,
     });
 
-    await this.events.publish({
+    const startEvt: SessionStateChangedEvent = {
+      eventId: randomUUID(),
+      schemaVersion: 1,
       topic: 'session.state_changed',
-      payload: { sessionId: started.id, from: 'creating', to: 'starting' },
+      payload: {
+        sessionId: started.id,
+        workspaceId: started.workspaceId,
+        fromState: 'creating',
+        toState: 'starting',
+        reason: 'user_requested',
+      },
       correlationId: params.correlationId,
       timestamp: new Date().toISOString(),
-    } as PlatformEvent);
+    };
+    await this.events.publish(startEvt);
 
     return started;
   }
@@ -231,12 +245,21 @@ export class PgSessionService implements SessionService {
       metadata: { reason: params.reason ?? 'user_requested' },
     });
 
-    await this.events.publish({
+    const stopEvt: SessionStateChangedEvent = {
+      eventId: randomUUID(),
+      schemaVersion: 1,
       topic: 'session.state_changed',
-      payload: { sessionId: stopped.id, from: 'running', to: 'stopping' },
+      payload: {
+        sessionId: stopped.id,
+        workspaceId: stopped.workspaceId,
+        fromState: 'running',
+        toState: 'stopping',
+        reason: params.reason ?? 'user_requested',
+      },
       correlationId: params.correlationId,
       timestamp: new Date().toISOString(),
-    } as PlatformEvent);
+    };
+    await this.events.publish(stopEvt);
 
     return stopped;
   }

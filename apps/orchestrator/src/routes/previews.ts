@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import { authMiddleware, requirePermission } from '@udd/auth';
 import { randomUUID } from 'crypto';
 import {
@@ -7,7 +7,7 @@ import {
   OptimisticConcurrencyError,
 } from '@udd/database';
 
-const router = Router();
+const router: RouterType = Router();
 router.use(authMiddleware);
 
 const sessions = new PgSessionRepository();
@@ -27,15 +27,24 @@ router.post('/sessions/:id/previews', requirePermission('preview.create'), async
     }
 
     const { ttlSeconds } = req.body as { ttlSeconds?: number };
-    const binding = await previewRoutes.create({
+    const createData: {
+      previewId: string;
+      sessionId: string;
+      projectId: string;
+      workspaceId: string;
+      workerHost: string;
+      hostPort: number;
+      ttlSeconds?: number;
+    } = {
       previewId: randomUUID(),
       sessionId: session.id,
       projectId: session.projectId,
       workspaceId: session.workspaceId,
       workerHost: session.workerHost,
       hostPort: session.hostPort,
-      ttlSeconds,
-    });
+    };
+    if (ttlSeconds !== undefined) createData.ttlSeconds = ttlSeconds;
+    const binding = await previewRoutes.create(createData);
 
     // Strip internal routing fields from response
     const { workerHost: _w, hostPort: _p, ...safeBinding } = binding;

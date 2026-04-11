@@ -30,9 +30,9 @@ export function PipelineRunCard({
   const canCancel = CANCELABLE_STATUSES.includes(run.status);
 
   const duration =
-    run.startedAt && run.completedAt
+    run.startedAt && run.finishedAt
       ? formatDuration(
-          new Date(run.completedAt).getTime() - new Date(run.startedAt).getTime(),
+          new Date(run.finishedAt).getTime() - new Date(run.startedAt).getTime(),
         )
       : null;
 
@@ -73,7 +73,7 @@ export function PipelineRunCard({
             {/* Triggered by */}
             <span className="flex items-center gap-1">
               <User className="h-3 w-3 shrink-0" />
-              {run.triggeredBy}
+              {run.triggeredByUserId}
             </span>
 
             {/* Start time */}

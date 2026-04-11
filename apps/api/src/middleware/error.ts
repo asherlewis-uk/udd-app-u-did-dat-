@@ -24,12 +24,13 @@ export function errorMiddleware(
   const code = err.code ?? (statusCode === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR');
 
   if (statusCode >= 500) {
-    logger.error('Unhandled error', {
-      correlationId: req.correlationId,
+    const logCtx: Record<string, unknown> = {
       err,
       path: req.path,
       method: req.method,
-    });
+    };
+    if (req.correlationId !== undefined) logCtx['correlationId'] = req.correlationId;
+    logger.error('Unhandled error', logCtx);
   }
 
   res.status(statusCode).json({
@@ -57,6 +58,6 @@ export function createAppError(
   const err = new Error(message) as AppError;
   err.statusCode = statusCode;
   err.code = code;
-  err.details = details;
+  if (details !== undefined) err.details = details;
   return err;
 }

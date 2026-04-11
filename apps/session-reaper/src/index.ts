@@ -1,7 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import { createLogger } from '@udd/observability';
 import { PgSessionRepository, PgSandboxLeaseRepository, closePool } from '@udd/database';
 import { createEventPublisher } from '@udd/events';
-import type { PlatformEvent } from '@udd/contracts';
+import type { SessionStateChangedEvent } from '@udd/contracts';
 
 const logger = createLogger('session-reaper');
 
@@ -44,17 +45,21 @@ async function reapIdleSessions(): Promise<void> {
         continue;
       }
 
-      await events.publish({
+      const evt: SessionStateChangedEvent = {
+        eventId: randomUUID(),
+        schemaVersion: 1,
         topic: 'session.state_changed',
         payload: {
           sessionId: stopped.id,
-          from: 'running',
-          to: 'stopping',
+          workspaceId: stopped.workspaceId,
+          fromState: 'running',
+          toState: 'stopping',
           reason: 'idle_timeout',
         },
         correlationId: `reaper-${stopped.id}`,
         timestamp: new Date().toISOString(),
-      } as PlatformEvent);
+      };
+      await events.publish(evt);
 
       logger.info('Reaped idle session', { sessionId: stopped.id });
     } catch (err) {

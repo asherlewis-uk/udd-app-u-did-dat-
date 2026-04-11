@@ -64,11 +64,12 @@ export class WorkOSAuthProvider implements AuthProvider {
   }
 
   getAuthorizationUrl(redirectUri: string, state?: string): string {
-    return getWorkOS().userManagement.getAuthorizationUrl({
+    const opts: { provider: string; redirectUri: string; clientId: string; state?: string } = {
       provider: 'authkit',
       redirectUri,
       clientId: getClientId(),
-      state,
-    });
+    };
+    if (state !== undefined) opts.state = state;
+    return getWorkOS().userManagement.getAuthorizationUrl(opts);
   }
 }

@@ -6,7 +6,7 @@ import { getContext } from '../context.js';
 import { createAppError } from '../middleware/error.js';
 import { OptimisticConcurrencyError } from '@udd/database';
 
-const router = Router();
+const router: Router = Router();
 
 // -------------------------------------------------------
 // Create preview route for a session
@@ -23,7 +23,9 @@ router.post(
       if (!session) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
 
       if (session.state !== 'running') {
-        return next(createAppError(`Session is not running (state: ${session.state})`, 409, 'INVALID_STATE'));
+        return next(
+          createAppError(`Session is not running (state: ${session.state})`, 409, 'INVALID_STATE'),
+        );
       }
 
       const membership = await ctx.memberships.findByUserAndWorkspace(
@@ -51,15 +53,24 @@ router.post(
       const { ttlSeconds } = req.body as { ttlSeconds?: number };
       const previewId = randomUUID();
 
-      const binding = await ctx.previewRoutes.create({
+      const createData: {
+        previewId: string;
+        sessionId: string;
+        projectId: string;
+        workspaceId: string;
+        workerHost: string;
+        hostPort: number;
+        ttlSeconds?: number;
+      } = {
         previewId,
         sessionId: session.id,
         projectId: session.projectId,
         workspaceId: session.workspaceId,
         workerHost: session.workerHost,
         hostPort: session.hostPort,
-        ttlSeconds,
-      });
+      };
+      if (ttlSeconds !== undefined) createData.ttlSeconds = ttlSeconds;
+      const binding = await ctx.previewRoutes.create(createData);
 
       await ctx.auditLogs.append({
         workspaceId: session.workspaceId,
@@ -71,11 +82,21 @@ router.post(
       });
 
       await ctx.events.publish({
-        topic: 'preview.bound',
-        payload: { previewId, sessionId: session.id, workspaceId: session.workspaceId },
+        eventId: randomUUID(),
+        schemaVersion: 1,
+        topic: 'preview.route.bound',
+        payload: {
+          previewId,
+          sessionId: session.id,
+          projectId: session.projectId,
+          workspaceId: session.workspaceId,
+          workerHost: session.workerHost,
+          hostPort: session.hostPort,
+          state: 'active' as const,
+        },
         correlationId: req.correlationId ?? 'unknown',
         timestamp: new Date().toISOString(),
-      } as PlatformEvent);
+      });
 
       return res.status(201).json({ data: binding, correlationId: req.correlationId });
     } catch (err) {
@@ -142,16 +163,25 @@ router.delete(
       });
 
       await ctx.events.publish({
-        topic: 'preview.revoked',
-        payload: { previewId: binding.previewId, sessionId: binding.sessionId },
+        eventId: randomUUID(),
+        schemaVersion: 1,
+        topic: 'preview.route.revoked',
+        payload: {
+          previewId: binding.previewId,
+          sessionId: binding.sessionId,
+          workspaceId: binding.workspaceId,
+          reason: 'user_requested',
+        },
         correlationId: req.correlationId ?? 'unknown',
         timestamp: new Date().toISOString(),
-      } as PlatformEvent);
+      });
 
       return res.status(204).send();
     } catch (err) {
       if (err instanceof OptimisticConcurrencyError) {
-        return next(createAppError('Concurrent modification detected, please retry', 409, 'CONFLICT'));
+        return next(
+          createAppError('Concurrent modification detected, please retry', 409, 'CONFLICT'),
+        );
       }
       return next(err);
     }

@@ -1,5 +1,6 @@
 import { PubSub, type Topic } from '@google-cloud/pubsub';
-import type { EventPublisher, PlatformEvent } from './interfaces.js';
+import type { PlatformEvent } from '@udd/contracts';
+import type { EventPublisher } from './interfaces.js';
 
 // ============================================================
 // GCP Cloud Pub/Sub event publisher (replaces SqsEventPublisher)
@@ -40,7 +41,7 @@ export class PubSubEventPublisher implements EventPublisher {
     if (!topic) {
       // enableMessageOrdering must be set on the Topic client, not just
       // at publish time, so the underlying gRPC channel uses ordered streams.
-      topic = this.pubsub.topic(name, { enableMessageOrdering: true });
+      topic = this.pubsub.topic(name, { messageOrdering: true });
       this.topicCache.set(name, topic);
     }
     return topic;

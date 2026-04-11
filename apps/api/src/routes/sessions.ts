@@ -1,11 +1,12 @@
+import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { requirePermission } from '@udd/auth';
-import type { PlatformEvent } from '@udd/contracts';
+import type { PlatformEvent, SessionCreatedEvent, SessionStateChangedEvent } from '@udd/contracts';
 import { getContext } from '../context.js';
 import { createAppError } from '../middleware/error.js';
 import { OptimisticConcurrencyError, withTransaction } from '@udd/database';
 
-const router = Router();
+const router: Router = Router();
 
 // -------------------------------------------------------
 // Create session for a project
@@ -29,12 +30,18 @@ router.post(
 
       const { idleTimeoutSeconds } = req.body as { idleTimeoutSeconds?: number };
 
-      const session = await ctx.sessions.create({
+      const createData: {
+        projectId: string;
+        workspaceId: string;
+        userId: string;
+        idleTimeoutSeconds?: number;
+      } = {
         projectId: project.id,
         workspaceId: project.workspaceId,
         userId: req.auth!.userId,
-        idleTimeoutSeconds,
-      });
+      };
+      if (idleTimeoutSeconds !== undefined) createData.idleTimeoutSeconds = idleTimeoutSeconds;
+      const session = await ctx.sessions.create(createData);
 
       await ctx.auditLogs.append({
         workspaceId: project.workspaceId,
@@ -45,12 +52,20 @@ router.post(
         metadata: { projectId: project.id },
       });
 
-      await ctx.events.publish({
+      const evt: SessionCreatedEvent = {
+        eventId: randomUUID(),
+        schemaVersion: 1,
         topic: 'session.created',
-        payload: { sessionId: session.id, projectId: project.id, workspaceId: project.workspaceId, userId: req.auth!.userId },
+        payload: {
+          sessionId: session.id,
+          projectId: project.id,
+          workspaceId: project.workspaceId,
+          userId: req.auth!.userId,
+        },
         correlationId: req.correlationId ?? 'unknown',
         timestamp: new Date().toISOString(),
-      } as PlatformEvent);
+      };
+      await ctx.events.publish(evt);
 
       return res.status(201).json({ data: session, correlationId: req.correlationId });
     } catch (err) {
@@ -98,22 +113,35 @@ router.post('/sessions/:id/start', requirePermission('session.start'), async (re
     if (!membership) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
 
     if (session.state !== 'creating' && session.state !== 'idle') {
-      return next(createAppError(`Cannot start session in state '${session.state}'`, 409, 'INVALID_STATE'));
+      return next(
+        createAppError(`Cannot start session in state '${session.state}'`, 409, 'INVALID_STATE'),
+      );
     }
 
     const updated = await ctx.sessions.updateState(session.id, 'starting', session.version);
 
-    await ctx.events.publish({
+    const startEvt: SessionStateChangedEvent = {
+      eventId: randomUUID(),
+      schemaVersion: 1,
       topic: 'session.state_changed',
-      payload: { sessionId: session.id, from: session.state, to: 'starting' },
+      payload: {
+        sessionId: session.id,
+        workspaceId: session.workspaceId,
+        fromState: session.state as 'creating' | 'idle',
+        toState: 'starting',
+        reason: 'user_requested',
+      },
       correlationId: req.correlationId ?? 'unknown',
       timestamp: new Date().toISOString(),
-    } as PlatformEvent);
+    };
+    await ctx.events.publish(startEvt);
 
     return res.json({ data: updated, correlationId: req.correlationId });
   } catch (err) {
     if (err instanceof OptimisticConcurrencyError) {
-      return next(createAppError('Concurrent modification detected, please retry', 409, 'CONFLICT'));
+      return next(
+        createAppError('Concurrent modification detected, please retry', 409, 'CONFLICT'),
+      );
     }
     return next(err);
   }
@@ -132,7 +160,9 @@ router.post('/sessions/:id/stop', requirePermission('session.stop'), async (req,
     if (!membership) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
 
     if (!['running', 'idle', 'starting'].includes(session.state)) {
-      return next(createAppError(`Cannot stop session in state '${session.state}'`, 409, 'INVALID_STATE'));
+      return next(
+        createAppError(`Cannot stop session in state '${session.state}'`, 409, 'INVALID_STATE'),
+      );
     }
 
     // Revoke preview routes and transition state atomically (H-1 fix):
@@ -152,50 +182,67 @@ router.post('/sessions/:id/stop', requirePermission('session.stop'), async (req,
       metadata: { reason: 'user_requested' },
     });
 
-    await ctx.events.publish({
+    const stopEvt: SessionStateChangedEvent = {
+      eventId: randomUUID(),
+      schemaVersion: 1,
       topic: 'session.state_changed',
-      payload: { sessionId: session.id, from: session.state, to: 'stopping' },
+      payload: {
+        sessionId: session.id,
+        workspaceId: session.workspaceId,
+        fromState: session.state,
+        toState: 'stopping',
+        reason: 'user_requested',
+      },
       correlationId: req.correlationId ?? 'unknown',
       timestamp: new Date().toISOString(),
-    } as PlatformEvent);
+    };
+    await ctx.events.publish(stopEvt);
 
     return res.json({ data: updated, correlationId: req.correlationId });
   } catch (err) {
     if (err instanceof OptimisticConcurrencyError) {
-      return next(createAppError('Concurrent modification detected, please retry', 409, 'CONFLICT'));
+      return next(
+        createAppError('Concurrent modification detected, please retry', 409, 'CONFLICT'),
+      );
     }
     return next(err);
   }
 });
 
-router.post('/sessions/:id/checkpoint', requirePermission('session.stop'), async (req, res, next) => {
-  try {
-    const ctx = getContext();
-    const session = await ctx.sessions.findById(req.params['id']!);
-    if (!session) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
+router.post(
+  '/sessions/:id/checkpoint',
+  requirePermission('session.stop'),
+  async (req, res, next) => {
+    try {
+      const ctx = getContext();
+      const session = await ctx.sessions.findById(req.params['id']!);
+      if (!session) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
 
-    const membership = await ctx.memberships.findByUserAndWorkspace(
-      req.auth!.userId,
-      session.workspaceId,
-    );
-    if (!membership) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
+      const membership = await ctx.memberships.findByUserAndWorkspace(
+        req.auth!.userId,
+        session.workspaceId,
+      );
+      if (!membership) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
 
-    // Emit checkpoint event — actual snapshotting is done by the host-agent
-    await ctx.events.publish({
-      topic: 'session.checkpoint_requested',
-      payload: { sessionId: session.id, requestedByUserId: req.auth!.userId },
-      correlationId: req.correlationId ?? 'unknown',
-      timestamp: new Date().toISOString(),
-    } as PlatformEvent);
+      // Emit checkpoint event — actual snapshotting is done by the host-agent
+      await ctx.events.publish({
+        eventId: randomUUID(),
+        schemaVersion: 1,
+        topic: 'session.checkpoint_requested',
+        payload: { sessionId: session.id, requestedByUserId: req.auth!.userId },
+        correlationId: req.correlationId ?? 'unknown',
+        timestamp: new Date().toISOString(),
+      } as unknown as PlatformEvent);
 
-    return res.status(202).json({
-      data: { message: 'Checkpoint initiated', sessionId: session.id },
-      correlationId: req.correlationId,
-    });
-  } catch (err) {
-    return next(err);
-  }
-});
+      return res.status(202).json({
+        data: { message: 'Checkpoint initiated', sessionId: session.id },
+        correlationId: req.correlationId,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  },
+);
 
 router.get('/sessions/:id/logs', requirePermission('session.start'), async (req, res, next) => {
   try {

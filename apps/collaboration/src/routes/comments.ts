@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import { authMiddleware, requirePermission } from '@udd/auth';
 import { PgProjectRepository, PgMembershipRepository, PgCommentRepository } from '@udd/database';
 
-const router = Router();
+const router: RouterType = Router();
 router.use(authMiddleware);
 
 const projects = new PgProjectRepository();
@@ -32,7 +32,10 @@ router.get('/projects/:id/comments', requirePermission('comment.read'), async (r
           message: 'limit must be a positive integer',
           correlationId: req.correlationId,
         });
-    const page = await comments.findThreadsByProjectId(project.id, { cursor, limit });
+    const opts: { cursor?: string; limit?: number } = {};
+    if (cursor !== undefined) opts.cursor = cursor;
+    if (limit !== undefined) opts.limit = limit;
+    const page = await comments.findThreadsByProjectId(project.id, opts);
 
     return res.json({
       data: page.items,

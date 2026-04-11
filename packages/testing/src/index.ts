@@ -159,25 +159,25 @@ export function makeAgentRole(overrides: Partial<AgentRole> = {}): AgentRole {
 }
 
 export function makePipelineDefinition(overrides: Partial<PipelineDefinition> = {}): PipelineDefinition {
-  return {
-    id: randomUUID(),
-    workspaceId: randomUUID(),
-    projectId: null,
-    createdByUserId: randomUUID(),
-    name: 'test-pipeline',
-    description: null,
-    pipelineVersion: 1,
-    pipelineDefinitionJson: {
-      nodes: [{ id: 'node-1', agentRoleId: randomUUID(), kind: 'role_step' }],
+  const result: PipelineDefinition = {
+    id: overrides.id ?? randomUUID(),
+    workspaceId: overrides.workspaceId ?? randomUUID(),
+    projectId: overrides.projectId ?? null,
+    createdByUserId: overrides.createdByUserId ?? randomUUID(),
+    name: overrides.name ?? 'test-pipeline',
+    description: overrides.description ?? null,
+    pipelineVersion: overrides.pipelineVersion ?? 1,
+    pipelineDefinitionJson: overrides.pipelineDefinitionJson ?? {
+      nodes: [{ id: 'node-1', agentRoleId: randomUUID(), kind: 'role_step' as const }],
       edges: [],
     },
-    inputSchemaJson: undefined,
-    outputSchemaJson: undefined,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    ...overrides,
+    isActive: overrides.isActive ?? true,
+    createdAt: overrides.createdAt ?? new Date().toISOString(),
+    updatedAt: overrides.updatedAt ?? new Date().toISOString(),
   };
+  if (overrides.inputSchemaJson != null) result.inputSchemaJson = overrides.inputSchemaJson;
+  if (overrides.outputSchemaJson != null) result.outputSchemaJson = overrides.outputSchemaJson;
+  return result;
 }
 
 export function makePipelineRun(overrides: Partial<PipelineRunRecord> = {}): PipelineRunRecord {

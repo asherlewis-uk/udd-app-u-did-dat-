@@ -136,9 +136,9 @@ export default function AiHubPage() {
                     </div>
 
                     <div className="flex items-center gap-3 text-[10px] text-[#71717a]">
-                      <span>{pipeline.nodes.length} node{pipeline.nodes.length !== 1 ? 's' : ''}</span>
+                      <span>{pipeline.pipelineDefinitionJson.nodes.length} node{pipeline.pipelineDefinitionJson.nodes.length !== 1 ? 's' : ''}</span>
                       <span>&middot;</span>
-                      <span>{pipeline.edges.length} edge{pipeline.edges.length !== 1 ? 's' : ''}</span>
+                      <span>{pipeline.pipelineDefinitionJson.edges.length} edge{pipeline.pipelineDefinitionJson.edges.length !== 1 ? 's' : ''}</span>
                       <span>&middot;</span>
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />

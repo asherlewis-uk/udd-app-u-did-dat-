@@ -3,7 +3,7 @@ import { authMiddleware, requirePermission } from '@udd/auth';
 import type { PlatformEvent } from '@udd/contracts';
 import { getContext } from '../context.js';
 
-const router = Router();
+const router: Router = Router();
 router.use(authMiddleware);
 
 async function assertMember(
@@ -27,22 +27,18 @@ router.post(
 
       const pipeline = await ctx.pipelines.findById(req.params['pipelineId']!);
       if (!pipeline || pipeline.workspaceId !== req.params['id']!) {
-        return res
-          .status(404)
-          .json({
-            code: 'NOT_FOUND',
-            message: 'Pipeline not found',
-            correlationId: req.correlationId,
-          });
+        return res.status(404).json({
+          code: 'NOT_FOUND',
+          message: 'Pipeline not found',
+          correlationId: req.correlationId,
+        });
       }
       if (!pipeline.isActive) {
-        return res
-          .status(400)
-          .json({
-            code: 'VALIDATION_ERROR',
-            message: 'Pipeline is not active',
-            correlationId: req.correlationId,
-          });
+        return res.status(400).json({
+          code: 'VALIDATION_ERROR',
+          message: 'Pipeline is not active',
+          correlationId: req.correlationId,
+        });
       }
 
       const { inputPayloadRef, idempotencyKey } = req.body as {
@@ -96,7 +92,7 @@ router.post(
         },
         correlationId: req.correlationId ?? 'unknown',
         timestamp: new Date().toISOString(),
-      } as PlatformEvent);
+      } as unknown as PlatformEvent);
 
       return res.status(202).json({ data: run, correlationId: req.correlationId });
     } catch (err) {
@@ -115,14 +111,15 @@ router.get('/workspaces/:id/ai/runs', requirePermission('ai.run.read'), async (r
     const cursor = req.query['cursor'] as string | undefined;
     const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
     if (limit !== undefined && isNaN(limit))
-      return res
-        .status(400)
-        .json({
-          code: 'VALIDATION_ERROR',
-          message: 'limit must be a positive integer',
-          correlationId: req.correlationId,
-        });
-    const page = await ctx.pipelineRuns.findByWorkspaceId(req.params['id']!, { cursor, limit });
+      return res.status(400).json({
+        code: 'VALIDATION_ERROR',
+        message: 'limit must be a positive integer',
+        correlationId: req.correlationId,
+      });
+    const page = await ctx.pipelineRuns.findByWorkspaceId(req.params['id']!, {
+      ...(cursor !== undefined && { cursor }),
+      ...(limit !== undefined && { limit }),
+    });
     return res.json({
       data: page.items,
       meta: { nextCursor: page.nextCursor, hasMore: page.hasMore },
@@ -197,7 +194,7 @@ router.post(
         payload: { pipelineRunId: run.id, workspaceId: req.params['id']! },
         correlationId: req.correlationId ?? 'unknown',
         timestamp: new Date().toISOString(),
-      } as PlatformEvent);
+      } as unknown as PlatformEvent);
 
       return res.json({ data: cancelled, correlationId: req.correlationId });
     } catch (err) {

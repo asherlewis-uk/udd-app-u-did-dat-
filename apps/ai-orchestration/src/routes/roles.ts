@@ -3,7 +3,7 @@ import { authMiddleware, requirePermission } from '@udd/auth';
 import type { AgentRole } from '@udd/contracts';
 import { getContext } from '../context.js';
 
-const router = Router();
+const router: Router = Router();
 router.use(authMiddleware);
 
 async function assertMember(
@@ -26,14 +26,15 @@ router.get(
       const cursor = req.query['cursor'] as string | undefined;
       const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
       if (limit !== undefined && isNaN(limit))
-        return res
-          .status(400)
-          .json({
-            code: 'VALIDATION_ERROR',
-            message: 'limit must be a positive integer',
-            correlationId: req.correlationId,
-          });
-      const page = await ctx.agentRoles.findByWorkspaceId(req.params['id']!, { cursor, limit });
+        return res.status(400).json({
+          code: 'VALIDATION_ERROR',
+          message: 'limit must be a positive integer',
+          correlationId: req.correlationId,
+        });
+      const page = await ctx.agentRoles.findByWorkspaceId(req.params['id']!, {
+        ...(cursor !== undefined && { cursor }),
+        ...(limit !== undefined && { limit }),
+      });
       return res.json({
         data: page.items,
         meta: { nextCursor: page.nextCursor, hasMore: page.hasMore },
@@ -65,25 +66,21 @@ router.post(
       };
 
       if (!body.name || !body.providerConfigId || !body.modelIdentifier) {
-        return res
-          .status(400)
-          .json({
-            code: 'VALIDATION_ERROR',
-            message: 'name, providerConfigId, modelIdentifier are required',
-            correlationId: req.correlationId,
-          });
+        return res.status(400).json({
+          code: 'VALIDATION_ERROR',
+          message: 'name, providerConfigId, modelIdentifier are required',
+          correlationId: req.correlationId,
+        });
       }
 
       // Validate providerConfigId exists in this workspace
       const providerConfig = await ctx.providerConfigs.findById(body.providerConfigId);
       if (!providerConfig || providerConfig.workspaceId !== req.params['id']!) {
-        return res
-          .status(400)
-          .json({
-            code: 'VALIDATION_ERROR',
-            message: 'providerConfigId not found in this workspace',
-            correlationId: req.correlationId,
-          });
+        return res.status(400).json({
+          code: 'VALIDATION_ERROR',
+          message: 'providerConfigId not found in this workspace',
+          correlationId: req.correlationId,
+        });
       }
 
       const role = await ctx.agentRoles.create({
@@ -161,12 +158,12 @@ router.patch(
           >
         >;
       const updated = await ctx.agentRoles.update(role.id, {
-        name,
-        description,
-        modelIdentifier,
-        endpointOverrideUrl,
-        roleConfigJson,
-        isActive,
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(modelIdentifier !== undefined && { modelIdentifier }),
+        ...(endpointOverrideUrl !== undefined && { endpointOverrideUrl }),
+        ...(roleConfigJson !== undefined && { roleConfigJson }),
+        ...(isActive !== undefined && { isActive }),
       });
 
       await ctx.auditLogs.append({

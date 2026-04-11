@@ -16,7 +16,7 @@ const authRateLimit = rateLimit({
   message: { code: 'RATE_LIMITED', message: 'Too many requests, please try again later.' },
 });
 
-const router = Router();
+const router: Router = Router();
 
 // ============================================================
 // PKCE + CSRF state store
