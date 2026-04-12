@@ -3,6 +3,8 @@ node_modules
 **/dist
 **/.turbo
 **/*.log
+**/*.test.ts
+**/vitest.config.ts
 .git
 .gitignore
 .env*
