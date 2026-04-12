@@ -44,7 +44,7 @@ COPY --from=build --chown=app:app /app/apps/api/dist ./apps/api/dist
 COPY --from=build --chown=app:app /app/apps/api/package.json ./apps/api/
 USER app
 ENV NODE_ENV=production
-EXPOSE 3001
+EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3001/ready || exit 1
+  CMD wget -qO- http://localhost:${PORT:-8080}/ready || exit 1
 CMD ["node", "/app/apps/api/dist/index.js"]
