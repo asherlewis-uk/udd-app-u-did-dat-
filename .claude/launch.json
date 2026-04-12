@@ -1,0 +1,47 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Web App",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@udd/web", "exec", "next", "dev", "--port", "3006"],
+      "port": 3006
+    },
+    {
+      "name": "Gateway",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@udd/gateway", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "API",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@udd/api", "dev"],
+      "port": 8080
+    },
+    {
+      "name": "Orchestrator",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@udd/orchestrator", "dev"],
+      "port": 3002
+    },
+    {
+      "name": "Collaboration",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@udd/collaboration", "dev"],
+      "port": 3003
+    },
+    {
+      "name": "AI Orchestration",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@udd/ai-orchestration", "dev"],
+      "port": 3004
+    },
+    {
+      "name": "Worker Manager",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@udd/worker-manager", "dev"],
+      "port": 3005
+    }
+  ]
+}

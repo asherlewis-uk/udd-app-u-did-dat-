@@ -9,6 +9,46 @@ import { OptimisticConcurrencyError, withTransaction } from '@udd/database';
 const router: Router = Router();
 
 // -------------------------------------------------------
+// List sessions for a project
+// -------------------------------------------------------
+
+router.get(
+  '/projects/:id/sessions',
+  requirePermission('session.create'),
+  async (req, res, next) => {
+    try {
+      const ctx = getContext();
+
+      const project = await ctx.projects.findById(req.params['id']!);
+      if (!project) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+
+      const membership = await ctx.memberships.findByUserAndWorkspace(
+        req.auth!.userId,
+        project.workspaceId,
+      );
+      if (!membership) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+
+      const cursor = req.query['cursor'] as string | undefined;
+      const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
+      if (limit !== undefined && isNaN(limit))
+        return next(createAppError('limit must be a positive integer', 400, 'VALIDATION_ERROR'));
+      const pageOpts: { cursor?: string; limit?: number } = {};
+      if (cursor !== undefined) pageOpts.cursor = cursor;
+      if (limit !== undefined) pageOpts.limit = limit;
+      const page = await ctx.sessions.findByProjectId(project.id, pageOpts);
+
+      return res.json({
+        data: page.items,
+        meta: { nextCursor: page.nextCursor, hasMore: page.hasMore },
+        correlationId: req.correlationId,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  },
+);
+
+// -------------------------------------------------------
 // Create session for a project
 // -------------------------------------------------------
 

@@ -1,28 +1,23 @@
 import SwiftUI
 
-// Status/review/comments companion — NO code editor, NO terminal
+/// Main tab shell — shown only when authenticated.
 struct ContentView: View {
+    @Environment(AuthManager.self) private var auth
+
     var body: some View {
         TabView {
-            NavigationView {
-                Text("Home").navigationTitle("Home")
-            }
-            .tabItem { Label("Home", systemImage: "house") }
-
-            NavigationView {
-                Text("Projects").navigationTitle("Projects")
+            NavigationStack {
+                WorkspacesView()
             }
             .tabItem { Label("Projects", systemImage: "folder") }
 
-            NavigationView {
-                Text("Activity").navigationTitle("Activity")
-            }
-            .tabItem { Label("Activity", systemImage: "bell") }
-
-            NavigationView {
-                Text("Settings").navigationTitle("Settings")
+            NavigationStack {
+                SettingsView()
             }
             .tabItem { Label("Settings", systemImage: "gear") }
+        }
+        .task {
+            await auth.restoreSession()
         }
     }
 }

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(xargs wc:*)",
+      "Bash(find \"C:\\\\Users\\\\asher\\\\PROJECTS\\\\udd-app\\(u-did-dat\\)\\\\apps\\\\mobile-ios\" -type f -exec echo {} \\\\;)",
+      "Bash(grep -i \"workos\\\\|oauth\\\\|auth\\\\|token\\\\|session\\\\|login\" \"C:\\\\Users\\\\asher\\\\PROJECTS\\\\udd-app\\(u-did-dat\\)\\\\apps\\\\mobile-ios\\\\Sources\\\\App\"*.swift)",
+      "Bash(find /c/Users/asher/PROJECTS/udd-app* -type f -path \"*/packages/auth/src/*\" -name \"*.ts\")",
+      "Bash(find /c/Users/asher/PROJECTS/udd-app* -type f -path \"*/packages/contracts/src/*\" -name \"*.ts\")",
+      "Bash(find /c/Users/asher/PROJECTS/udd-app* -type f -path \"*/gateway/src/*\" -name \"*.ts\")",
+      "Bash(find /c/Users/asher/PROJECTS/udd-app* -type f -name \"*.ts\" -o -name \"*.js\")",
+      "Bash(xargs grep:*)",
+      "Bash(ls -la /c/Users/asher/PROJECTS/udd-app*'/apps/api/src/routes/')",
+      "Bash(pnpm exec:*)"
+    ]
+  }
+}

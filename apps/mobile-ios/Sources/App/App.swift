@@ -2,9 +2,18 @@ import SwiftUI
 
 @main
 struct UDDCompanionApp: App {
+    @State private var authManager = AuthManager()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            Group {
+                if authManager.isAuthenticated {
+                    ContentView()
+                } else {
+                    LoginView()
+                }
+            }
+            .environment(authManager)
         }
     }
 }
