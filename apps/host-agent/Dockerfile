@@ -5,6 +5,7 @@ RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/config/package.json packages/config/
 COPY packages/contracts/package.json packages/contracts/
+COPY packages/events/package.json packages/events/
 COPY packages/observability/package.json packages/observability/
 COPY apps/host-agent/package.json apps/host-agent/
 RUN pnpm install --frozen-lockfile --prefer-offline
@@ -14,11 +15,13 @@ FROM deps AS build
 COPY tsconfig.base.json ./
 COPY packages/config/ packages/config/
 COPY packages/contracts/ packages/contracts/
+COPY packages/events/ packages/events/
 COPY packages/observability/ packages/observability/
 COPY apps/host-agent/ apps/host-agent/
 RUN pnpm --filter @udd/contracts build \
  && pnpm --filter @udd/config build \
  && pnpm --filter @udd/observability build \
+ && pnpm --filter @udd/events build \
  && pnpm --filter @udd/host-agent build
 
 # ─── Stage 3: runtime ─────────────────────────────────────────────────────────
@@ -28,6 +31,7 @@ RUN addgroup -S app && adduser -S app -G app
 COPY --from=build --chown=app:app /app/node_modules ./node_modules
 COPY --from=build --chown=app:app /app/packages/config/dist ./packages/config/dist
 COPY --from=build --chown=app:app /app/packages/contracts/dist ./packages/contracts/dist
+COPY --from=build --chown=app:app /app/packages/events/dist ./packages/events/dist
 COPY --from=build --chown=app:app /app/packages/observability/dist ./packages/observability/dist
 COPY --from=build --chown=app:app /app/apps/host-agent/dist ./apps/host-agent/dist
 COPY --from=build --chown=app:app /app/apps/host-agent/package.json ./apps/host-agent/
