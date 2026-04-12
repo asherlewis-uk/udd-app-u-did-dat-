@@ -2,11 +2,11 @@ import { createApp } from './app.js';
 import { createLogger } from '@udd/observability';
 
 const logger = createLogger('api');
-const PORT = parseInt(process.env['PORT'] ?? '3001', 10);
+const PORT = parseInt(process.env['PORT'] ?? '8080', 10);
 
 const app = createApp();
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info('API gateway started', { port: PORT });
 });
 
