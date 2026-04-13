@@ -17,15 +17,16 @@ This index defines the canonical documentation set, the reading order for humans
 9. [contracts.md](contracts.md)
 10. [flows.md](flows.md)
 11. [constraints.md](constraints.md)
-12. [observability.md](observability.md)
-13. [ENV_CONTRACT.md](ENV_CONTRACT.md)
-14. [LOCAL_DEV.md](LOCAL_DEV.md)
-15. [repo-map.md](repo-map.md)
-16. [implementation-gaps.md](implementation-gaps.md)
-17. [change-protocol.md](change-protocol.md)
-18. [quality-gates.md](quality-gates.md)
-19. Relevant ADRs in [adr/](adr/) — see index below
-20. Relevant runbooks in [runbooks/](runbooks/)
+12. [ui-material-system.md](ui-material-system.md)
+13. [observability.md](observability.md)
+14. [ENV_CONTRACT.md](ENV_CONTRACT.md)
+15. [LOCAL_DEV.md](LOCAL_DEV.md)
+16. [repo-map.md](repo-map.md)
+17. [implementation-gaps.md](implementation-gaps.md)
+18. [change-protocol.md](change-protocol.md)
+19. [quality-gates.md](quality-gates.md)
+20. Relevant ADRs in [adr/](adr/) — see index below
+21. Relevant runbooks in [runbooks/](runbooks/)
 
 ## ADR Index
 
@@ -63,6 +64,7 @@ This index defines the canonical documentation set, the reading order for humans
 - Internal boundaries and interfaces: [contracts.md](contracts.md)
 - Environment and config: [ENV_CONTRACT.md](ENV_CONTRACT.md)
 - Operations: [runbooks/](runbooks/)
+- UI material system / hosted web rendering: [ui-material-system.md](ui-material-system.md)
 - Observability: [observability.md](observability.md)
 - Known implementation drift: [implementation-gaps.md](implementation-gaps.md)
 
