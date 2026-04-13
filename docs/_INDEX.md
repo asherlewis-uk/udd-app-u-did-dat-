@@ -1,50 +1,66 @@
-# UDD Platform — Documentation Index
+# Documentation Index
 
-This is the authoritative documentation system for the UDD Platform monorepo.
-When in doubt about what is true, read the source code. When in doubt about what to do, start here.
+Back to the canonical entrypoint: this file.
 
-## Authoritative Documents
+This index defines the canonical documentation set, the reading order for humans and coding agents, and the conflict rules for the repo.
 
-| Document | When to read it |
-|----------|----------------|
-| [overview.md](overview.md) | First read — what the system is, phase status, what is implemented vs stubbed vs planned |
-| [architecture.md](architecture.md) | Service map, package map, control/worker plane split, DB ownership |
-| [runtime.md](runtime.md) | How sessions, workers, previews, and pipelines actually behave at runtime |
-| [flows.md](flows.md) | End-to-end traces of auth, session creation, preview access, pipeline runs |
-| [repo-map.md](repo-map.md) | Where things live, what they own, dependency rules |
-| [constraints.md](constraints.md) | Hard invariants — read before touching tenancy, credentials, preview, or worker plane |
-| [contracts.md](contracts.md) | Shared types, state transitions, event topics, inter-service API surface |
-| [change-protocol.md](change-protocol.md) | How to safely make changes: schema, contracts, state machines, new services |
-| [quality-gates.md](quality-gates.md) | What must pass before work is considered complete |
-| [priority-map.md](priority-map.md) | High-value gaps, unstable areas, Phase 3 scope boundary |
-| [ENV_CONTRACT.md](ENV_CONTRACT.md) | Canonical environment variable reference for all services |
-| [LOCAL_DEV.md](LOCAL_DEV.md) | Local development setup |
+## Canonical Reading Order
 
-## Architecture Decision Records
+1. [product-scope.md](product-scope.md)
+2. [overview.md](overview.md)
+3. [architecture.md](architecture.md)
+4. [domain-model.md](domain-model.md)
+5. [execution-modes.md](execution-modes.md)
+6. [security-model.md](security-model.md)
+7. [service-catalog.md](service-catalog.md)
+8. [runtime.md](runtime.md)
+9. [contracts.md](contracts.md)
+10. [flows.md](flows.md)
+11. [constraints.md](constraints.md)
+12. [observability.md](observability.md)
+13. [ENV_CONTRACT.md](ENV_CONTRACT.md)
+14. [LOCAL_DEV.md](LOCAL_DEV.md)
+15. [repo-map.md](repo-map.md)
+16. [implementation-gaps.md](implementation-gaps.md)
+17. [change-protocol.md](change-protocol.md)
+18. [quality-gates.md](quality-gates.md)
+19. Relevant ADRs in [adr/](adr/)
+20. Relevant runbooks in [runbooks/](runbooks/)
 
-All six ADRs are accepted and current.
+## Canonical vs Historical
 
-| ADR | Decision |
-|-----|----------|
-| [ADR 001](adr/001-split-control-worker-plane.md) | Control plane / worker plane network split |
-| [ADR 002](adr/002-port-mapped-preview-proxy.md) | Path-based preview proxy (`/preview/{id}/...`) |
-| [ADR 003](adr/003-workspace-tenancy.md) | Three-level tenancy: Org → Workspace → Project |
-| [ADR 004](adr/004-microvm-isolation.md) | MicroVM-per-session isolation, port range 32000–33000 |
-| [ADR 005](adr/005-model-provider-adapter-boundary.md) | ModelProviderAdapter boundary — no direct provider SDK usage outside adapters package |
-| [ADR 006](adr/006-external-secret-manager.md) | External secret manager — no plaintext credentials in DB |
+- Canonical docs: every file named in the reading order above.
+- Historical but still relevant: ADRs and runbooks, provided their status header says they are current, current for hosted operations, or current for supported local development.
+- Historical but non-authoritative: anything in [archive/](archive/), including archived planning docs.
 
-## Operational Runbooks
+## Source Of Truth By Concern
 
-| Runbook | Trigger |
-|---------|---------|
-| [worker-failure.md](runbooks/worker-failure.md) | Worker host missed heartbeats; sessions/previews stranded on dead host |
-| [stale-preview-lease.md](runbooks/stale-preview-lease.md) | Preview URL returning 410 for a session that is still running |
-| [secret-rotation.md](runbooks/secret-rotation.md) | Rotating or emergency-revoking AI provider credentials |
-| [stuck-pipeline-run.md](runbooks/stuck-pipeline-run.md) | Pipeline run stuck in `preparing` or `running` state |
-| [db-migration-rollout.md](runbooks/db-migration-rollout.md) | Deploying schema migrations safely |
+- Product scope: [product-scope.md](product-scope.md)
+- Product overview: [overview.md](overview.md)
+- Architecture: [architecture.md](architecture.md)
+- Domain model: [domain-model.md](domain-model.md)
+- Execution model: [execution-modes.md](execution-modes.md) and [runtime.md](runtime.md)
+- Security: [security-model.md](security-model.md)
+- Internal boundaries and interfaces: [contracts.md](contracts.md)
+- Environment and config: [ENV_CONTRACT.md](ENV_CONTRACT.md)
+- Operations: [runbooks/](runbooks/)
+- Observability: [observability.md](observability.md)
+- Known implementation drift: [implementation-gaps.md](implementation-gaps.md)
 
-## Archive
+## Conflict Rules
 
-`docs/archive/` contains non-authoritative historical material.
-Do not use archived content to guide implementation.
-See [`archive/_ARCHIVE_NOTICE.md`](archive/_ARCHIVE_NOTICE.md) for the exclusion rule.
+If canonical docs conflict, use this priority order:
+1. `docs/product-scope.md`
+2. `docs/architecture.md`
+3. `docs/domain-model.md`
+4. `docs/execution-modes.md`
+5. `docs/security-model.md`
+6. `docs/contracts.md`
+7. `docs/ENV_CONTRACT.md`
+8. runbooks
+9. archived docs
+
+Root-file precedence is separate:
+`AGENTS.md` > canonical-doc priority defined here > `AI.md` > `GEMINI.md` > `README.md`
+
+If any non-canonical file conflicts with the rules above, treat that file as stale and record the conflict in [implementation-gaps.md](implementation-gaps.md).

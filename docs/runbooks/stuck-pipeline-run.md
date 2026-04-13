@@ -1,61 +1,42 @@
 # Runbook: Stuck Pipeline Run
 
+**Status:** Canonical  
+Back to [docs/_INDEX.md](../_INDEX.md).
+
 ## Symptoms
-- Pipeline run shows `status = 'preparing'` or `status = 'running'` for longer than expected
-- `pipeline_run.status_changed` events stopped appearing in the audit log
-- User reports a pipeline has been running for hours
+
+- Pipeline run remains in `queued`, `preparing`, or `running` much longer than expected
+- Users report AI work never finishing
+- Provider calls or run state transitions stop appearing in logs
 
 ## Diagnosis
 
 ```sql
--- Find stuck runs
-SELECT id, pipeline_id, workspace_id, status, started_at,
-       NOW() - started_at AS duration, error_summary
+SELECT id, pipeline_id, workspace_id, status, started_at, finished_at, error_summary
 FROM pipeline_runs
-WHERE status IN ('preparing', 'running')
-  AND started_at < NOW() - INTERVAL '30 minutes'
-ORDER BY started_at ASC;
+WHERE status IN ('queued', 'preparing', 'running')
+ORDER BY started_at NULLS FIRST, created_at;
 ```
 
-## Automatic Recovery
+## Recovery
 
-The `ai-orchestration` service has a scheduled job (`stuckRunRecovery`) that:
-1. Finds runs in `preparing`/`running` state beyond `STUCK_RUN_TIMEOUT_MS`.
-2. Marks them as `failed` with `errorSummary = 'Recovered by stuck-run detector'`.
-3. Emits `pipeline_run.status_changed` event.
+1. Inspect `ai-orchestration` logs for the run correlation ID.
+2. Check provider availability and secret-manager health.
+3. Cancel or fail the run if it is unrecoverable.
 
-Verify the job is running (GCP Cloud Run logs):
-```bash
-gcloud logging read \
-  'resource.type="cloud_run_revision" resource.labels.service_name="udd-prod-ai-orchestration" textPayload:"stuck_run"' \
-  --limit=50 --format=json | jq '.[] | .textPayload'
-```
-
-## Manual Recovery
-
-If automatic recovery is not triggering:
+## Manual fail
 
 ```sql
--- Mark stuck runs as failed
 UPDATE pipeline_runs
 SET status = 'failed',
-    error_summary = 'Manually marked failed by operator',
+    error_summary = 'Manually failed by operator',
     finished_at = NOW(),
     updated_at = NOW()
-WHERE id IN ('<run-id-1>', '<run-id-2>')
-  AND status IN ('preparing', 'running');
+WHERE id = '<pipeline-run-id>'
+  AND status IN ('queued', 'preparing', 'running');
 ```
 
-Then emit a `pipeline_run.status_changed` event manually or restart the `ai-orchestration` service.
+## Follow-up
 
-## Root Cause Investigation
-
-- Check `model_invocation_logs` for the affected runs — was the adapter call attempted?
-- Check `ai-orchestration` service logs for errors during the run.
-- Check if the secret manager was unreachable at the time of the run.
-- Check if the provider endpoint was returning errors.
-
-## Prevention
-
-- Set `STUCK_RUN_TIMEOUT_MS` appropriately (default: 5 minutes).
-- Alert on `pipeline_run_state_transition_latency_seconds` p99 > threshold.
+- If the root cause is provider connectivity or credential failure, use [provider-adapter-failure.md](./provider-adapter-failure.md).
+- If the root cause is docs or workflow drift around AI services, log it in [docs/implementation-gaps.md](../implementation-gaps.md).

@@ -1,59 +1,39 @@
-# Runbook: AI Provider Secret Rotation
+# Runbook: Secret Rotation
 
-Credentials are stored in GCP Secret Manager. The DB stores only the resource name ref (`credential_secret_ref`). See ADR 006 (revised).
+**Status:** Canonical  
+Back to [docs/_INDEX.md](../_INDEX.md).
 
-## Planned Rotation (user-initiated)
+## Use this runbook when
 
-Users rotate credentials via the UI or API:
+- a provider credential is compromised
+- a provider credential expires
+- local provider validation needs a fresh development credential
 
-```
-POST /v1/workspaces/{workspaceId}/ai/providers/{providerConfigId}/rotate-secret
-{ "newCredential": "sk-..." }
-```
+## Hosted rotation path
 
-The `ai-orchestration` service:
-1. Writes new credential to GCP Secret Manager → receives new resource name ref.
-2. Updates `provider_configs.credential_secret_ref` to new ref.
-3. Schedules deletion of old ref in GCP Secret Manager.
-4. Emits `provider_config.secret_rotated` event → audit log.
+1. Revoke or replace the provider credential at the external provider.
+2. Call the rotate-secret route on the provider config:
+   `POST /workspaces/:id/ai/providers/:providerConfigId/rotate-secret`
+3. Confirm the stored `credential_secret_ref` changed.
+4. Confirm new invocations succeed.
 
-## Emergency Rotation (credential compromised)
+## Local development path
 
-1. **Revoke the credential at the provider** (Anthropic dashboard, OpenAI dashboard, etc.) immediately.
-2. **Rotate via the API** with the new credential (above).
-3. **Check audit logs** for recent invocations with the old credential:
-   ```sql
-   SELECT * FROM model_invocation_logs
-   WHERE provider_config_id = '<id>'
-     AND created_at > '<compromise-time>'
-   ORDER BY created_at DESC;
-   ```
-4. **Notify affected users** if unauthorized invocations occurred.
+- In development and test, current code uses `InMemorySecretManagerProvider`.
+- Restarting the local `ai-orchestration` process clears the in-memory secret store.
+- Recreate the provider config if you need a clean local secret state.
 
-## Verifying Rotation Succeeded
+## Verification
 
 ```sql
-SELECT id, name, credential_secret_ref, updated_at
+SELECT id, credential_secret_ref, updated_at
 FROM provider_configs
 WHERE id = '<provider-config-id>';
 ```
 
-The `credential_secret_ref` should show the new GCP Secret Manager resource name (newer version in the name).
+The DB should contain only the secret ref, never the plaintext credential.
 
-## Rollback
+## Recovery
 
-If the new credential is invalid:
-1. Rotate again with the correct credential.
-2. The old ref is scheduled for deletion but not immediately deleted — check with GCP Secret Manager before it is destroyed:
-
-```bash
-gcloud secrets versions list {SECRET_NAME} --project={PROJECT_ID}
-```
-
-If the old version is still present and in `ENABLED` state, you can restore it by updating `provider_configs.credential_secret_ref` to point to the old resource name.
-
-## Monitoring
-
-- `secret_rotation_outcome` metric — counter with `success/failure` labels.
-- Alert if `failure` count > 0 in any 5-minute window.
-- GCP Cloud Audit Logs capture all secret access at the infrastructure level.
+- If rotation fails because the new credential is invalid, rotate again with a valid credential.
+- If the secret manager itself is failing, switch to [provider-adapter-failure.md](./provider-adapter-failure.md).

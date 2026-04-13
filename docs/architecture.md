@@ -1,124 +1,109 @@
 # Architecture
 
-## Service Map
+Back to [docs/_INDEX.md](./_INDEX.md).
 
-| Service | Port | Plane | Primary Role |
-|---------|------|-------|-------------|
-| `apps/api` | 3001 | Control (public) | REST API gateway / BFF — all web and mobile client traffic |
-| `apps/gateway` | 3000 | Control (public) | Preview proxy — routes `/preview/{id}/*` to worker sandbox ports |
-| `apps/orchestrator` | 3002 | Control (internal) | Session and preview route lifecycle; allocates sandbox leases from DB directly |
-| `apps/collaboration` | 3003 | Control (internal) | WebSocket server — real-time presence, comments |
-| `apps/ai-orchestration` | 3004 | Control (internal) | Provider configs, agent roles, pipeline definitions, run execution |
-| `apps/worker-manager` | 3005 | Control (internal) | Capacity snapshot ingestion from host agents (`POST /internal/capacity-snapshot`) |
-| `apps/host-agent` | — | Worker | Runs on each worker VM — registration and heartbeat via capacity snapshots |
-| `apps/session-reaper` | — | Background | Scans for idle sessions and orphaned leases; drives cleanup |
-| `apps/usage-meter` | — | Background | Consumes usage events; records to DB; uploads to billing adapter |
-| `apps/web` | 3006 | Public | Next.js 14 (App Router) web front-end |
-| `apps/mobile-ios` | — | Client | Swift/SwiftUI companion — auth, workspace/project/session views, preview |
-| `apps/mobile-android` | — | Client | Kotlin/Jetpack Compose companion — tab UI + API client; scope-limited (partial) |
+## Canonical posture
 
-**Worker-manager clarification:** worker-manager does not allocate leases. It only ingests capacity snapshots from host agents and writes them to the `worker_capacity` table. Lease allocation is done by the orchestrator in a DB transaction — see `apps/orchestrator/src/services/session.ts`.
+This repo documents a **solo-first, hosted-first** product. The default user experience is the hosted product, reached through the web client and the iOS client. Web and iOS are both first-class surfaces. iOS does not replace or demote the hosted web surface.
 
-**Android companion clarification:** The Android app has a real Compose UI (`MainActivity.kt` with tab navigation) and a real Ktor HTTP client (`ApiClient.kt`). It is not a skeleton. Its declared scope (from an in-code comment) is "Status/review/comments companion — NO code editor, NO terminal."
+The canonical architecture is organized around a single builder loop:
 
-## Shared Package Map
+`idea -> open or create project -> AI-assisted changes -> run in hosted session -> preview in hosted surface -> optionally export or deploy elsewhere`
 
-| Package | What it owns | Who imports it |
-|---------|-------------|----------------|
-| `@udd/contracts` | Entity types, DTOs, enums, state transition tables, event topic names | Every service and package |
-| `@udd/database` | Schema migrations, repository interfaces, PG implementations | api, orchestrator, collaboration, ai-orchestration, worker-manager, session-reaper, usage-meter, gateway |
-| `@udd/auth` | JWT middleware, RBAC role→permission map, policy helpers | api, orchestrator, collaboration, ai-orchestration, worker-manager |
-| `@udd/config` | Typed env var accessors (`required`, `optional`, `flag`) | Every service |
-| `@udd/adapters` | All vendor boundaries (model providers, secrets, auth, git, storage, queue, billing, notifications) | api, ai-orchestration |
-| `@udd/events` | Event publisher/consumer interfaces, Noop implementation | Every service |
-| `@udd/observability` | JSON logger, metrics facade, OpenTelemetry tracing, health endpoints | Every service |
-| `@udd/testing` | Test factories, fixtures, assertion helpers | Test suites only |
+Local development exists to build and operate the product, and to validate stack behavior outside the hosted runtime. It is supported, but it is not the canonical product mode. See [docs/execution-modes.md](./execution-modes.md).
 
-**Dependency rule:** `packages/contracts` has no `@udd/*` dependencies — it is the base. Packages must not import from `apps/`. Provider SDKs must only be imported within `packages/adapters/src/model-provider/`.
+## Boundary model
 
-## Control Plane vs Worker Plane
+| Module | Purpose | Repo reality | Class | Notes |
+|---|---|---|---|---|
+| App shell and UX | Hosted user-facing shell for auth, projects, sessions, preview, AI surfaces | `apps/web`, `apps/api`, `apps/mobile-ios` | Core | Web is the primary hosted surface. iOS is a required first-class surface. |
+| AI orchestration | Provider configs, roles, pipelines, run execution, invocation logging | `apps/ai-orchestration`, `packages/adapters`, `packages/contracts`, `packages/events` | Core | Provider boundary and secret handling are real. |
+| Project indexing and memory | Searchable project context, code memory, retrieval state for AI workflows | No dedicated subsystem yet | Core | Canonical boundary exists; implementation is incomplete. See [docs/implementation-gaps.md](./implementation-gaps.md). |
+| Scaffold and template engine | Turn an idea into a new project or a known stack template | No dedicated subsystem yet | Core | Canonical boundary exists; implementation is incomplete. |
+| Stack adapters | Detect, normalize, and operate across many stacks without leaking stack details into core services | Partially implicit in web editor stubs and service code; no registry | Core | Polyglot support is product scope, but the repo lacks a first-class stack registry today. |
+| Runtime and execution manager | Create sessions, allocate runtime capacity, start and stop runs, manage lifecycle | `apps/orchestrator`, `apps/worker-manager`, `apps/host-agent`, `apps/session-reaper` | Core | Hosted runtime is canonical. Isolation and capacity reporting are still incomplete. |
+| Preview system | Turn a running session into a user-facing preview URL or preview frame | `apps/gateway`, preview route repositories, web/iOS preview consumers | Core | Hosted preview is canonical. |
+| Export and deploy adapters | Hand off artifacts to Git providers, storage, or external deploy targets | `packages/adapters`, `packages/database` project repo and artifact tables | Adapter | Deployment is not the core product. |
+| Provider and secret handling | Store refs, fetch secrets, invoke providers, redact sensitive fields | `packages/adapters`, `apps/ai-orchestration` | Core | Strong boundary. Keep it. |
+| Collaboration support | Comments, presence, websocket fan-out | `apps/collaboration` | Optional | Present in code, not a defining product concept. |
+| Android client | Additional mobile surface | `apps/mobile-android` | Optional | Exists in repo. Not first-class in the canonical product story. |
 
-```
-Internet
-  │
-  └── GCP Cloud Load Balancer
-        │
-        ├── apps/web       (3006)   Next.js SSR + static assets
-        ├── apps/api       (3001)   REST API ─────────────────────────────┐
-        └── apps/gateway   (3000)   Preview proxy ─────────────────────────┼──► worker-host:32100-32109
-                                                                           │    (port range per host)
-        ┌──────────────── internal VPC only ─────────────────────────────────┤
-        │                                                                   │
-        ├── apps/orchestrator     (3002)   ◄── PgWorkerCapacityRepository (DB)
-        ├── apps/collaboration    (3003)
-        ├── apps/ai-orchestration (3004)
-        └── apps/worker-manager   (3005)   ◄── host-agent capacity snapshots
+## Core, adapter, and optional infrastructure
 
-Worker plane (private subnet — no direct inbound internet):
-  └── worker-host  (host-agent process + user sandboxes)
-      → POSTs /internal/capacity-snapshot to worker-manager on startup and every heartbeat interval
+### Core
 
-Background jobs (Cloud Run Jobs, triggered by Cloud Scheduler):
-  ├── apps/session-reaper  (Cloud Scheduler: every 5 minutes)
-  └── apps/usage-meter
-```
+- Hosted web client, hosted iOS client, and the API surface they consume.
+- Hosted runtime lifecycle: session creation, preview creation, run orchestration, provider-backed AI execution.
+- Provider credential handling through a secret-manager boundary.
+- Project-centered product model defined in [docs/domain-model.md](./domain-model.md), even where code still uses workspace-shaped routes and tables.
 
-**The gateway is the only service that routes traffic to worker preview ports.** Sandbox breakout cannot reach control plane services. See ADR 001.
+### Adapter
 
-**Orchestrator accesses worker capacity directly via DB** (`PgWorkerCapacityRepository.findHealthyWithLock()` with `FOR UPDATE SKIP LOCKED`), not via HTTP to worker-manager. Lease creation and worker selection happen in a single serializable transaction.
+- Git provider integration.
+- Object storage, billing, queue, and deployment/export handoff.
+- Any infrastructure used to move artifacts out of the product boundary.
 
-## Database Ownership
+### Optional or non-core
 
-All services share a single PostgreSQL 16 instance (Cloud SQL). Tenancy isolation is enforced by the application layer (not PG RLS). Every table row carries `workspace_id` where applicable.
+- Collaboration and presence.
+- Android client.
+- Local-only operator workflows.
+- Any future enterprise tenancy or workspace administration layer not backed by an explicit ADR.
 
-| Tables | Service that writes | Services that read |
-|--------|--------------------|--------------------|
-| `users`, `organizations`, `workspaces`, `memberships`, `role_grants` | api | auth middleware (all services) |
-| `projects`, `project_repos`, `project_environments` | api | orchestrator |
-| `sessions` | orchestrator, session-reaper | api, gateway (indirect) |
-| `sandbox_leases` | orchestrator (creates), session-reaper (releases) | — |
-| `preview_routes` | orchestrator | gateway, api |
-| `worker_capacity` | worker-manager | orchestrator |
-| `provider_configs`, `agent_roles`, `pipeline_definitions` | ai-orchestration | api (read-proxy) |
-| `pipeline_runs`, `model_invocation_logs` | ai-orchestration | api (read-proxy) |
-| `comments` | collaboration | api |
-| `audit_logs` | All services (append-only) | — |
-| `usage_meter_events` | usage-meter | — |
-| `secret_metadata` | ai-orchestration | — |
+## Default topology
 
-## Tenancy Model
+### Canonical hosted path
 
-**Three levels: Organization → Workspace → Project**
+1. Web or iOS authenticates through the hosted auth flow.
+2. Client traffic hits the hosted API surface.
+3. API delegates session, preview, and AI work to hosted internal services.
+4. Orchestrator and runtime services allocate or manage hosted execution.
+5. Gateway exposes preview traffic for active sessions.
+6. AI orchestration resolves provider config, fetches secrets, invokes adapters, and records results.
 
-- `Organization` — billing entity, maps to a WorkOS organization
-- `Workspace` — primary collaboration unit; users hold membership here
-- `Project` — container for sessions, previews, pipeline runs, comments; belongs to one workspace
+### Supported local path
 
-Every workspace-scoped DB row carries `workspace_id`. Every repository method filters by it. Cross-workspace access is not permitted at any layer. See ADR 003.
+1. Developers run the same services locally against local PostgreSQL and Redis.
+2. Web can be served locally.
+3. iOS can point at local API and gateway URLs during local development.
+4. Hosted runtime behavior can be partially validated locally, but full hosted isolation is not implemented in this repo yet.
 
-**RBAC hierarchy** (each role includes all permissions of roles below it):
-```
-org_owner
-  └── workspace_admin
-        └── workspace_member
-              └── project_editor
-                    └── project_viewer
-```
+## Request flows
 
-Source of truth: `packages/auth/src/rbac.ts`
+### Open an existing project
 
-## Infrastructure
+1. User signs in on web or iOS.
+2. Client calls the hosted API for the current user and project list.
+3. API resolves authorization using the current implementation's workspace-shaped access checks.
+4. Project metadata, sessions, previews, and AI runs are returned to the client.
+5. Canonical product meaning is still "a solo builder opening a project", even though the current API shape remains workspace-based.
 
-**Deployment:** GCP exclusively.
-- Compute: Cloud Run (services), Cloud Run Jobs (session-reaper, worker-manager)
-- Database: Cloud SQL PostgreSQL 16 (regional HA, 4 vCPU / 15.36 GB, with read replica)
-- Cache: Memorystore Redis (STANDARD_HA, 4 GB)
-- Images: Google Container Registry (GCR)
-- State: GCS bucket for Terraform state
-- Scheduling: Cloud Scheduler (triggers session-reaper every 5 minutes)
+### Create a new project
 
-**Provider:** `infra/terraform/` uses the `hashicorp/google` provider exclusively. No AWS provider blocks exist in any Terraform file.
+1. User starts from an idea or chooses an existing template.
+2. Canonical architecture expects a scaffold/template boundary to pick a stack and initialize project structure.
+3. Current code can persist projects and repos, but it does not yet provide a first-class scaffold engine.
+4. Any mismatch between the canonical scaffold boundary and the current repo must be tracked in [docs/implementation-gaps.md](./implementation-gaps.md).
 
-**Application-layer adapters** in `@udd/adapters` include AWS-compatible implementations (SqsEventPublisher, S3 storage). These are present but the production configuration deploys GCP services. The production secret manager is `GCPSecretManagerProvider`, selected by `NODE_ENV === 'production'` in `apps/ai-orchestration/src/context.ts`.
+### Run a project
 
-**CI/CD:** GitHub Actions. Build and test on every PR. Deploy to dev (main branch), staging/prod (release/* branches with manual gates). See `.github/workflows/`.
+1. User triggers a run from the hosted web or iOS surface.
+2. API calls orchestrator to create or start a session.
+3. Orchestrator allocates runtime capacity and a preview target.
+4. Gateway serves preview traffic for that target.
+5. Session lifecycle cleanup runs through session-reaper and related hosted services.
+
+### Apply an AI edit
+
+1. User submits an AI request from web or iOS.
+2. API forwards AI work to `apps/ai-orchestration`.
+3. AI orchestration loads provider config, fetches the referenced secret, selects the provider adapter, and runs the request.
+4. Results are returned to the client surface and logged without leaking secrets.
+5. Canonical architecture expects project memory, retrieval, and stack-aware edit safety. Those boundaries are only partially present in code today.
+
+## Current implementation notes
+
+- The canonical model is project-centered and solo-first, but the repo still encodes `Organization -> Workspace -> Project` across schema, routes, auth claims, and UI. See [docs/domain-model.md](./domain-model.md) and [docs/implementation-gaps.md](./implementation-gaps.md).
+- Hosted runtime is canonical, but the repo does not yet implement a full scaffold engine, project memory service, or production-ready session isolation.
+- Collaboration exists as a service, but it is not part of the product center.
+- Workflow files are intentionally out of scope for this pass. Any architecture drift encoded there is tracked in [docs/implementation-gaps.md](./implementation-gaps.md).

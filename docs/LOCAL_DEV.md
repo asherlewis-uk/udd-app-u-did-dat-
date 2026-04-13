@@ -1,163 +1,227 @@
-# Local Development Setup
+# Local Development
 
-## Prerequisites
+Back to [docs/_INDEX.md](./_INDEX.md).
 
-- Node.js 20+
-- pnpm 9+
-- Docker Desktop (for PostgreSQL + Redis)
+## Purpose
 
-## 1. Install dependencies
+This guide is for developers and operators working on the hosted product locally. The product is hosted-first. Local setup exists to build, test, and validate the product, not to redefine the product story.
+
+## Required tools
+
+### For all repo work
+
+- Node.js `20+`
+- pnpm `9+`
+- Docker or another way to run PostgreSQL and Redis locally
+
+### For iOS work
+
+- macOS
+- Xcode `15+`
+- iOS Simulator support
+
+## Install
 
 ```bash
 pnpm install
 ```
 
-## 2. Start local infrastructure (Docker)
+## Local infrastructure
 
-**The repo does not include a `docker-compose.yml`.** Create the following file at the repo root:
-
-```yaml
-# docker-compose.yml
-services:
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_DB: udd_dev
-      POSTGRES_USER: udddev
-      POSTGRES_PASSWORD: udddev
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-volumes:
-  pgdata:
-```
-
-Then start:
+Start PostgreSQL:
 
 ```bash
-docker compose up -d
+docker run --name udd-postgres ^
+  -e POSTGRES_DB=udd_dev ^
+  -e POSTGRES_USER=udddev ^
+  -e POSTGRES_PASSWORD=udddev ^
+  -p 5432:5432 ^
+  -d postgres:16
 ```
 
-## 3. Configure environment variables
-
-**There is no `.env.example` in this repo.** The canonical variable reference is `docs/ENV_CONTRACT.md`. Create a `.env` file at the repo root with at minimum:
-
-```env
-DATABASE_URL=postgresql://udddev:udddev@localhost:5432/udd_dev
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=dev-secret-change-in-prod
-NODE_ENV=development
-
-# WorkOS (required for auth flow — get from WorkOS dashboard)
-WORKOS_API_KEY=your-workos-api-key
-WORKOS_CLIENT_ID=your-workos-client-id
-WORKOS_WEBHOOK_SECRET=your-workos-webhook-secret
-
-# Use in-memory or local providers for dev
-# NODE_ENV=development causes ai-orchestration to use InMemorySecretManagerProvider
-OBJECT_STORAGE_PROVIDER=local
-OBJECT_STORAGE_BUCKET=dev-bucket
-QUEUE_PROVIDER=redis
-
-# Service discovery (all running locally)
-API_BASE_URL=http://localhost:3001
-ORCHESTRATOR_BASE_URL=http://localhost:3002
-COLLABORATION_BASE_URL=http://localhost:3003
-AI_ORCHESTRATION_BASE_URL=http://localhost:3004
-WORKER_MANAGER_BASE_URL=http://localhost:3005
-GATEWAY_BASE_URL=http://localhost:3000
-
-# Web app
-NEXT_PUBLIC_API_URL=http://localhost:3001
-GATEWAY_URL=http://localhost:3000
-
-# Host agent (if running locally)
-WORKER_HOST=localhost
-```
-
-See `docs/ENV_CONTRACT.md` for the full variable reference.
-
-**Security rules:**
-- Never commit `.env` files
-- `NODE_ENV=production` in `apps/ai-orchestration/src/context.ts` triggers `GCPSecretManagerProvider`. Do not set `NODE_ENV=production` locally unless you have GCP credentials configured.
-
-## 4. Run migrations
+Start Redis:
 
 ```bash
-pnpm --filter="@udd/database" migrate
+docker run --name udd-redis -p 6379:6379 -d redis:7-alpine
 ```
 
-Verify:
+If those containers already exist, start them instead of recreating them:
 
 ```bash
-psql postgresql://udddev:udddev@localhost:5432/udd_dev \
-  -c "SELECT version, applied_at FROM schema_migrations ORDER BY applied_at;"
+docker start udd-postgres udd-redis
 ```
 
-## 5. Build shared packages
+## Environment setup
+
+Set the minimum runtime variables before starting services:
+
+```powershell
+$env:NODE_ENV='development'
+$env:DATABASE_URL='postgresql://udddev:udddev@localhost:5432/udd_dev'
+$env:REDIS_URL='redis://localhost:6379'
+$env:JWT_SECRET='dev-secret'
+$env:WORKOS_API_KEY='your-workos-api-key'
+$env:WORKOS_CLIENT_ID='your-workos-client-id'
+$env:WORKOS_WEBHOOK_SECRET='your-workos-webhook-secret'
+$env:NEXT_PUBLIC_WORKOS_CLIENT_ID='your-workos-client-id'
+$env:API_BASE_URL='http://localhost:8080'
+$env:ORCHESTRATOR_BASE_URL='http://localhost:3002'
+$env:COLLABORATION_BASE_URL='http://localhost:3003'
+$env:AI_ORCHESTRATION_BASE_URL='http://localhost:3004'
+$env:WORKER_MANAGER_BASE_URL='http://localhost:3005'
+$env:GATEWAY_BASE_URL='http://localhost:3000'
+$env:NEXT_PUBLIC_API_URL='http://localhost:8080'
+$env:GATEWAY_URL='http://localhost:3000'
+$env:OBJECT_STORAGE_PROVIDER='local'
+$env:OBJECT_STORAGE_BUCKET='udd-local'
+$env:QUEUE_PROVIDER='sqs'
+$env:WORKER_HOST='10.0.0.10'
+$env:WORKER_SUBNET_PREFIX='10.'
+```
+
+The full catalog is in [docs/ENV_CONTRACT.md](./ENV_CONTRACT.md).
+
+## Database boot sequence
+
+1. Build shared packages:
 
 ```bash
 pnpm build --filter="./packages/*"
 ```
 
-This step is required before starting services. Apps import from compiled package output directories.
-
-## 6. Start all services
+2. Run migrations:
 
 ```bash
-pnpm dev
+pnpm --filter @udd/database build
+pnpm --filter @udd/database migrate
 ```
 
-Turborepo starts all services in parallel with file watching:
-
-| Service | URL |
-|---------|-----|
-| Preview Gateway | http://localhost:3000 |
-| API | http://localhost:3001 |
-| Orchestrator | http://localhost:3002 |
-| Collaboration | http://localhost:3003 |
-| AI Orchestration | http://localhost:3004 |
-| Worker Manager | http://localhost:3005 |
-| Web App | http://localhost:3006 |
-| PostgreSQL | localhost:5432 |
-| Redis | localhost:6379 |
-
-**Note:** `session-reaper` and `usage-meter` are background services. Run them separately if needed:
+3. Verify migrations applied:
 
 ```bash
-pnpm --filter="@udd/session-reaper" dev
-pnpm --filter="@udd/usage-meter" dev
+psql postgresql://udddev:udddev@localhost:5432/udd_dev -c "SELECT version, applied_at FROM schema_migrations ORDER BY applied_at;"
 ```
 
-## Health checks
+## Recommended local service startup
 
-Every service exposes:
+Do **not** rely on `pnpm dev` as the clean all-services entrypoint. The current repo has default port collisions.
 
-```
-GET /health   — full health report with dependency statuses
-GET /ready    — readiness probe
-GET /alive    — liveness probe
-```
+### Minimum hosted-web stack
 
-## Running tests
+Start these in separate terminals:
 
 ```bash
-pnpm test:unit          # Unit tests (no external dependencies required)
-pnpm test:integration   # Integration tests (requires DB + Redis from step 2)
-pnpm test               # All tests
+pnpm --filter @udd/api dev
+pnpm --filter @udd/orchestrator dev
+pnpm --filter @udd/ai-orchestration dev
+pnpm --filter @udd/worker-manager dev
+pnpm --filter @udd/gateway dev
 ```
 
-## Useful commands
+Start the web app on a non-conflicting port:
+
+```powershell
+$env:PORT='3006'; pnpm --filter @udd/web dev
+```
+
+### Optional supporting services
 
 ```bash
-pnpm typecheck          # TypeScript check across all packages and apps
-pnpm lint               # ESLint
-pnpm format             # Auto-format with Prettier
-pnpm format:check       # Check formatting without modifying files
-pnpm build              # Full build of all packages and apps
+pnpm --filter @udd/collaboration dev
+pnpm --filter @udd/host-agent dev
 ```
+
+Run usage meter on a non-conflicting port:
+
+```powershell
+$env:PORT='3007'; pnpm --filter @udd/usage-meter dev
+```
+
+Run session reaper in a dedicated terminal:
+
+```bash
+pnpm --filter @udd/session-reaper dev
+```
+
+## Tests
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm test:unit
+pnpm test:integration
+pnpm test
+```
+
+## Representative local stack validation
+
+### Hosted web surface
+
+1. Start the minimum hosted-web stack above.
+2. Open the local web app at `http://localhost:3006`.
+3. Sign in through the local auth flow.
+4. Verify project and workspace pages load against the local API.
+
+### iOS surface
+
+1. On macOS, open `apps/mobile-ios/Package.swift` in Xcode.
+2. Confirm `AppConfig.swift` points DEBUG builds at the local API and gateway.
+3. Run the generated `UDDCompanion` scheme in Simulator.
+4. Sign in and verify the iOS client can load workspaces, projects, sessions, and previews against the local stack.
+
+## Validate AI provider configuration locally
+
+### Fast validation
+
+```bash
+pnpm --filter @udd/adapters test
+```
+
+This verifies the adapter registry and secret-manager test surface.
+
+### End-to-end local validation
+
+1. Start `@udd/api` and `@udd/ai-orchestration` with `NODE_ENV=development`.
+2. Sign in through the local web app or iOS app.
+3. Capture a workspace ID from `/v1/workspaces`.
+4. POST a provider config to `/v1/workspaces/{workspaceId}/ai/providers`.
+5. Verify the response omits plaintext credentials.
+6. Verify the `provider_configs` table stores only `credential_secret_ref`.
+
+The current route body requires:
+
+- `name`
+- `providerType`
+- `endpointUrl`
+- `authScheme`
+- `credential`
+
+## Validate preview behavior locally
+
+### Supported validation path today
+
+```bash
+pnpm --filter @udd/gateway test
+```
+
+This is the reliable local validation path for preview authorization and proxy behavior in the current repo.
+
+### Manual local smoke test
+
+1. Start API, gateway, orchestrator, worker-manager, and host-agent locally.
+2. Use the web or iOS client to start a session and request a preview.
+3. Verify preview URL creation and gateway auth behavior.
+
+Current limitation: the hosted runtime boot path is incomplete, so full preview execution is not a trustworthy local proof of production runtime behavior. That is a known gap, not a doc omission.
+
+## Docs index maintenance
+
+There is no doc-index generator in this repo. Update these files manually when docs move or priorities change:
+
+- `docs/_INDEX.md`
+- `README.md`
+- `AGENTS.md`
+- `AI.md`
+- `GEMINI.md`
+
+After updating links, run a quick link and terminology sweep before merging.

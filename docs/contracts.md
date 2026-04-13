@@ -1,209 +1,107 @@
-# Contracts and Integration Points
+# Contracts
 
-All shared types are defined in `packages/contracts/src/`. This package is the authoritative contract between services. When types in `contracts/` change, all consumers must be updated.
+Back to [docs/_INDEX.md](./_INDEX.md).
 
----
+## Contract scope
 
-## State Machines
+This file defines the stable internal boundaries the rest of the docs rely on. Web and iOS are the first-class client consumers of these boundaries. Current HTTP routes and database tables still expose workspace-shaped implementation details, but those details do not redefine the canonical contracts below.
 
-Defined in `packages/contracts/src/enums.ts`.
+## Common rules
 
-### Session state transitions (`SESSION_TRANSITIONS`)
+- Every contract must expose explicit inputs, outputs, and error cases.
+- Provider credentials never cross a boundary as durable plaintext.
+- Stack-specific behavior belongs behind stack or scaffold boundaries, not in generic client or API contracts.
+- When code still uses workspace-shaped DTOs, treat that as current implementation reality and record drift in [docs/implementation-gaps.md](./implementation-gaps.md).
 
-| From | Valid next states |
-|------|------------------|
-| `creating` | `starting`, `failed` |
-| `starting` | `running`, `failed` |
-| `running` | `idle`, `stopping`, `failed` |
-| `idle` | `running`, `stopping`, `failed` |
-| `stopping` | `stopped`, `failed` |
-| `stopped` | *(terminal)* |
-| `failed` | *(terminal)* |
+## AI orchestration contract
 
-### Pipeline run status transitions (`PIPELINE_RUN_TRANSITIONS`)
+| Item | Contract |
+|---|---|
+| Purpose | Execute provider-backed AI work, pipeline runs, and future agent-driven edit flows |
+| Inputs | Provider config ref, model/provider type, structured request payload, run metadata, correlation ID |
+| Outputs | Run status, model response, invocation metadata, audit-safe logs |
+| Errors | Invalid provider config, secret lookup failure, unsupported provider, provider failure, rate limit, validation failure |
+| Current code | `apps/ai-orchestration`, `packages/adapters` |
 
-| From | Valid next states |
-|------|------------------|
-| `queued` | `preparing`, `cancelled` |
-| `preparing` | `running`, `cancelled`, `failed` |
-| `running` | `succeeded`, `failed`, `cancelled` |
-| `succeeded` | *(terminal)* |
-| `failed` | *(terminal)* |
-| `cancelled` | *(terminal)* |
+## Stack adapter contract
 
-### Lease state transitions
+| Item | Contract |
+|---|---|
+| Purpose | Normalize stack detection, run behavior, preview expectations, and future stack-aware edits |
+| Inputs | Project files, explicit stack hint, run or build intent |
+| Outputs | Detected stack, commands, preview defaults, adapter-specific capabilities |
+| Errors | Unknown stack, ambiguous stack, unsupported stack, invalid adapter output |
+| Current code | No first-class registry yet; canonical boundary only |
 
-`pending → active → released | expired | orphaned`
+## Scaffold contract
 
-### Preview route state transitions
+| Item | Contract |
+|---|---|
+| Purpose | Create new projects from an idea, template, or selected stack |
+| Inputs | Idea, template ID, stack choice, project metadata |
+| Outputs | Project skeleton, stack metadata, initial files, next recommended run path |
+| Errors | Unknown template, unsupported stack, invalid scaffold parameters |
+| Current code | No first-class scaffold engine yet |
 
-`pending → active → expired | revoked`
+## Runtime contract
 
----
+| Item | Contract |
+|---|---|
+| Purpose | Create, start, stop, and observe hosted run sessions |
+| Inputs | Project identity, user identity, desired runtime parameters, correlation ID |
+| Outputs | Run session record, state transitions, runtime target, lifecycle events |
+| Errors | Invalid project, no capacity, invalid transition, concurrency conflict, runtime boot failure |
+| Current code | `apps/orchestrator`, `apps/worker-manager`, `apps/host-agent`, `apps/session-reaper` |
 
-## API DTOs (`packages/contracts/src/api.ts`)
+## Preview contract
 
-**Auth:**
-- `ExchangeTokenRequest` — `{ code: string }`
-- `ExchangeTokenResponse` — `{ token: string, user: User }`
+| Item | Contract |
+|---|---|
+| Purpose | Expose a running session through a stable preview surface |
+| Inputs | Session ID, auth context, preview TTL or policy |
+| Outputs | Preview binding, preview URL, preview state |
+| Errors | Session not runnable, binding failure, expired or revoked preview, unauthorized access |
+| Current code | `apps/gateway`, preview repositories, web and iOS preview consumers |
 
-**Workspace:**
-- `CreateWorkspaceRequest` — `{ name, slug? }`
-- `InviteMemberRequest` — `{ email, role: MembershipRole }`
+## Model provider contract
 
-**Project:**
-- `CreateProjectRequest` — `{ name, description? }`
+| Item | Contract |
+|---|---|
+| Purpose | Standardize model invocation across Anthropic, OpenAI, Google, compatible endpoints, and future providers |
+| Inputs | Normalized invocation request, model settings, fetched credential |
+| Outputs | Normalized response, usage metadata, safe error surface |
+| Errors | Unsupported provider, invalid credential, provider outage, malformed response |
+| Current code | `packages/adapters/src/model-provider/*` |
 
-**Session:**
-- `CreateSessionRequest` — `{ projectId }`
-- `CreateSessionResponse` — session entity including `worker_host`, `host_port`
+## Secret manager contract
 
-**Preview:**
-- `CreatePreviewRouteRequest` — `{ sessionId, ttlSeconds? }`
-- `CreatePreviewRouteResponse` — `{ previewId, previewUrl, expiresAt }`
+| Item | Contract |
+|---|---|
+| Purpose | Store and fetch secret values without persisting plaintext in product tables |
+| Inputs | Secret write request, secret ref lookup, rotation request |
+| Outputs | Secret ref, fetched secret value at call time, rotation result |
+| Errors | Not found, permission denied, provider unavailable, invalid ref |
+| Current code | `GCPSecretManagerProvider`, `InMemorySecretManagerProvider` |
 
-**AI providers / pipelines:**
-- `CreateProviderConfigRequest` — `{ name, providerType, credential, modelCatalogMode }`
-- `CreatePipelineRunRequest` — `{ pipelineId, inputs, idempotencyKey }`
-- `CreatePipelineRunResponse` — `{ runId, status: 'queued' }`
+## Export and deploy adapter contract
 
-**Envelope types:**
-- `ApiError` — `{ code: string, message: string, correlationId: string }`
-- `ApiResponse<T>` — `{ data: T, correlationId: string }`
-- `PaginatedResponse<T>` — `{ data: T[], nextCursor?: string, totalCount?: number }`
+| Item | Contract |
+|---|---|
+| Purpose | Hand artifacts or repos off to external git, storage, or deployment targets |
+| Inputs | Artifact metadata, repo metadata, destination target, auth context |
+| Outputs | Export record, external reference, adapter result |
+| Errors | Unsupported target, auth failure, external provider failure |
+| Current code | Partial via git, storage, billing, and notification adapters; not a first-class deploy product surface |
 
----
+## Error envelope rules
 
-## Event Topics (`packages/contracts/src/events.ts`)
+- Client-facing errors must expose a stable code and a human-usable message.
+- Internal errors may carry correlation IDs and safe metadata.
+- Secret-bearing payloads must never be included in an error body.
+- Web and iOS contract changes must remain backward-compatible unless an explicit ADR says otherwise.
 
-| Topic | Publisher | Key Consumers |
-|-------|-----------|---------------|
-| `SESSION_CREATED` | orchestrator | session-reaper, usage-meter |
-| `SESSION_RESUMED` | orchestrator | usage-meter |
-| `SESSION_IDLE_DETECTED` | session-reaper | orchestrator |
-| `SESSION_STATE_CHANGED` | orchestrator | collaboration, usage-meter |
-| `SESSION_TERMINATED` | orchestrator | collaboration, usage-meter |
-| `PREVIEW_ROUTE_BOUND` | orchestrator | (gateway future cache invalidation) |
-| `PREVIEW_ROUTE_REVOKED` | orchestrator | (gateway future cache invalidation) |
-| `WORKER_REGISTERED` | worker-manager | orchestrator |
-| `WORKER_UNHEALTHY` | worker-manager | orchestrator, monitoring |
-| `SANDBOX_CAPACITY_LOW` | worker-manager | monitoring/alerting |
-| `ARTIFACT_CREATED` | orchestrator | usage-meter |
-| `USAGE_METER_RECORDED` | usage-meter | billing adapter |
-| `PROVIDER_CONFIG_CREATED` | ai-orchestration | audit |
-| `PROVIDER_CONFIG_UPDATED` | ai-orchestration | audit |
-| `PROVIDER_CONFIG_SECRET_ROTATED` | ai-orchestration | audit |
-| `PROVIDER_CONFIG_DELETED` | ai-orchestration | audit |
-| `AGENT_ROLE_CREATED` | ai-orchestration | audit |
-| `AGENT_ROLE_UPDATED` | ai-orchestration | audit |
-| `PIPELINE_CREATED` | ai-orchestration | audit |
-| `PIPELINE_UPDATED` | ai-orchestration | audit |
-| `PIPELINE_RUN_CREATED` | ai-orchestration | usage-meter |
-| `PIPELINE_RUN_STATUS_CHANGED` | ai-orchestration | usage-meter, api (polling) |
+## Current implementation notes
 
-Note: `WORKER_REGISTERED` and `WORKER_UNHEALTHY` are defined as event topics, but the current worker-manager implementation only calls `upsertSnapshot()`. Emission of these specific events has not been verified in the worker-manager source.
-
----
-
-## Adapter Boundaries (`packages/adapters/src/`)
-
-| Boundary | Interface | Production implementation | Dev/test implementation | Status |
-|----------|-----------|--------------------------|------------------------|--------|
-| Model invocation | `ModelProviderAdapter` | `AnthropicAdapter`, `OpenAIAdapter`, `GoogleAdapter`, `OpenAICompatibleAdapter`, `SelfHostedAdapter` | Same | Implemented |
-| Secret storage | `SecretManagerProvider` | `GCPSecretManagerProvider` | `InMemorySecretManagerProvider` | Implemented |
-| Auth provider | `AuthProvider` | `WorkOSAuthProvider` | — | Implemented |
-| Git provider | `GitProvider` | GitHub, GitLab, Bitbucket adapters | — | Implemented |
-| Object storage | `StorageProvider` | S3 adapter (via `OBJECT_STORAGE_PROVIDER=aws`) | Local filesystem | Implemented |
-| Queue | `QueueProvider` | `SqsEventPublisher` (via `QUEUE_PROVIDER=sqs`) | Noop/Redis | Implemented |
-| Billing | `BillingProvider` | `StripeBillingProvider` | — | **Stubbed** — all methods throw `NotImplementedError` |
-| Notifications | `NotificationProvider` | `EmailNotificationProvider` | — | **Stubbed** — `send()` throws `NotImplementedError` |
-
-**Secret manager selection (from `apps/ai-orchestration/src/context.ts`):**
-```typescript
-process.env['NODE_ENV'] === 'production'
-  ? new GCPSecretManagerProvider()
-  : new InMemorySecretManagerProvider()
-```
-This is not governed by a `SECRET_MANAGER_PROVIDER` env var. It is hardcoded by `NODE_ENV`.
-
-**Model provider registry:** `ModelProviderAdapterRegistry.get(providerType)` in `packages/adapters/src/model-provider/registry.ts` is the sole mapping from `ProviderType` enum values to adapter instances.
-
----
-
-## Inter-Service HTTP Calls
-
-| Caller | Callee | Endpoint | Purpose |
-|--------|--------|----------|---------|
-| `api` | `orchestrator` | various `/v1/sessions`, `/v1/previews` | Session and preview route CRUD |
-| `api` | `ai-orchestration` | transparent proxy | All AI endpoints (providers, roles, pipelines, runs) |
-| `gateway` | `database` (directly) | — | Preview route lookup via `PgPreviewRouteRegistry` |
-| `session-reaper` | `orchestrator` | session stop endpoints | Drive session stop transitions |
-| `host-agent` | `worker-manager` | `POST /internal/capacity-snapshot` | Registration and periodic heartbeats |
-
-**Important:** The orchestrator does NOT call worker-manager via HTTP for lease allocation. It queries `worker_capacity` directly via `PgWorkerCapacityRepository.findHealthyWithLock()` and creates leases in the same DB transaction. See `docs/runtime.md`.
-
----
-
-## Worker-Manager API
-
-Single endpoint (internal, no auth — mTLS planned but not yet enforced):
-
-```
-POST /internal/capacity-snapshot
-Content-Type: application/json
-
-{
-  "workerHost": "string",
-  "totalSlots": number,
-  "usedSlots": number,
-  "availablePorts": number[],
-  "healthy": boolean
-}
-
-→ 204 No Content
-→ 400 { code: "VALIDATION_ERROR", message: "..." }
-→ 500 { code: "INTERNAL_ERROR", message: "..." }
-```
-
----
-
-## iOS Companion API Surface
-
-The companion app (`apps/mobile-ios`) expects these endpoints to be stable on `apps/api`. Breaking changes require a client update.
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/v1/me` | Current user profile |
-| `GET` | `/v1/workspaces` | List user's workspaces |
-| `GET` | `/v1/workspaces/:id` | Workspace detail |
-| `GET` | `/v1/workspaces/:id/members` | Workspace members |
-| `GET` | `/v1/workspaces/:id/projects` | Projects in workspace |
-| `POST` | `/v1/workspaces/:id/projects` | Create project |
-| `GET` | `/v1/projects/:id` | Project detail |
-| `GET` | `/v1/projects/:id/sessions` | Sessions for project |
-| `POST` | `/v1/sessions` | Create session |
-| `POST` | `/v1/sessions/:id/start` | Start session |
-| `POST` | `/v1/sessions/:id/stop` | Stop session |
-| `GET` | `/v1/projects/:id/comments` | Comment threads |
-| `POST` | `/v1/projects/:id/comments` | Post comment |
-| `GET` | `/v1/projects/:id/previews` | Preview routes |
-| `POST` | `/auth/session/exchange` | WorkOS code → JWT |
-
-## Android Companion API Surface
-
-The Android app (`apps/mobile-android`) implements:
-- `GET /v1/me` — current user
-- `GET /v1/workspaces` — workspace list
-
-Its in-code scope comment states: "Status/review/comments companion — NO code editor, NO terminal." The full API surface it will need is not yet defined; the iOS surface above is the closest reference.
-
----
-
-## Pagination
-
-All list endpoints use keyset pagination:
-- Request: `?cursor={base64url_encoded_cursor}&limit={n}`
-- Response: `PaginatedResponse<T>` with `nextCursor` for the next page
-- Cursors encode `(timestamp, id)` pairs for stable, DESC-ordered iteration
-
-Implementation: `packages/database/src/repositories/pg/cursor.ts`
+- `packages/contracts` remains the code-level contract base for entities, DTOs, events, and enums.
+- The current external API still reflects workspace ownership and workspace-scoped routes.
+- The canonical contract set in this file is stricter and more stable than the current route layout. See [docs/implementation-gaps.md](./implementation-gaps.md).

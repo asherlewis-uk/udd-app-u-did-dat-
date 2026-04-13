@@ -1,66 +1,45 @@
-# System Overview
+# Overview
 
-## What this system is
+Back to [docs/_INDEX.md](./_INDEX.md).
 
-UDD Platform is a multi-tenant cloud IDE and AI pipeline execution platform. Users create workspaces, run code in isolated sandbox sessions, expose running services via a secure preview proxy, and execute AI pipelines using configurable model providers.
+## Who This Product Is For
 
-The platform is a pnpm/Turborepo monorepo with:
-- 9 backend Node.js/Express/TypeScript services
-- 1 Next.js 14 web app
-- 1 Swift/SwiftUI iOS companion app
-- 1 Kotlin/Jetpack Compose Android companion app
-- 8 shared TypeScript packages
+UDD is for solo builders who want a hosted, AI-native development product that works across stacks and also provides a first-class iOS surface without turning the product into a workspace-centric team platform.
 
-## Build phase status
+## What The Product Is
 
-| Phase | Status | Description |
-|-------|--------|-------------|
-| Phase 1 | **Complete** | Monorepo scaffolding, shared contracts, DB schema, service skeletons compilable |
-| Phase 2 | **Complete** | Real DB repositories, adapter HTTP implementations, API handlers, tests |
-| Phase 3 | **Pending approval** | UI overhaul, design system, web shell, AI/ops surfaces |
+UDD is a hosted-first development environment and runtime product with two required client surfaces:
+- the hosted web surface
+- the iOS surface
 
-Phase 3 has not been started. Do not implement Phase 3 work without explicit user approval.
+Both surfaces operate against the same hosted project, session, preview, and AI boundaries.
 
-## Implementation status by component
+## Primary Workflow
 
-| Component | Status | Detail |
-|-----------|--------|--------|
-| PostgreSQL repositories (all entities) | **Implemented** | Real SQL queries, optimistic locking |
-| Session lifecycle state machine | **Implemented** | create → start → run ⇄ idle → stop, atomic transactions |
-| Preview gateway proxy | **Implemented** | DB-authoritative route lookup, auth enforcement |
-| Orchestrator lease allocation | **Implemented** | DB-direct via `FOR UPDATE SKIP LOCKED` on `worker_capacity` |
-| Worker-manager capacity ingestion | **Implemented** | `POST /internal/capacity-snapshot` endpoint |
-| Host agent — registration + heartbeat | **Implemented** | POSTs snapshots to worker-manager on startup and interval |
-| Host agent — capacity measurement | **Stubbed** | `collectCapacitySnapshot()` returns hardcoded 10 slots, ports 32100–32109. TODO: query actual OS/container runtime |
-| AI provider CRUD + secret manager | **Implemented** | GCP Secret Manager in production, InMemory in dev/test |
-| Pipeline DAG validation + run execution | **Implemented** | Kahn's algorithm, async execution, idempotency key |
-| WorkOS OAuth → JWT | **Implemented** | Code exchange, user upsert, signed JWT |
-| RBAC permission matrix | **Implemented** | 5 roles, permission table in `packages/auth/src/rbac.ts` |
-| Collaboration (WebSocket, comments) | **Implemented** | Presence tracking + DB-backed comments |
-| iOS companion app | **Implemented** | PKCE auth, Keychain JWT, typed API client, all screens |
-| Android companion app | **Partial** | Compose tab UI + Ktor API client implemented; scope-limited (status/review/comments only) |
-| Session reaper | **Implemented** | Idle session detection, orphaned lease cleanup |
-| Usage metering | **Implemented** | Event ingestion and DB recording |
-| Web app UI | **Partial** | SWR hooks and page shells exist; design system is Phase 3 |
-| MicroVM provisioning on worker hosts | **Not implemented** | Port allocation protocol exists; actual VM provisioning is not wired in host-agent |
-| mTLS between planes | **Not implemented** | ADR 001 specifies it; endpoint comment notes "mTLS in prod" but not yet enforced |
-| Billing adapter integration | **Stubbed** | `StripeBillingProvider` — all methods throw `NotImplementedError` |
-| Notification adapter integration | **Stubbed** | `EmailNotificationProvider.send()` throws `NotImplementedError` |
-| `model_invocation_logs` read surface | **Not implemented** | Write path exists; no read endpoints defined |
+`idea -> choose or open project -> scaffold or edit with AI -> run in the hosted runtime -> preview through the hosted surface -> validate on web and iOS -> optionally export or deploy elsewhere`
 
-## Infrastructure
+Local development is supported for engineering, debugging, and validation, but it does not replace the hosted product story.
 
-**Deployment target: GCP** — Cloud Run (services), Cloud SQL PostgreSQL 16, Memorystore (Redis), GCR (images), GCS (Terraform state, object storage), Cloud Scheduler (session-reaper triggers every 5 minutes).
+## What The Product Is Not
 
-The README states "AWS (ECS/Fargate, RDS...)" — this is inaccurate. All Terraform in `infra/terraform/` uses the `google` provider and targets GCP resources exclusively. The application-layer adapters (`@udd/adapters`) include AWS-compatible implementations for SQS and S3, but the production secret manager is `GCPSecretManagerProvider`, not `AWSSecretManagerProvider`.
+- Not a team-first workspace product
+- Not an org-admin platform with RBAC as the product center
+- Not an infrastructure ownership product where deployment is the main value proposition
+- Not an iOS-first rewrite of a web product
 
-## Deprecated framing — do not use
+## Major Subsystems
 
-| Stale claim | What is true instead |
-|-------------|---------------------|
-| "Phase 1 skeleton / stub implementations" | Phase 2 complete — all skeletons replaced with real implementations |
-| "Phase 2 not started" | Phase 2 complete as of 2026-04-11 |
-| "AWS ECS/Fargate/RDS deployment" | GCP Cloud Run + Cloud SQL |
-| "AWS Secrets Manager in production" | `GCPSecretManagerProvider` is the production implementation |
-| "Android companion is a skeleton" | Android has real Compose UI + Ktor API client; it is partial, not skeletal |
-| "HOST_AGENT queries actual sandbox capacity" | `collectCapacitySnapshot()` returns hardcoded values; actual OS query is a pending stub |
+- Hosted web surface
+- First-class iOS surface
+- Public API and auth surface
+- Hosted runtime and session orchestration
+- Hosted preview system
+- AI orchestration and provider configuration
+- Provider, secret, storage, queue, billing, and notification adapters
+- Supported local development path for builders and operators
+
+## Supported Stack Philosophy
+
+- The product is polyglot by default.
+- Stack support belongs behind adapters, templates, and stack-specific modules rather than inside the product core.
+- The current repo does not yet expose a first-class scaffold or stack registry layer as code. That gap is tracked in [implementation-gaps.md](implementation-gaps.md).

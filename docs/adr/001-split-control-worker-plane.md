@@ -1,24 +1,25 @@
-# ADR 001: Split Control Plane / Worker Plane
+# ADR 001: Split Control Plane and Runtime Plane
 
-**Status**: Accepted  
-**Date**: 2026-04-11
+**Status:** Canonical  
+**Date:** 2026-04-11  
+Back to [docs/_INDEX.md](../_INDEX.md).
 
 ## Context
 
-The platform needs to run user code in isolated sandboxes. User sandboxes must not be able to influence the platform control services or access other users' data. Naive co-location of control services and worker sandboxes on the same network segment creates lateral movement risk.
+The product is hosted-first. Hosted runtime execution must stay isolated from the public control surfaces used by web and iOS clients. A flat network where runtime targets and public APIs share the same trust boundary is not acceptable for the hosted product.
 
 ## Decision
 
-Separate all infrastructure into two planes:
+Keep a split between:
 
-**Control plane**: API gateway, orchestrator, collaboration, AI orchestration, worker manager. Reachable from the internet via ALB. Connected to the database and Redis.
+- **Control plane**: public and internal product services such as API, gateway, orchestration, auth-facing services, and AI orchestration.
+- **Runtime plane**: the runtime hosts and runtime-facing infrastructure used to execute user work.
 
-**Worker plane**: Worker hosts running user sandboxes. Private subnet only — no direct internet access. Not reachable from the internet. Only the preview gateway (which runs in the control plane) can reach worker preview ports.
+The preview gateway is the controlled ingress from product clients into hosted runtime previews.
 
 ## Consequences
 
-- Sandbox breakout cannot directly reach control plane services.
-- Preview gateway is the only path from users to worker preview ports and must enforce authorization on every request.
-- Worker hosts register with the worker manager via an internal control channel.
-- Inter-plane traffic must go through the gateway tier, enabling mTLS enforcement in Phase 2.
-- Additional networking complexity versus a flat network, but necessary for multi-tenant security.
+- Hosted preview traffic remains a gateway concern, not a direct runtime-host concern.
+- Runtime hosts stay out of the public product surface.
+- Web and iOS both benefit from a cleaner hosted trust boundary.
+- This ADR stays canonical for the hosted-first architecture.

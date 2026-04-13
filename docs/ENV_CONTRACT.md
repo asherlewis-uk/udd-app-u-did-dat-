@@ -1,93 +1,107 @@
-# Environment Variable Contract
+# Environment Contract
 
-All services consume configuration via `packages/config/src/index.ts`.
-This document is the canonical reference for all environment variables.
+Back to [docs/_INDEX.md](./_INDEX.md).
 
-## Required everywhere
+## How to read this file
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `REDIS_URL` | Redis connection string |
-| `JWT_SECRET` | Secret for signing session JWTs |
-| `NODE_ENV` | `development` \| `staging` \| `production` \| `test` |
+- This is the canonical env and config catalog for the repo.
+- It includes both typed config from `packages/config` and raw `process.env` reads still present in apps and packages.
+- If a variable is used in code or workflows and not listed here, that is a docs bug.
+- If config behavior disagrees with code behavior, the drift is called out explicitly and also tracked in [docs/implementation-gaps.md](./implementation-gaps.md).
 
-## Auth (WorkOS)
+## Core runtime variables
 
-| Variable | Description |
-|----------|-------------|
-| `WORKOS_API_KEY` | WorkOS API key |
-| `WORKOS_CLIENT_ID` | WorkOS OAuth client ID |
-| `WORKOS_WEBHOOK_SECRET` | WorkOS webhook signing secret |
-| `JWT_EXPIRES_IN_SECONDS` | Session token TTL (default: 86400) |
+| Variable | Owner | Required | Default | Allowed values | Effect | Sensitivity | Scope |
+|---|---|---|---|---|---|---|---|
+| `NODE_ENV` | All services, especially `ai-orchestration` and logger | Optional in code, required in practice | `development` | `development`, `staging`, `production`, `test` | Controls environment mode, non-prod stack traces, and current secret-manager selection in `ai-orchestration` | Low | local, runtime, ops |
+| `DATABASE_URL` | `packages/database` and all DB-backed apps | Yes | None | PostgreSQL URI | Connects services to PostgreSQL | High | local, runtime, ops |
+| `DATABASE_POOL_MAX` | `packages/config` | No | `10` | Integer | Sets DB pool max | Low | runtime, ops |
+| `DATABASE_SSL` | `packages/config` | No | `false` | `true`, `false`, `1`, `0` | Enables DB SSL at config layer | Low | runtime, ops |
+| `REDIS_URL` | `packages/config` | Yes | None | Redis URI | Connects services to Redis | Medium | local, runtime, ops |
+| `PORT` | App entrypoints | No | App-specific | Integer | Listener port for each Node service; current defaults differ by app and collide locally | Low | local, runtime |
 
-## Secret Manager
+## Auth and session variables
 
-| Variable | Description |
-|----------|-------------|
-| `SECRET_MANAGER_PROVIDER` | `aws` \| `memory` (dev/test only) |
-| `AWS_REGION` | AWS region (default: us-east-1) |
-| `AWS_SECRETS_PREFIX` | Prefix for secret names (default: /udd/) |
+| Variable | Owner | Required | Default | Allowed values | Effect | Sensitivity | Scope |
+|---|---|---|---|---|---|---|---|
+| `JWT_SECRET` | `packages/auth`, API | Yes | None | Any non-empty secret | Signs and validates session JWTs | High | local, runtime, ops |
+| `JWT_EXPIRES_IN_SECONDS` | `packages/config` | No | `86400` | Integer seconds | Session token TTL | Low | runtime, ops |
+| `WORKOS_API_KEY` | `WorkOSAuthProvider` | Yes for auth flows | None | WorkOS API key | Server-to-WorkOS auth calls | High | local, runtime, ops |
+| `WORKOS_CLIENT_ID` | Auth flows | Yes for auth flows | None | WorkOS client ID | Used by server-side auth wiring and iOS config inputs | Low | local, runtime, ops |
+| `WORKOS_WEBHOOK_SECRET` | Auth flows | Yes where webhook verification is used | None | WorkOS webhook secret | Validates incoming WorkOS webhook traffic | High | runtime, ops |
+| `NEXT_PUBLIC_WORKOS_CLIENT_ID` | `apps/web` | Yes for hosted web sign-in | None | WorkOS client ID | Used by the hosted web login page to construct WorkOS auth requests | Low | local, runtime |
 
-## Object Storage
+## Service discovery and client URLs
 
-| Variable | Description |
-|----------|-------------|
-| `OBJECT_STORAGE_PROVIDER` | `aws` \| `local` |
-| `OBJECT_STORAGE_BUCKET` | S3 bucket name |
+| Variable | Owner | Required | Default | Allowed values | Effect | Sensitivity | Scope |
+|---|---|---|---|---|---|---|---|
+| `API_BASE_URL` | Internal callers | No | `http://localhost:3001` in config | URL | Base URL other services use for API calls; note API service code itself defaults to `8080` unless `PORT` is overridden | Low | local, runtime |
+| `ORCHESTRATOR_BASE_URL` | Internal callers | No | `http://localhost:3002` | URL | Base URL for orchestrator | Low | local, runtime |
+| `COLLABORATION_BASE_URL` | Internal callers | No | `http://localhost:3003` | URL | Base URL for collaboration service | Low | local, runtime |
+| `AI_ORCHESTRATION_BASE_URL` | Internal callers | No | `http://localhost:3004` | URL | Base URL for AI orchestration service | Low | local, runtime |
+| `WORKER_MANAGER_BASE_URL` | Host agent and internal callers | No | `http://localhost:3005` | URL | Base URL for worker-manager capacity snapshot ingestion | Low | local, runtime |
+| `GATEWAY_BASE_URL` | Internal callers | No | `http://localhost:3000` | URL | Base URL for hosted preview gateway | Low | local, runtime |
+| `NEXT_PUBLIC_API_URL` | `apps/web` | Yes for useful local web work | None | URL | Browser-visible API base URL | Low | local, runtime |
+| `GATEWAY_URL` | `apps/web` | Yes for preview links and rewrites | None | URL | Browser-visible gateway URL | Low | local, runtime |
 
-## Queue
+## Hosted runtime, preview, and AI execution
 
-| Variable | Description |
-|----------|-------------|
-| `QUEUE_PROVIDER` | `sqs` \| `redis` |
-| `SQS_QUEUE_URL_PREFIX` | SQS queue URL prefix |
+| Variable | Owner | Required | Default | Allowed values | Effect | Sensitivity | Scope |
+|---|---|---|---|---|---|---|---|
+| `WORKER_HEARTBEAT_INTERVAL_MS` | `packages/config`, host agent | No | `30000` | Integer ms | Host-agent heartbeat interval | Low | runtime, ops |
+| `WORKER_HOST` | `apps/host-agent` | No | `localhost` in code | Hostname or IP | Reported runtime-host identity in heartbeats | Low | local, runtime |
+| `WORKER_SUBNET_PREFIX` | `apps/gateway` | No | `10.` | Prefix string | Gateway allowlist for runtime target addresses | Low | runtime, ops |
+| `SANDBOX_LEASE_TTL_SECONDS` | `apps/orchestrator` | No | `86400` | Integer seconds | Lease expiry window for runtime allocation | Low | runtime, ops |
+| `PREVIEW_DOMAIN` | `packages/config` | No | `localhost:3000` | Host or host:port | Default preview host construction | Low | local, runtime |
+| `PREVIEW_DEFAULT_TTL_SECONDS` | `packages/config` | No | `3600` | Integer seconds | Default preview TTL | Low | runtime, ops |
+| `IDLE_THRESHOLD_SECONDS` | `apps/session-reaper` raw env | No | `1800` | Integer seconds | Idle-session reap threshold actually used by session-reaper code | Low | runtime, ops |
+| `SCAN_INTERVAL_MS` | `apps/session-reaper` raw env | No | `60000` | Integer ms | Session-reaper scan loop interval actually used by code | Low | runtime, ops |
+| `IDLE_SESSION_SCAN_INTERVAL_MS` | `packages/config` | No | `60000` | Integer ms | Typed config accessor for a scan interval, but current session-reaper code does not use this name directly | Low | runtime, ops |
+| `STUCK_RUN_TIMEOUT_MS` | `packages/config` | No | `300000` | Integer ms | AI run timeout threshold for stuck-run handling | Low | runtime, ops |
+| `PIPELINE_MAX_NODES` | `apps/ai-orchestration` raw env | No | `500` | Positive integer | Maximum nodes accepted by DAG validator | Low | runtime, ops |
+| `PIPELINE_MAX_EDGES` | `apps/ai-orchestration` raw env | No | `5000` | Positive integer | Maximum edges accepted by DAG validator | Low | runtime, ops |
 
-## Telemetry
+## Secret manager, storage, and queue variables
 
-| Variable | Description |
-|----------|-------------|
-| `OTEL_SERVICE_NAME` | Service name for traces/logs |
-| `OTLP_ENDPOINT` | OpenTelemetry collector endpoint |
-| `LOG_LEVEL` | `debug` \| `info` \| `warn` \| `error` (default: info) |
+| Variable | Owner | Required | Default | Allowed values | Effect | Sensitivity | Scope |
+|---|---|---|---|---|---|---|---|
+| `SECRET_MANAGER_PROVIDER` | `packages/config` | No | `aws` | `aws`, `memory` | Typed config accessor only; not authoritative for current `ai-orchestration` provider selection | Low | runtime, ops |
+| `AWS_REGION` | `packages/config`, SQS publisher | No | `us-east-1` | AWS region | Region for AWS-backed storage, queue, or legacy secret-manager config | Low | runtime, ops |
+| `AWS_SECRETS_PREFIX` | `packages/config` | No | `/udd/` | String prefix | Prefix for legacy AWS secret naming | Low | runtime, ops |
+| `OBJECT_STORAGE_PROVIDER` | `packages/config` | No | `aws` | `aws`, `local` | Selects object-storage adapter family | Low | local, runtime, ops |
+| `OBJECT_STORAGE_BUCKET` | `packages/config` | Yes when storage is used | None | Bucket name | Bucket or local-bucket identifier for object storage | Medium | local, runtime, ops |
+| `QUEUE_PROVIDER` | `packages/config`, `packages/events` | No | `packages/config`: `sqs`; `packages/events` when unset: `noop` | `pubsub`, `sqs`, unset | Selects event publisher; current config and implementation defaults drift | Low | local, runtime, ops |
+| `SQS_QUEUE_URL_PREFIX` | `packages/config` | No | Empty string | String | Prefix helper for SQS queue URLs | Low | runtime, ops |
+| `SQS_EVENTS_QUEUE_URL` | `packages/events` | Required when `QUEUE_PROVIDER=sqs` | None | SQS queue URL | Queue URL for `SqsEventPublisher` | Medium | runtime, ops |
+| `GCP_PROJECT_ID` | `packages/events`, infra and workflows | Required for Pub/Sub and hosted deployments | None | GCP project ID | Required by `PubSubEventPublisher` and many hosted deployment paths | Medium | runtime, ops |
+| `PUBSUB_TOPIC_PREFIX` | `packages/events` | No | `udd` | String prefix | Prefix for Pub/Sub topic names | Low | runtime, ops |
 
-## Service Discovery
+## Observability variables
 
-| Variable | Description |
-|----------|-------------|
-| `API_BASE_URL` | API gateway internal URL |
-| `ORCHESTRATOR_BASE_URL` | Orchestrator internal URL |
-| `COLLABORATION_BASE_URL` | Collaboration service internal URL |
-| `AI_ORCHESTRATION_BASE_URL` | AI orchestration internal URL |
-| `WORKER_MANAGER_BASE_URL` | Worker manager internal URL |
-| `GATEWAY_BASE_URL` | Preview gateway public URL |
+| Variable | Owner | Required | Default | Allowed values | Effect | Sensitivity | Scope |
+|---|---|---|---|---|---|---|---|
+| `OTLP_ENDPOINT` | `packages/config` | No | Empty string | URL | Collector endpoint for traces or logs if wired | Low | runtime, ops |
+| `OTEL_SERVICE_NAME` | `packages/config`, logger | No | `udd-service` in config, `udd` in root logger fallback | String | Service label in telemetry and logs | Low | runtime, ops |
+| `LOG_LEVEL` | logger | No | `info` | `debug`, `info`, `warn`, `error` | Minimum log level | Low | local, runtime, ops |
 
-## Worker / Reaper
+## Workspace-shaped legacy and drift-prone variables
 
-| Variable | Description |
-|----------|-------------|
-| `WORKER_HOST` | Hostname reported by host-agent |
-| `WORKER_HEARTBEAT_INTERVAL_MS` | Heartbeat interval (default: 30000) |
-| `IDLE_SESSION_SCAN_INTERVAL_MS` | Reaper scan interval (default: 60000) |
-| `STUCK_RUN_TIMEOUT_MS` | Pipeline run stuck timeout (default: 300000) |
+| Variable | Owner | Required | Default | Allowed values | Effect | Sensitivity | Scope |
+|---|---|---|---|---|---|---|---|
+| `DEFAULT_ORGANIZATION_ID` | `apps/api/src/routes/workspaces.ts` | No, but required if creating workspaces without request body org ID | None | UUID | Fallback organization ID for workspace creation in current workspace-shaped API | Low | local, runtime, ops |
 
-## Preview
+## Workflow-only GitHub secrets and automation inputs
 
-| Variable | Description |
-|----------|-------------|
-| `PREVIEW_DOMAIN` | Domain for preview URLs |
-| `PREVIEW_DEFAULT_TTL_SECONDS` | Default preview TTL (default: 3600) |
+These are not authoritative architecture inputs, but they are relevant because the current repo automation reads them.
 
-## Web App (NEXT_PUBLIC_*)
+| Variable | Owner | Required | Default | Allowed values | Effect | Sensitivity | Scope |
+|---|---|---|---|---|---|---|---|
+| `AWS_ACCESS_KEY_ID` | `.github/workflows/terraform.yml` | Yes for current workflow | None | AWS access key | Used by a workflow that currently conflicts with GCP-oriented Terraform | High | ops |
+| `AWS_SECRET_ACCESS_KEY` | `.github/workflows/terraform.yml` | Yes for current workflow | None | AWS secret key | Used by a workflow that currently conflicts with GCP-oriented Terraform | High | ops |
+| `AWS_ACCOUNT_ID` | `.github/workflows/terraform.yml` | Yes for current workflow | None | AWS account ID | Used by a workflow that currently conflicts with GCP-oriented Terraform | Medium | ops |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | `.github/workflows/deploy.yml` | Yes for current workflow | None | GCP workload identity provider | Used for GitHub-to-GCP auth in deploy workflow | Medium | ops |
+| `GCP_CI_SERVICE_ACCOUNT` | `.github/workflows/deploy.yml` | Yes for current workflow | None | GCP service account email | Used for GitHub-to-GCP auth in deploy workflow | Medium | ops |
 
-| Variable | Description |
-|----------|-------------|
-| `NEXT_PUBLIC_API_URL` | API base URL for browser clients |
-| `GATEWAY_URL` | Gateway URL for Next.js rewrites |
+## Non-env configuration note
 
-## Security rules
-
-- **Never** commit `.env` files
-- **Never** put real credentials in `.env.example`
-- **Never** use `SECRET_MANAGER_PROVIDER=memory` in staging or production
-- All secret values for AI providers must be stored in the external secret manager — `packages/config` provides no mechanism to pass credentials through env vars
+The iOS client currently uses compile-time values in `apps/mobile-ios/Sources/App/AppConfig.swift` rather than a repo-wide env loading path. That is part of current implementation reality and is tracked in [docs/implementation-gaps.md](./implementation-gaps.md).

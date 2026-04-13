@@ -1,208 +1,101 @@
-# Key Request and State Flows
+# Flows
 
-All flows below reflect implemented code, not intended design. Where a flow differs from the original architectural description (e.g., orchestrator uses DB-direct worker selection rather than an HTTP call to worker-manager), the implemented behavior is documented.
+Back to [docs/_INDEX.md](./_INDEX.md).
 
----
+## Canonical user and system flows
 
-## 1. Authentication Flow
+Hosted product flows come first. Local-development flows exist to support building and validating the product.
 
-**Status: Implemented**
+## Create project from idea
 
-```
-Browser / Mobile
-  → WorkOS AuthKit login page
-  → WorkOS returns authorization code to redirect URI
+1. User starts from web or iOS.
+2. User gives an idea or selects a known stack template.
+3. Canonical flow passes through scaffold selection and stack detection.
+4. Project metadata is created.
+5. Initial files and stack defaults are produced.
+6. User lands in the hosted project view, ready to run or edit.
 
-Client
-  → POST /auth/session/exchange  { code: "..." }
-  → apps/api/src/routes/auth.ts
-      → WorkOSAuthProvider.authenticateWithCode(code)
-          → WorkOS API: exchange code for WorkOS user token
-          → Upsert user row in `users` table (create or update)
-      → Sign JWT:
-          payload: { sub, email, displayName, workspaceId?, workspaceRole?, grantedPermissions[] }
-          secret: JWT_SECRET
-          ttl: JWT_EXPIRES_IN_SECONDS (default 86400)
-  ← { token: "eyJ...", user: { id, email, displayName } }
-```
+Current repo note: project persistence exists, but a first-class scaffold engine does not. See [docs/implementation-gaps.md](./implementation-gaps.md).
 
-All subsequent requests: `Authorization: Bearer {token}`
+## Open or import existing project
 
-JWT `workspaceId` and `grantedPermissions` are resolved at token issuance. Workspace membership changes require re-authentication.
+1. User signs in on web or iOS.
+2. Client fetches available projects.
+3. User opens an existing project or imports a repo-backed project.
+4. Project metadata, recent sessions, previews, and AI history are loaded.
 
----
+Current repo note: the current API and UI still route through workspace-shaped ownership.
 
-## 2. Session Creation Flow
+## Detect stack
 
-**Status: Implemented** — orchestrator allocates leases via DB transaction, not via HTTP to worker-manager
+1. System inspects project files or explicit stack metadata.
+2. Stack adapter resolves language, framework, runtime hints, and preview defaults.
+3. Result feeds scaffolding, runtime commands, preview behavior, and AI edit safety.
 
-```
-Client
-  → POST /v1/sessions  { projectId }
-  → apps/api/src/routes/sessions.ts
-      → Auth middleware: validate JWT, extract { sub, workspaceId, grantedPermissions }
-      → Policy check: user has session.create permission
-      → Load project; verify project.workspace_id === jwt.workspaceId
-      → POST apps/orchestrator/v1/sessions  { projectId, workspaceId, userId }
+Current repo note: this is a canonical boundary without a first-class implementation yet.
 
-apps/orchestrator/src/services/session.ts (PgSessionService.startSession)
-  → Begin serializable DB transaction:
-      → SELECT session FOR UPDATE  (lock session row)
-      → PgWorkerCapacityRepository.findHealthyWithLock()
-          → SELECT * FROM worker_capacity
-             WHERE healthy = true
-               AND last_heartbeat_at > NOW() - INTERVAL '60 seconds'
-             FOR UPDATE SKIP LOCKED
-             LIMIT 1
-      → Pick available port from worker_capacity.available_ports
-      → PgSandboxLeaseRepository.create({
-            sessionId, workerHost, hostPort,
-            leaseState: 'active', expiresAt
-          })
-          → INSERT with partial unique index enforcement
-      → PgSessionRepository.update({
-            state: 'starting', workerHost, hostPort,
-            version: current + 1
-          })
-  → COMMIT
-  → (after commit) Emit SESSION_CREATED event
+## Scaffold from template
 
-  ← session entity { id, state: 'starting', worker_host, host_port, ... }
+1. User picks a template or accepts an AI suggestion.
+2. Scaffold engine generates baseline files and stack metadata.
+3. Runtime and preview defaults are attached to the project.
+4. User can immediately start a hosted run or continue editing.
 
-NOTE: 'starting' → 'running' transition currently requires a manual client-side
-assumption or a subsequent state update. The host agent does not signal VM boot
-completion (VM provisioning is not implemented — see docs/runtime.md).
-```
+Current repo note: template scaffolding is not implemented as a dedicated subsystem yet.
 
-**Polling:** Web app polls `GET /v1/sessions/{id}` every 5 seconds via SWR hook.
+## Apply AI edits safely
 
----
+1. User submits an AI request from web or iOS.
+2. Request includes project context, edit intent, and current file or run context.
+3. AI orchestration loads provider config and secret ref, invokes the adapter, and returns a safe result.
+4. The client displays or applies the suggested change.
+5. The system records run or invocation metadata without leaking credentials.
 
-## 3. Preview Access Flow
+Current repo note: provider-backed invocation exists. Dedicated project memory and stack-aware edit safety are still partial.
 
-**Status: Implemented**
+## Run and test in hosted mode
 
-```
-Browser
-  → GET /preview/{previewId}/some/path
-  → apps/gateway/src/index.ts
-      → Auth middleware: validate JWT → extract workspaceId
-      → PgPreviewRouteRegistry.resolve(previewId)
-          → SELECT id, state, expires_at, workspace_id, worker_host, host_port
-             FROM preview_routes
-             WHERE preview_id = $1
-          (no cache — DB read on every request)
-      → Checks:
-          route.state === 'active'               else → 410 PREVIEW_REVOKED/EXPIRED
-          route.expires_at > NOW()               else → 410 PREVIEW_EXPIRED
-          route.workspace_id === jwt.workspaceId else → 403 PREVIEW_FORBIDDEN
-          worker target passes IP safety filter  else → 502
-      → Strip hop-by-hop headers
-      → http-proxy-middleware → http://{worker_host}:{host_port}/some/path
+1. User starts a run session from web or iOS.
+2. API calls orchestrator.
+3. Orchestrator creates or starts the session and allocates runtime capacity.
+4. Session state advances through the runtime lifecycle.
+5. User observes status and logs from the hosted product surfaces.
 
-Worker sandbox
-  → processes request, returns response
+Current repo note: hosted session lifecycle exists, but runtime isolation and capacity truth are incomplete.
 
-Browser ← proxied response
-```
+## Preview in hosted mode
 
----
+1. User requests a preview for a running session.
+2. Preview binding is created for that session.
+3. Gateway validates auth, route state, TTL, and target safety on every request.
+4. Web or iOS loads the preview surface through the gateway.
 
-## 4. Pipeline Run Submission Flow
+## Run and test locally
 
-**Status: Implemented (async)**
+1. Developer starts local infrastructure and the needed services.
+2. Developer opens the hosted web client locally or points the iOS client at local API and gateway URLs.
+3. Developer validates project behavior or service wiring on the local machine.
 
-```
-Client
-  → POST /v1/workspaces/{wid}/ai/runs
-    { pipelineId, inputs: {...}, idempotencyKey: "client-uuid" }
+Current repo note: local development is supported but requires manual setup and explicit port handling.
 
-  → apps/api  (transparent proxy to apps/ai-orchestration)
+## Preview locally
 
-  → apps/ai-orchestration/src/routes/runs.ts
-      → Check idempotency key: if run exists with same key, return it
-      → PgPipelineRunRepository.create({ pipelineId, workspaceId, inputs, idempotencyKey })
-          → INSERT pipeline_runs with status = 'queued'
-      ← { runId, status: 'queued' }   (returned immediately — execution is async)
+1. Developer runs gateway and the relevant local services.
+2. Developer validates gateway behavior or preview-facing UI locally.
+3. Any full end-to-end preview claim must be limited by the current hosted-runtime gaps.
 
-  [async, inside ai-orchestration]
-      → dag-validator.ts: validateDag(pipelineDefinition, workspaceId)
-          → Kahn's topological sort — reject if cycle detected
-          → Verify all agent roles exist and belong to workspaceId
-      → Transition: queued → preparing → running
-      → For each step (topological order):
-          → SELECT credentialSecretRef FROM provider_configs
-          → GCPSecretManagerProvider.get(credentialSecretRef)  [prod]
-             InMemorySecretManagerProvider.get(credentialSecretRef)  [dev/test]
-          → resolveAdapterForConfig(providerConfig) → adapter instance
-          → adapter.invoke({ messages, model, ... })
-          → INSERT model_invocation_logs (no credential)
-          → Credential out of scope
-      → On all steps: status → 'succeeded'
-      → On any error: status → 'failed', error_summary set
-      → Emit PIPELINE_RUN_STATUS_CHANGED
+## Optionally export or deploy
 
-Client polls GET /v1/workspaces/{wid}/ai/runs/{runId} (every 10s via SWR hook)
-```
+1. User chooses an external target.
+2. Export or deploy adapter hands off repo, artifact, or metadata.
+3. Product records the result and external reference.
 
----
+Deployment is adapter-based. It is not the core product loop.
 
-## 5. Host Agent → Worker-Manager Capacity Flow
+## Rotate provider credential
 
-**Status: Registration and heartbeat implemented; capacity values are stubbed**
-
-```
-Worker host startup (host-agent)
-
-  registerHost():
-  → collectCapacitySnapshot()
-    → returns hardcoded { totalSlots: 10, usedSlots: 0,
-                          availablePorts: [32100..32109], healthy: true }
-    (Phase 2 stub — does not query actual OS/container runtime)
-  → POST {WORKER_MANAGER_URL}/internal/capacity-snapshot
-    { workerHost, totalSlots, usedSlots, availablePorts, healthy, reportedAt }
-  → apps/worker-manager: validate payload, upsertSnapshot to DB
-  ← 204 No Content
-
-  Loop every WORKER_HEARTBEAT_INTERVAL_MS (default 30s):
-  → publishHeartbeat()
-    → collectCapacitySnapshot()  (same hardcoded stub)
-    → POST /internal/capacity-snapshot
-    → apps/worker-manager: upsertSnapshot (UPDATE last_heartbeat_at)
-  ← 204 No Content
-
-  Worker host shutdown:
-  → heartbeat loop stops
-  → orchestrator excludes host when last_heartbeat_at > 60s old (at next allocation)
-```
-
-**There is no `WORKER_UNHEALTHY` event emitted by the current host-agent.** Stale heartbeat detection happens passively at allocation time when the orchestrator's `findHealthyWithLock()` query finds no healthy workers.
-
----
-
-## 6. Idle Session Cleanup Flow
-
-**Status: Implemented — runs as Cloud Run Job (Cloud Scheduler every 5 minutes)**
-
-```
-session-reaper (triggered by Cloud Scheduler every 5 min):
-
-  reapIdleSessions():
-  → PgSessionRepository.findIdleBeyond(threshold)
-  → For each idle session:
-      → Re-check inside UPDATE (atomic — prevents race with concurrent stop)
-      → Transition: running/idle → stopping → stopped
-      → PgPreviewRouteRepository.revokeAllForSession(sessionId)
-          → UPDATE preview_routes SET state = 'revoked' WHERE session_id = $1
-      → PgSandboxLeaseRepository.release(leaseId)
-          → UPDATE sandbox_leases SET lease_state = 'released'
-      → Emit SESSION_STATE_CHANGED event
-      → (per-session errors caught; other sessions continue)
-
-  reapOrphanedLeases():
-  → Find leases in active/pending state where session is stopped/failed
-  → Mark lease_state = 'orphaned'
-  → Log for operator investigation
-
-  Process exits after both complete.
-```
+1. User updates a provider credential through the provider-management flow.
+2. AI orchestration writes the new secret through the secret-manager boundary.
+3. Product updates the stored secret ref.
+4. Old secret ref is retired on the provider-specific rotation path.
+5. Subsequent invocations use the new secret ref.

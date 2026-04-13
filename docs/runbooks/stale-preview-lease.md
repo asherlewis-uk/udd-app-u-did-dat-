@@ -1,42 +1,47 @@
 # Runbook: Stale Preview Lease
 
+**Status:** Canonical  
+Back to [docs/_INDEX.md](../_INDEX.md).
+
 ## Symptoms
-- Preview URL returns 410 or 404 but the user reports the session is still running
-- Preview route in DB shows `state = 'active'` but `expires_at` is in the past
-- Gateway returning `PREVIEW_EXPIRED` for what should be a live session
+
+- Hosted preview returns `404`, `410`, or `502`
+- Preview route exists but should no longer be active
+- Preview route is active while the backing session is stopped or failed
 
 ## Diagnosis
 
 ```sql
--- Find stale preview routes
-SELECT pr.*, s.state AS session_state
+SELECT pr.preview_id, pr.state, pr.expires_at, pr.worker_host, pr.host_port, s.state AS session_state
 FROM preview_routes pr
-JOIN sessions s ON pr.session_id = s.id
-WHERE pr.state = 'active'
-  AND pr.expires_at < NOW()
-  AND s.state = 'running';
+JOIN sessions s ON s.id = pr.session_id
+WHERE pr.preview_id = '<preview-id>';
 ```
 
-## Resolution
+## Recovery
 
-**Extend the TTL** (for routes that should remain active):
+### If the session is still valid
+
+- extend the route expiry if the route should remain active
+- or recreate the preview binding through the API
+
+### If the session is no longer valid
+
+- revoke the preview route
+- stop or fail the stale session if it is still marked active incorrectly
+
+## Manual revoke
+
 ```sql
 UPDATE preview_routes
-SET expires_at = NOW() + INTERVAL '1 hour', version = version + 1
-WHERE id = '<route-id>' AND version = <current-version>;
+SET state = 'revoked',
+    revoked_at = NOW(),
+    version = version + 1
+WHERE preview_id = '<preview-id>'
+  AND state = 'active';
 ```
 
-**Revoke stale routes** (for routes belonging to stopped sessions):
-```sql
-UPDATE preview_routes
-SET state = 'revoked', revoked_at = NOW(), version = version + 1
-WHERE state = 'active' AND expires_at < NOW()
-  AND session_id IN (
-    SELECT id FROM sessions WHERE state IN ('stopped', 'failed')
-  );
-```
+## Follow-up
 
-## Prevention
-- Session-reaper automatically revokes preview routes when sessions stop.
-- Verify `session-reaper` is running and its scan interval is configured correctly.
-- Check `IDLE_SESSION_SCAN_INTERVAL_MS` env var on the session-reaper service.
+- Check session lifecycle and worker health.
+- If preview failures are systemic, continue with [worker-failure.md](./worker-failure.md).

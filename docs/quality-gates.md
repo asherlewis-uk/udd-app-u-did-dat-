@@ -1,92 +1,49 @@
 # Quality Gates
 
-Work is not complete until all applicable gates pass. The CI pipeline enforces the automated checks; the manual checklist items are the responsibility of the author.
+Back to [docs/_INDEX.md](./_INDEX.md).
 
----
+## Canonical merge gates
 
-## Automated gates (must be green before merge)
+1. No new organization or workspace abstraction becomes part of the canonical product model without an ADR.
+2. No change may demote the hosted web surface to satisfy iOS requirements without an ADR.
+3. Web and iOS client-facing contract changes must be reviewed as first-class product changes.
+4. No new stack support lands without a stack-registry decision, tests, and docs.
+5. No new provider integration lands without adapter compliance and secret-manager rules.
+6. No doc/code divergence is allowed without an entry in [docs/implementation-gaps.md](./implementation-gaps.md).
+7. No hidden environment variable is allowed outside [docs/ENV_CONTRACT.md](./ENV_CONTRACT.md).
+8. Every new operator workflow needs a runbook or an explicit statement that no runbook is needed.
+
+## Automated checks
 
 ```bash
-pnpm typecheck     # Zero TypeScript errors across all packages and apps
-pnpm lint          # Zero ESLint violations
-pnpm test          # All unit and integration tests pass
-pnpm format:check  # All files match .prettierrc formatting
-pnpm build         # All packages and services compile and build successfully
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm format:check
+pnpm build
 ```
 
-These run automatically on every PR via `.github/workflows/`. They must also pass locally before requesting review.
+## Doc gates
 
----
+- `docs/_INDEX.md` stays the single docs entrypoint.
+- Root instruction precedence must remain: `AGENTS.md` > canonical-doc priority in `_INDEX` > `AI.md` > `GEMINI.md` > `README.md`.
+- If any file conflicts with that precedence, the file is stale and must be logged in [docs/implementation-gaps.md](./implementation-gaps.md).
+- ADRs and runbooks must carry explicit status headers.
 
-## Schema migration checklist
+## Runtime and client gates
 
-For any PR that includes a new migration file:
+- Hosted-first assumptions must stay explicit in architecture and runtime docs.
+- Web and iOS remain first-class client surfaces.
+- Collaboration features must not be promoted into the product center without an ADR.
+- Runtime or preview behavior changes must be reflected in `docs/runtime.md`, `docs/flows.md`, and the relevant runbooks.
 
-- [ ] Migration file named with the next sequential prefix in `packages/database/src/migrations/`
-- [ ] Migration is idempotent (safe to run twice without error)
-- [ ] All new columns are nullable or have safe defaults
-- [ ] All new indexes use `CREATE INDEX CONCURRENTLY`
-- [ ] Migration has been run locally against a clean dev DB without errors
-- [ ] `SELECT * FROM schema_migrations` shows the new version applied
-- [ ] Rollback plan documented (either: redeploy old app version, or: next-migration rollback file)
-- [ ] No DROP or RENAME in the same migration as the replacement feature
+## Config and secret gates
 
----
+- New config must appear in [docs/ENV_CONTRACT.md](./ENV_CONTRACT.md).
+- Plaintext provider credentials remain forbidden in database tables and logs.
+- Provider SDK imports stay behind the adapter boundary.
 
-## Contract checklist
+## Local development gates
 
-For any PR that modifies `packages/contracts/src/`:
-
-- [ ] `pnpm typecheck` passes with zero errors (confirms all consumers compile)
-- [ ] No existing response fields removed or renamed without a migration plan
-- [ ] New event topics have a publisher call in the emitting service and at least a noop consumer registration
-- [ ] iOS companion API surface is unchanged, or the change is additive and non-breaking
-- [ ] State transition tables (`SESSION_TRANSITIONS`, `PIPELINE_RUN_TRANSITIONS`) only have transitions added, none removed
-
----
-
-## Security checklist
-
-For any PR that touches data access, credentials, or the preview/worker path:
-
-- [ ] No plaintext credentials appear in new code: no new DB columns storing credentials, no logging of credential-bearing objects
-- [ ] Any new AI provider interaction goes through `ModelProviderAdapter`, not a direct SDK import
-- [ ] Any new endpoint returning workspace-scoped data filters by `workspace_id` from JWT context (not from client-supplied body)
-- [ ] Any new endpoint modifying session, sandbox_lease, or preview_route state uses `WHERE version = $n` optimistic locking
-- [ ] `InMemorySecretManagerProvider` is only reachable when `NODE_ENV=development` or `NODE_ENV=test`
-- [ ] No new gateway-side caching of preview route bindings
-
----
-
-## Architecture checklist
-
-For any PR that adds a new service, endpoint, or inter-service dependency:
-
-- [ ] New service-to-service calls use env-var-configured base URLs, not hardcoded hostnames
-- [ ] No new service imports provider SDKs outside `packages/adapters/src/model-provider/`
-- [ ] New service exposes `/health`, `/ready`, `/alive` via `@udd/observability`
-- [ ] New service uses `@udd/config` for all env vars (no raw `process.env` access)
-- [ ] Worker plane remains unreachable except via gateway
-
----
-
-## Environment variable checklist
-
-For any PR that introduces new configuration:
-
-- [ ] New env var added to `packages/config/src/index.ts` with type and safe default
-- [ ] `docs/ENV_CONTRACT.md` updated with the new variable and description
-- [ ] Variable is set in `infra/terraform/` for all target environments (dev, staging, prod)
-- [ ] No new env var accepts a plaintext credential (all secrets via secret manager)
-
----
-
-## Test coverage expectations
-
-- New repository methods: unit test with real query shape (or integration test against test DB)
-- New state transitions: test the transition path in `apps/orchestrator` and the rejection of invalid transitions
-- New adapter implementations: test via `packages/adapters/src/model-provider/registry.test.ts` pattern
-- New gateway auth/check logic: test via the deny/allow test pattern in `apps/gateway/src/proxy.test.ts`
-- New DAG validation rules: test in `apps/ai-orchestration/src/dag-validator.test.ts`
-
-There is no enforced coverage percentage. The expectation is that critical paths (auth checks, state machine transitions, proxy authorization, adapter resolution) have explicit test coverage.
+- If a local workflow is required to operate or verify the repo, [docs/LOCAL_DEV.md](./LOCAL_DEV.md) must describe it.
+- If local development remains awkward because of implementation reality, document the awkwardness directly instead of hiding it.

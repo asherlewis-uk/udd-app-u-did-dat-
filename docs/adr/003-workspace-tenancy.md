@@ -1,30 +1,24 @@
 # ADR 003: Workspace-Owned Tenancy Model
 
-**Status**: Accepted  
-**Date**: 2026-04-11
+**Status:** Superseded  
+**Date:** 2026-04-11  
+**Superseded by:** [ADR 007](./007-solo-first-hosted-first-product-model.md), [ADR 010](./010-project-centered-identity-model.md)  
+Back to [docs/_INDEX.md](../_INDEX.md).
 
 ## Context
 
-The platform serves multiple organizations. We need a tenancy model that:
-- Isolates data between organizations
-- Allows sharing within an organization
-- Supports per-project access controls
+This ADR captured the original workspace-centered implementation model:
 
-## Decision
+`Organization -> Workspace -> Project`
 
-Three-level hierarchy: **Organization → Workspace → Project**
+That model still exists in the current codebase and database.
 
-- An `Organization` is the billing entity (WorkOS org).
-- A `Workspace` is the primary collaboration unit. Users are members of workspaces, not organizations directly.
-- A `Project` belongs to a workspace. Sessions, previews, comments, and pipeline runs are scoped to projects.
-- All RBAC is workspace-scoped. Permissions are granted at the workspace level with optional project-level refinement.
-- Every DB row carries a `workspace_id` column that is indexed and used in all access checks.
+## Historical decision
 
-**Row-level security**: Enforced in application layer (not PostgreSQL RLS) for now. Every repository method filters by `workspace_id`.
+The old decision made workspace membership and workspace-scoped RBAC the primary tenancy boundary.
 
-## Consequences
+## Current status
 
-- `workspace_id` must be verified on every data access — it is the tenancy boundary.
-- Cross-workspace data access is never permitted by the application layer.
-- Workspace membership must be loaded and verified before any workspace-scoped operation.
-- Future: PostgreSQL RLS can be added as defense in depth without application changes.
+This ADR is historical only. It remains useful for understanding current implementation reality, but it is no longer the canonical product model.
+
+Canonical product docs are now solo-first and project-centered. Any continued workspace dependency belongs in [docs/implementation-gaps.md](../implementation-gaps.md), not in current product scope.
