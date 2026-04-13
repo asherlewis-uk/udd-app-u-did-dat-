@@ -44,7 +44,16 @@ SELECT COUNT(*) FROM <new_or_altered_table>;
 
 ### Step 4: Deploy new application version
 
-Deploy services via ECS after migration completes.
+Deploy services via Cloud Run after migration completes:
+
+```bash
+# Trigger a new deployment for the affected service(s)
+gcloud run services update udd-prod-api \
+  --region=europe-west1 \
+  --image=gcr.io/{PROJECT_ID}/udd-platform/api:{SHA}
+```
+
+Repeat for each service that depends on the new schema.
 
 ## Rollback
 

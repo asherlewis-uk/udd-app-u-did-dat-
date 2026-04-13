@@ -101,39 +101,69 @@ Defined in `packages/contracts/src/enums.ts`.
 | `PIPELINE_RUN_CREATED` | ai-orchestration | usage-meter |
 | `PIPELINE_RUN_STATUS_CHANGED` | ai-orchestration | usage-meter, api (polling) |
 
+Note: `WORKER_REGISTERED` and `WORKER_UNHEALTHY` are defined as event topics, but the current worker-manager implementation only calls `upsertSnapshot()`. Emission of these specific events has not been verified in the worker-manager source.
+
 ---
 
 ## Adapter Boundaries (`packages/adapters/src/`)
 
-| Boundary | Interface | Implementations | Status |
-|----------|-----------|-----------------|--------|
-| Model invocation | `ModelProviderAdapter` | `AnthropicAdapter`, `OpenAIAdapter`, `GoogleAdapter`, `OpenAICompatibleAdapter`, `SelfHostedAdapter` | Implemented |
-| Secret storage | `SecretManagerProvider` | `AWSSecretManagerProvider` (prod), `InMemorySecretManagerProvider` (dev/test) | Implemented |
-| Auth provider | `AuthProvider` | `WorkOSAuthProvider` | Implemented |
-| Git provider | `GitProvider` | GitHub, GitLab, Bitbucket | Implemented |
-| Object storage | `StorageProvider` | S3 adapter, local filesystem adapter | Implemented |
-| Queue | `QueueProvider` | `SqsEventPublisher`, Redis adapter | Implemented |
-| Billing | `BillingProvider` | Adapter boundary exists | **Stubbed** — integration not connected |
-| Notifications | `NotificationProvider` | Adapter boundary exists | **Stubbed** — integration not connected |
+| Boundary | Interface | Production implementation | Dev/test implementation | Status |
+|----------|-----------|--------------------------|------------------------|--------|
+| Model invocation | `ModelProviderAdapter` | `AnthropicAdapter`, `OpenAIAdapter`, `GoogleAdapter`, `OpenAICompatibleAdapter`, `SelfHostedAdapter` | Same | Implemented |
+| Secret storage | `SecretManagerProvider` | `GCPSecretManagerProvider` | `InMemorySecretManagerProvider` | Implemented |
+| Auth provider | `AuthProvider` | `WorkOSAuthProvider` | — | Implemented |
+| Git provider | `GitProvider` | GitHub, GitLab, Bitbucket adapters | — | Implemented |
+| Object storage | `StorageProvider` | S3 adapter (via `OBJECT_STORAGE_PROVIDER=aws`) | Local filesystem | Implemented |
+| Queue | `QueueProvider` | `SqsEventPublisher` (via `QUEUE_PROVIDER=sqs`) | Noop/Redis | Implemented |
+| Billing | `BillingProvider` | `StripeBillingProvider` | — | **Stubbed** — all methods throw `NotImplementedError` |
+| Notifications | `NotificationProvider` | `EmailNotificationProvider` | — | **Stubbed** — `send()` throws `NotImplementedError` |
 
-All model invocations go through `ModelProviderAdapterRegistry.get(providerType)` in `packages/adapters/src/model-provider/registry.ts`. The registry is the only place that maps `ProviderType` enum values to adapter instances.
+**Secret manager selection (from `apps/ai-orchestration/src/context.ts`):**
+```typescript
+process.env['NODE_ENV'] === 'production'
+  ? new GCPSecretManagerProvider()
+  : new InMemorySecretManagerProvider()
+```
+This is not governed by a `SECRET_MANAGER_PROVIDER` env var. It is hardcoded by `NODE_ENV`.
+
+**Model provider registry:** `ModelProviderAdapterRegistry.get(providerType)` in `packages/adapters/src/model-provider/registry.ts` is the sole mapping from `ProviderType` enum values to adapter instances.
 
 ---
 
 ## Inter-Service HTTP Calls
 
-Services call each other via base URLs from env vars (see `docs/ENV_CONTRACT.md`). There is no service mesh — calls are plain HTTP internally.
+| Caller | Callee | Endpoint | Purpose |
+|--------|--------|----------|---------|
+| `api` | `orchestrator` | various `/v1/sessions`, `/v1/previews` | Session and preview route CRUD |
+| `api` | `ai-orchestration` | transparent proxy | All AI endpoints (providers, roles, pipelines, runs) |
+| `gateway` | `database` (directly) | — | Preview route lookup via `PgPreviewRouteRegistry` |
+| `session-reaper` | `orchestrator` | session stop endpoints | Drive session stop transitions |
+| `host-agent` | `worker-manager` | `POST /internal/capacity-snapshot` | Registration and periodic heartbeats |
 
-| Caller | Callee | What for |
-|--------|--------|---------|
-| `api` | `orchestrator` | Session and preview route create/read/update |
-| `api` | `ai-orchestration` | Transparent proxy for all AI endpoints (providers, roles, pipelines, runs) |
-| `orchestrator` | `worker-manager` | Sandbox lease allocation |
-| `gateway` | `database` (directly) | Preview route lookup — **not via orchestrator**, performance-critical |
-| `session-reaper` | `orchestrator` | Drive session stop transitions |
-| `host-agent` | `worker-manager` | Registration and heartbeat |
+**Important:** The orchestrator does NOT call worker-manager via HTTP for lease allocation. It queries `worker_capacity` directly via `PgWorkerCapacityRepository.findHealthyWithLock()` and creates leases in the same DB transaction. See `docs/runtime.md`.
 
-Note: `gateway` bypasses `orchestrator` for preview route lookups and reads `preview_routes` via `PgPreviewRouteRegistry` directly. This is intentional — the orchestrator would add unnecessary latency on the hot preview path.
+---
+
+## Worker-Manager API
+
+Single endpoint (internal, no auth — mTLS planned but not yet enforced):
+
+```
+POST /internal/capacity-snapshot
+Content-Type: application/json
+
+{
+  "workerHost": "string",
+  "totalSlots": number,
+  "usedSlots": number,
+  "availablePorts": number[],
+  "healthy": boolean
+}
+
+→ 204 No Content
+→ 400 { code: "VALIDATION_ERROR", message: "..." }
+→ 500 { code: "INTERNAL_ERROR", message: "..." }
+```
 
 ---
 
@@ -158,6 +188,14 @@ The companion app (`apps/mobile-ios`) expects these endpoints to be stable on `a
 | `POST` | `/v1/projects/:id/comments` | Post comment |
 | `GET` | `/v1/projects/:id/previews` | Preview routes |
 | `POST` | `/auth/session/exchange` | WorkOS code → JWT |
+
+## Android Companion API Surface
+
+The Android app (`apps/mobile-android`) implements:
+- `GET /v1/me` — current user
+- `GET /v1/workspaces` — workspace list
+
+Its in-code scope comment states: "Status/review/comments companion — NO code editor, NO terminal." The full API surface it will need is not yet defined; the iOS surface above is the closest reference.
 
 ---
 

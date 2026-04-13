@@ -24,9 +24,11 @@ The `ai-orchestration` service has a scheduled job (`stuckRunRecovery`) that:
 2. Marks them as `failed` with `errorSummary = 'Recovered by stuck-run detector'`.
 3. Emits `pipeline_run.status_changed` event.
 
-Verify the job is running:
+Verify the job is running (GCP Cloud Run logs):
 ```bash
-aws logs tail /ecs/udd-prod-ai-orchestration --filter-pattern 'stuck_run'
+gcloud logging read \
+  'resource.type="cloud_run_revision" resource.labels.service_name="udd-prod-ai-orchestration" textPayload:"stuck_run"' \
+  --limit=50 --format=json | jq '.[] | .textPayload'
 ```
 
 ## Manual Recovery

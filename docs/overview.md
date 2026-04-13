@@ -8,7 +8,7 @@ The platform is a pnpm/Turborepo monorepo with:
 - 9 backend Node.js/Express/TypeScript services
 - 1 Next.js 14 web app
 - 1 Swift/SwiftUI iOS companion app
-- 1 Kotlin/Compose Android companion (skeleton only)
+- 1 Kotlin/Jetpack Compose Android companion app
 - 8 shared TypeScript packages
 
 ## Build phase status
@@ -21,55 +21,46 @@ The platform is a pnpm/Turborepo monorepo with:
 
 Phase 3 has not been started. Do not implement Phase 3 work without explicit user approval.
 
-## What is fully implemented (Phase 2 complete)
+## Implementation status by component
 
-- PostgreSQL repositories for all entities (real SQL queries, not stubs)
-- Session lifecycle state machine (create → start → run ⇄ idle → stop)
-- Preview gateway proxy with DB-authoritative route lookup and auth enforcement
-- Worker host registration, heartbeat loop, port lease allocation
-- AI provider CRUD with external secret manager integration
-- Pipeline definition (DAG validation via Kahn's algorithm) and async run execution
-- WorkOS OAuth code exchange → JWT issuance
-- RBAC permission matrix (5 roles: org_owner → workspace_admin → workspace_member → project_editor → project_viewer)
-- Collaboration: WebSocket presence tracking + comments
-- iOS companion app: PKCE auth, Keychain JWT, typed API client, all screens
-- Session reaper: idle session detection, orphaned lease cleanup
-- Usage metering: event ingestion and DB recording
+| Component | Status | Detail |
+|-----------|--------|--------|
+| PostgreSQL repositories (all entities) | **Implemented** | Real SQL queries, optimistic locking |
+| Session lifecycle state machine | **Implemented** | create → start → run ⇄ idle → stop, atomic transactions |
+| Preview gateway proxy | **Implemented** | DB-authoritative route lookup, auth enforcement |
+| Orchestrator lease allocation | **Implemented** | DB-direct via `FOR UPDATE SKIP LOCKED` on `worker_capacity` |
+| Worker-manager capacity ingestion | **Implemented** | `POST /internal/capacity-snapshot` endpoint |
+| Host agent — registration + heartbeat | **Implemented** | POSTs snapshots to worker-manager on startup and interval |
+| Host agent — capacity measurement | **Stubbed** | `collectCapacitySnapshot()` returns hardcoded 10 slots, ports 32100–32109. TODO: query actual OS/container runtime |
+| AI provider CRUD + secret manager | **Implemented** | GCP Secret Manager in production, InMemory in dev/test |
+| Pipeline DAG validation + run execution | **Implemented** | Kahn's algorithm, async execution, idempotency key |
+| WorkOS OAuth → JWT | **Implemented** | Code exchange, user upsert, signed JWT |
+| RBAC permission matrix | **Implemented** | 5 roles, permission table in `packages/auth/src/rbac.ts` |
+| Collaboration (WebSocket, comments) | **Implemented** | Presence tracking + DB-backed comments |
+| iOS companion app | **Implemented** | PKCE auth, Keychain JWT, typed API client, all screens |
+| Android companion app | **Partial** | Compose tab UI + Ktor API client implemented; scope-limited (status/review/comments only) |
+| Session reaper | **Implemented** | Idle session detection, orphaned lease cleanup |
+| Usage metering | **Implemented** | Event ingestion and DB recording |
+| Web app UI | **Partial** | SWR hooks and page shells exist; design system is Phase 3 |
+| MicroVM provisioning on worker hosts | **Not implemented** | Port allocation protocol exists; actual VM provisioning is not wired in host-agent |
+| mTLS between planes | **Not implemented** | ADR 001 specifies it; endpoint comment notes "mTLS in prod" but not yet enforced |
+| Billing adapter integration | **Stubbed** | `StripeBillingProvider` — all methods throw `NotImplementedError` |
+| Notification adapter integration | **Stubbed** | `EmailNotificationProvider.send()` throws `NotImplementedError` |
+| `model_invocation_logs` read surface | **Not implemented** | Write path exists; no read endpoints defined |
 
-## What is partial or stubbed
+## Infrastructure
 
-| Area | Status | Notes |
-|------|--------|-------|
-| Web app UI | **Partial** | SWR hooks and page shells exist; visual design system is Phase 3 |
-| Android companion | **Skeleton** | `apps/mobile-android` has no real screens |
-| MicroVM provisioning | **Stubbed** | Port allocation protocol is implemented; actual Firecracker/VM provisioning on worker hosts is not wired |
-| mTLS between planes | **Not implemented** | ADR 001 specifies it for Phase 2; enforcement not yet present |
-| Billing integration | **Stubbed** | Usage events recorded; `packages/adapters/src/billing.ts` adapter boundary exists; backend integration not connected |
-| Notification adapter | **Stubbed** | `packages/adapters/src/notification.ts` boundary exists; no real delivery |
-| `model_invocation_logs` query surface | **Partial** | Write path implemented; no read endpoints exposed yet |
+**Deployment target: GCP** — Cloud Run (services), Cloud SQL PostgreSQL 16, Memorystore (Redis), GCR (images), GCS (Terraform state, object storage), Cloud Scheduler (session-reaper triggers every 5 minutes).
 
-## What this system is NOT
-
-- Not a full VSCode server — the Monaco editor is present in the web app; the terminal and file system browsing are scaffold-only in Phase 2
-- Not a container orchestrator — it relies on external VM provisioning by worker hosts
-- Not a billing platform — billing logic lives behind the `BillingProvider` adapter and is external
-- Not an auth provider — WorkOS AuthKit handles identity; this system issues scoped JWTs from it
-
-## Infrastructure reality
-
-**Deployment target: GCP** (Cloud Run, Cloud SQL, GCR)  
-**Application adapters: AWS-compatible** (SQS, S3, Secrets Manager) with GCP alternatives
-
-The README states "AWS (ECS/Fargate, RDS...)" — this is inaccurate. The Terraform modules in `infra/terraform/` and the CI/CD pipelines in `.github/workflows/deploy.yml` target Google Cloud Platform: Cloud Run for services, Cloud SQL for PostgreSQL, GCR for images. However, the application layer supports AWS services via adapters (`SqsEventPublisher`, `AWSSecretManagerProvider`, S3 storage adapter). Runbooks that reference `aws ecs` commands are deployment-assumption errors — see `docs/runbooks/worker-failure.md` for the corrected version.
-
-The infrastructure target should be treated as GCP unless the Terraform explicitly changes.
+The README states "AWS (ECS/Fargate, RDS...)" — this is inaccurate. All Terraform in `infra/terraform/` uses the `google` provider and targets GCP resources exclusively. The application-layer adapters (`@udd/adapters`) include AWS-compatible implementations for SQS and S3, but the production secret manager is `GCPSecretManagerProvider`, not `AWSSecretManagerProvider`.
 
 ## Deprecated framing — do not use
 
 | Stale claim | What is true instead |
 |-------------|---------------------|
-| "Phase 1 skeleton / stub implementations" | Phase 2 is complete — all skeletons replaced with real implementations |
+| "Phase 1 skeleton / stub implementations" | Phase 2 complete — all skeletons replaced with real implementations |
 | "Phase 2 not started" | Phase 2 complete as of 2026-04-11 |
-| "AWS ECS/Fargate deployment" | GCP Cloud Run deployment |
-| Any context file saying Phase 2 is pending | Stale; Phase 2 is done |
-| "Android companion ready" | Android is skeleton only |
+| "AWS ECS/Fargate/RDS deployment" | GCP Cloud Run + Cloud SQL |
+| "AWS Secrets Manager in production" | `GCPSecretManagerProvider` is the production implementation |
+| "Android companion is a skeleton" | Android has real Compose UI + Ktor API client; it is partial, not skeletal |
+| "HOST_AGENT queries actual sandbox capacity" | `collectCapacitySnapshot()` returns hardcoded values; actual OS query is a pending stub |

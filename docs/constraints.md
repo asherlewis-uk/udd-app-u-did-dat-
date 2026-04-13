@@ -22,18 +22,24 @@ There is no admin bypass. Any operation that would return or modify data from wo
 ## Credentials
 
 **C4. No plaintext credentials in the database.**
-The `provider_configs.credential_secret_ref` column stores an opaque reference (ARN or key) to the external secret manager. The actual credential is never written to any DB table.
+The `provider_configs.credential_secret_ref` column stores an opaque reference (a GCP Secret Manager resource name) to the external secret manager. The actual credential is never written to any DB table.
 
 **C5. No credentials in logs, traces, audit events, or error messages.**
 Any field named `credential`, `apiKey`, `secret`, `password`, or similar must not be logged. This applies to application logs, structured traces, and audit log rows.
 
-**C6. `InMemorySecretManagerProvider` must not be used in staging or production.**
-`SECRET_MANAGER_PROVIDER=memory` is only valid when `NODE_ENV=development` or `NODE_ENV=test`. `packages/config` must enforce this at startup.
+**C6. `InMemorySecretManagerProvider` must not be used in production.**
+In `apps/ai-orchestration/src/context.ts`, the secret manager is selected by:
+```typescript
+process.env['NODE_ENV'] === 'production'
+  ? new GCPSecretManagerProvider()
+  : new InMemorySecretManagerProvider()
+```
+This selection happens at service startup. If `NODE_ENV` is not set to `'production'` in the production deployment, the service will use the in-memory provider. Verify `NODE_ENV=production` is set in `infra/terraform/` for all production Cloud Run services.
 
 **C7. Only `ai-orchestration` has write access to the external secret manager.**
 No other service may write credentials. `api`, `gateway`, and other services have no secret write permissions.
 
-*Source: ADR 006, `packages/adapters/src/secret-manager.ts`*
+*Source: ADR 006 (revised), `apps/ai-orchestration/src/context.ts`*
 
 ---
 
@@ -55,53 +61,62 @@ Fetch from secret manager at call time. Pass to adapter method. Do not assign to
 Route bindings must never be cached in memory, Redis, or any intermediate layer. A cached stale binding could route traffic to a reassigned or revoked lease.
 
 **C11. Preview route ID alone never grants access.**
-All four conditions must pass: authenticated user, workspace membership match, route state `active`, route not expired.
+All conditions must pass: authenticated user, workspace membership match, route state `active`, route not expired, worker target IP safety check.
 
 **C12. No arbitrary upstream override in the gateway.**
 The proxy target (`worker_host:host_port`) must come exclusively from the `preview_routes` DB record. It must never be derived from user-supplied values.
 
-*Source: ADR 002, `apps/gateway/src/registry.ts`*
+*Source: ADR 002, `apps/gateway/src/proxy.ts`*
 
 ---
 
 ## Worker Plane
 
 **C13. Only the gateway tier can route traffic to worker preview ports.**
-No other service or direct user connection reaches the worker plane. Sandbox breakout cannot reach control plane services.
+No other service or direct user connection reaches the worker plane.
 
-**C14. Preview port range 32000–33000 is exclusively for sandbox preview ports.**
-No other service or process may use this range on worker hosts.
+**C14. Preview port range on worker hosts is 32100–32109 per host** (as reported by the current stubbed capacity implementation). When the stub is replaced with real OS querying, this range may expand. Any new code that assumes a port range should read from `worker_capacity.available_ports`, not hardcode a range.
 
 **C15. Worker hosts are in a private subnet with no direct inbound internet access.**
-New infrastructure must maintain this. No security group rule may open worker hosts to the internet.
+New infrastructure must maintain this.
 
 *Source: ADR 001*
 
 ---
 
+## Lease Allocation
+
+**C16. Sandbox lease allocation and session state transition must be atomic.**
+Both happen in a single serializable DB transaction in the orchestrator (`PgSessionService.startSession`). Never split these into separate transactions.
+
+**C17. Lease allocation uses `FOR UPDATE SKIP LOCKED` on `worker_capacity`.**
+This is the mechanism that prevents concurrent startSession calls from double-allocating the same port. Do not change this to `FOR UPDATE` (causes blocking) or remove the lock (causes double-allocation).
+
+---
+
 ## Optimistic Concurrency
 
-**C16. `sessions`, `sandbox_leases`, and `preview_routes` use `version`-based optimistic locking.**
+**C18. `sessions`, `sandbox_leases`, and `preview_routes` use `version`-based optimistic locking.**
 All UPDATE statements against these tables must include `WHERE version = $current_version` and increment `version` in the same statement. A concurrent update that does not match the expected version must throw `OptimisticConcurrencyError`. Callers must handle this and retry if appropriate.
 
 ---
 
 ## Audit
 
-**C17. All mutations must write an audit log entry.**
-The audit log is the authoritative record of who changed what and when. Secret values must not appear in any audit log field.
+**C19. All mutations must write an audit log entry.**
+The audit log is the authoritative record of who changed what and when. Secret values must never appear in any audit log field.
 
-**C18. Audit logs are append-only.**
-No UPDATE or DELETE from the application layer. Any tooling that modifies audit log rows is a security violation.
+**C20. Audit logs are append-only.**
+No UPDATE or DELETE from the application layer.
 
 ---
 
 ## Database Migrations
 
-**C19. Migrations must be backward-compatible.**
-The new schema must work correctly with both the previous and current application versions simultaneously. One deploy = one forward-only schema change. Never drop or rename in the same migration that introduces the replacement.
+**C21. Migrations must be backward-compatible.**
+Additive only in a single deploy. Never drop or rename in the same migration that introduces the replacement.
 
-**C20. Two-phase drops.** Phase 1: stop using the column/table in the application code. Phase 2: drop it in a separate migration in a subsequent deploy.
+**C22. Two-phase drops.** Phase 1: stop using the column/table in application code, deploy. Phase 2: drop it in a separate migration in a subsequent deploy.
 
 *Source: `docs/runbooks/db-migration-rollout.md`*
 
@@ -109,15 +124,17 @@ The new schema must work correctly with both the previous and current applicatio
 
 ## iOS Companion API Contract
 
-**C21. The iOS companion API surface must not receive breaking changes without a client-coordinated update.**
-Endpoints consumed by the iOS app (see `docs/contracts.md` iOS section) must remain backward-compatible. Removing or renaming fields in their responses requires a versioning strategy.
+**C23. The iOS companion API surface must not receive breaking changes without a client-coordinated update.**
+Endpoints listed in `docs/contracts.md` (iOS section) must remain backward-compatible.
 
 ---
 
 ## Common wrong assumptions
 
 - **"I can cache preview route bindings for performance"** — you cannot. See C10.
-- **"The JWT workspace membership is always current"** — it was current at issuance. Membership changes require re-auth. Always verify against DB for mutations. See C2.
+- **"The JWT workspace membership is always current"** — it was current at issuance. Always verify against DB for mutations. See C2.
 - **"Admin service accounts can bypass workspace_id filtering"** — there is no such bypass. See C3.
 - **"I can import the Anthropic SDK directly in the api service"** — you cannot. See C8.
-- **"I can log the full request body for debugging"** — only if you are certain no credentials are in it. See C5.
+- **"The InMemorySecretManagerProvider check lives in packages/config"** — it does not. It is in `apps/ai-orchestration/src/context.ts`. See C6.
+- **"The orchestrator calls worker-manager HTTP endpoint to allocate leases"** — it does not. It queries the DB directly. See C16.
+- **"Worker hosts report accurate capacity"** — they report hardcoded values. See `docs/runtime.md` host agent section.

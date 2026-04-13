@@ -6,81 +6,71 @@ What needs to happen next, and where the current codebase is unstable or incompl
 
 ## Phase 3 boundary
 
-Phase 3 (UI overhaul, design system, web shell, AI/ops surfaces) is **pending explicit user approval**. Do not implement Phase 3 work in advance.
+Phase 3 (UI overhaul, design system, web shell, AI/ops surfaces) is **pending explicit user approval**. Do not implement Phase 3 work without approval.
 
-Phase 3 intended scope (for planning purposes only — not authorized):
-- Web app design system: Radix + Tailwind component library replacing scaffold UI
-- Web shell: workspace/project navigation, code editor pane, session terminal, preview iframe
-- AI pipeline authoring UI: visual DAG builder, run history, invocation logs
+Phase 3 intended scope (not authorized — for planning only):
+- Web app design system: Radix + Tailwind component library
+- Web shell: workspace/project navigation, session terminal, preview iframe, code editor pane
+- AI pipeline authoring UI: visual DAG builder, run history, invocation log viewer
 - Operational dashboards: worker health, session state, pipeline run monitoring
 
 ---
 
 ## High-value implementation gaps (Phase 2 complete, pre-Phase 3)
 
-These are gaps that exist in the codebase now and are not blocked on Phase 3 approval.
+### 1. Host agent real capacity measurement
 
-### 1. mTLS between control and worker plane
+**Impact:** Correctness — the orchestrator allocates sandbox ports based on data reported by host agents. Currently `collectCapacitySnapshot()` in `apps/host-agent/src/agent.ts` returns hardcoded values (10 slots, ports 32100–32109, always healthy). No actual OS or container runtime is queried.  
+**Code location of stub:** `apps/host-agent/src/agent.ts`, `collectCapacitySnapshot()` function, with TODO comment: `"Phase 2: query the host OS / container runtime for actual state"`  
+**Risk:** The orchestrator allocates ports that may not actually be available on the worker host. Port conflicts at the sandbox level are silent.
 
-**Impact:** Security — ADR 001 explicitly calls for mTLS enforcement on inter-plane traffic.  
-**Current state:** All inter-plane traffic is plain HTTP.  
-**Where to implement:** `apps/host-agent/src/agent.ts`, `apps/worker-manager/src/`, `infra/terraform/compute/`  
-**Risk if deferred:** Sandbox-to-control-plane communication is not cryptographically authenticated.
+### 2. MicroVM provisioning on worker hosts
 
-### 2. Actual MicroVM provisioning on worker hosts
+**Impact:** Core security — ADR 004 requires a MicroVM per session. Port allocation works. No VM is created.  
+**Current state:** Host agent heartbeats and registers. It does not spin up Firecracker VMs or any equivalent. The `starting` → `running` session state transition occurs via the orchestrator DB write, not via a VM boot confirmation.  
+**Code location:** `apps/host-agent/src/agent.ts` — VM lifecycle responsibilities are listed in the comment header but have no implementation  
+**Risk:** User code runs with no sandbox isolation. This is a security gap if real user traffic is served.
 
-**Impact:** Core functionality — the session model describes MicroVM-per-session isolation (ADR 004). Port allocation is wired; actual VM creation is not.  
-**Current state:** `apps/host-agent/src/agent.ts` reports capacity and heartbeats. It does not spin up Firecracker VMs.  
-**Where to implement:** `apps/host-agent/src/agent.ts`  
-**Risk if deferred:** Sessions are allocated a port but no isolated execution environment is created. User code has no sandbox.
+### 3. mTLS between control and worker planes
 
-### 3. Billing adapter integration
+**Impact:** Security — ADR 001 specifies mTLS enforcement. The comment in `apps/worker-manager/src/app.ts` explicitly notes `"mTLS in prod"` as the planned auth mechanism for the `/internal/capacity-snapshot` endpoint. Currently unenforced.  
+**Risk:** The worker-manager accepts capacity snapshots from any caller on the VPC without authentication.
 
-**Impact:** Revenue — usage events are correctly recorded. The `BillingProvider` adapter boundary exists. Nothing is connected.  
-**Current state:** `packages/adapters/src/billing.ts` interface stub; `apps/usage-meter/src/index.ts` records events locally but does not upload.  
-**Where to implement:** `packages/adapters/src/billing.ts` (real implementation), `apps/usage-meter/src/index.ts` (upload loop)
+### 4. `WORKER_UNHEALTHY` event emission
 
-### 4. Partitioned table maintenance automation
+**Impact:** Operational visibility — the event topic exists in contracts. The current worker-manager and host-agent code does not emit it. Unhealthy worker detection only surfaces passively at lease allocation time when `findHealthyWithLock()` finds no healthy workers.  
+**Risk:** Operators have no proactive alert when a worker host stops heartbeating. Detection latency equals the next allocation attempt.
 
-**Impact:** Operational — `audit_logs`, `usage_meter_events`, `pipeline_runs` are range-partitioned by time. Monthly partitions must be created ahead of time.  
-**Current state:** Partitions exist for the current period; creation is manual.  
-**Where to implement:** Scheduled job or `pg_partman` extension configuration.  
-**Risk if deferred:** Inserts into unprepared partition range will fail.
+### 5. Billing adapter integration
 
-### 5. Android companion app
-
-**Impact:** Platform coverage — `apps/mobile-android` is a skeleton with no real screens.  
-**Current state:** Gradle project structure, no implemented screens.  
-**Where to implement:** `apps/mobile-android/`  
-**Note:** iOS companion is complete and defines the scope: monitor/review/collaborate — no IDE parity, no editor, no file browser.
+**Impact:** Revenue — usage events are recorded. `StripeBillingProvider` in `packages/adapters/src/billing.ts` has all methods throwing `NotImplementedError`. `usage-meter` records events locally but does not upload to billing.  
+**Code location:** `packages/adapters/src/billing.ts` (all methods stub), `apps/usage-meter/src/index.ts` (upload loop missing)
 
 ### 6. `model_invocation_logs` read surface
 
-**Impact:** Observability — invocation logs are written correctly. No endpoints expose them.  
-**Current state:** Write path in `apps/ai-orchestration/src/routes/runs.ts`; no GET endpoint or pagination.  
-**Where to implement:** `apps/ai-orchestration/src/routes/` — add read endpoints.
+**Impact:** Observability — write path is implemented and correct. No read endpoints expose invocation history.  
+**Code location:** `apps/ai-orchestration/src/routes/` — add GET endpoint with pagination.
+
+### 7. Partitioned table maintenance
+
+**Impact:** Operational — `audit_logs`, `usage_meter_events`, `pipeline_runs` are range-partitioned by time. `docs/runbooks/db-migration-rollout.md` documents manual partition creation. No automation exists.  
+**Risk:** Inserts into an uncreated partition range will fail silently or with a PostgreSQL error.
+
+### 8. Android companion app completion
+
+**Impact:** Platform coverage — `apps/mobile-android` has a real Compose tab UI (`MainActivity.kt`) and a real Ktor API client (`ApiClient.kt`) with two endpoints (`getMe`, `listWorkspaces`). The full companion scope (status/review/comments) is not yet implemented.  
+**Scope comment in code:** `"Status/review/comments companion — NO code editor, NO terminal"`  
+**Reference:** iOS companion (`apps/mobile-ios`) implements the full scope and is the implementation reference.
 
 ---
 
 ## Unstable areas
 
-Approach with care; these areas are likely to change significantly.
-
 | Area | Why unstable | What to avoid |
 |------|-------------|---------------|
-| Web app UI components (`apps/web/src/components/`) | Phase 3 will replace these with a design system. Current components are scaffold-only. | Heavy investment in current component structure |
-| Host agent VM lifecycle (`apps/host-agent/src/agent.ts`) | MicroVM integration not implemented. Structure will change when real VM provisioning is added. | Tightly coupling orchestrator to host-agent internals |
-| Infrastructure target (AWS vs GCP) | Terraform targets GCP; application adapters support both AWS and GCP. The deployment target is not definitively locked in documentation. | Hardcoding AWS or GCP SDK calls outside the adapters layer |
-| Android companion (`apps/mobile-android/`) | Not started beyond skeleton. Architecture decisions not made. | Assuming iOS patterns will directly map to Android |
-| `model_invocation_logs` query surface | Write path exists; read surface not designed. Schema or access patterns may change. | Building external integrations against direct DB queries |
-
----
-
-## Infrastructure ambiguity to resolve
-
-The README states AWS infrastructure. The actual Terraform deploys to GCP. The application adapters support both. This creates ambiguity when:
-- Writing new runbooks (which CLI tools to reference)
-- Adding new infrastructure resources (which provider to use)
-- Configuring secret management in production
-
-**Resolution needed:** Decide the canonical production infrastructure target (GCP vs AWS) and update README, runbooks, and Terraform to reflect a single consistent answer.
+| Web app UI components (`apps/web/src/components/`) | Phase 3 will replace these with a design system | Heavy investment in current layout |
+| Host agent VM lifecycle | MicroVM integration not implemented; structure will change significantly | Tightly coupling orchestrator to host-agent internals before VM lifecycle is defined |
+| Host agent port range | Currently hardcoded 32100–32109 per host; will change when real OS querying is added | Hardcoding this range anywhere except reading from `worker_capacity.available_ports` |
+| Android companion full scope | Partial implementation; API surface not fully defined | Assuming iOS patterns map 1:1 to Android before Android scope is confirmed |
+| `model_invocation_logs` query surface | No read endpoints exist; schema may evolve | Building external integrations against direct DB queries on this table |
+| Infrastructure secrets selection | `NODE_ENV === 'production'` hardcoded in context.ts; no env var override | Adding a new `SECRET_MANAGER_PROVIDER` env var without also updating the context.ts check |

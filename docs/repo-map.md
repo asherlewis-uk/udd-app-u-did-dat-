@@ -5,7 +5,7 @@
 | I need to... | Look here |
 |---|---|
 | Change REST API behavior (routes, handlers) | `apps/api/src/routes/` |
-| Change session lifecycle logic | `apps/orchestrator/src/services/session.ts` |
+| Change session lifecycle or lease allocation logic | `apps/orchestrator/src/services/session.ts` — lease allocation happens here via DB transaction, not via HTTP to worker-manager |
 | Change preview proxy behavior | `apps/gateway/src/proxy.ts`, `apps/gateway/src/registry.ts` |
 | Change RBAC roles or permissions | `packages/auth/src/rbac.ts` |
 | Change permission policy helpers | `packages/auth/src/policies.ts` |
@@ -19,8 +19,9 @@
 | Add a new AI provider | `packages/adapters/src/model-provider/` + `registry.ts` + `packages/contracts/src/enums.ts` |
 | Change secret manager behavior | `packages/adapters/src/secret-manager.ts` |
 | Change env var definitions or defaults | `packages/config/src/index.ts` — then update `docs/ENV_CONTRACT.md` |
-| Change worker capacity / lease logic | `apps/worker-manager/src/` |
-| Change host agent heartbeat behavior | `apps/host-agent/src/agent.ts` |
+| Change capacity snapshot ingestion | `apps/worker-manager/src/app.ts` — single endpoint: `POST /internal/capacity-snapshot` |
+| Change host agent heartbeat or registration | `apps/host-agent/src/agent.ts` |
+| Implement real capacity measurement (stub) | `apps/host-agent/src/agent.ts`, `collectCapacitySnapshot()` |
 | Change DAG validation for pipelines | `apps/ai-orchestration/src/dag-validator.ts` |
 | Change collaboration / presence logic | `apps/collaboration/src/` |
 | Change idle session detection | `apps/session-reaper/src/index.ts` |
