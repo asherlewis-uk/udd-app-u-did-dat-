@@ -1,6 +1,6 @@
 # Architecture
 
-Back to [docs/_INDEX.md](./_INDEX.md).
+Back to [docs/\_INDEX.md](./_INDEX.md).
 
 ## Canonical posture
 
@@ -14,19 +14,19 @@ Local development exists to build and operate the product, and to validate stack
 
 ## Boundary model
 
-| Module | Purpose | Repo reality | Class | Notes |
-|---|---|---|---|---|
-| App shell and UX | Hosted user-facing shell for auth, projects, sessions, preview, AI surfaces | `apps/web`, `apps/api`, `apps/mobile-ios` | Core | Web is the primary hosted surface. iOS is a required first-class surface. |
-| AI orchestration | Provider configs, roles, pipelines, run execution, invocation logging | `apps/ai-orchestration`, `packages/adapters`, `packages/contracts`, `packages/events` | Core | Provider boundary and secret handling are real. |
-| Project indexing and memory | Searchable project context, code memory, retrieval state for AI workflows | No dedicated subsystem yet | Core | Canonical boundary exists; implementation is incomplete. See [docs/implementation-gaps.md](./implementation-gaps.md). |
-| Scaffold and template engine | Turn an idea into a new project or a known stack template | No dedicated subsystem yet | Core | Canonical boundary exists; implementation is incomplete. |
-| Stack adapters | Detect, normalize, and operate across many stacks without leaking stack details into core services | Partially implicit in web editor stubs and service code; no registry | Core | Polyglot support is product scope, but the repo lacks a first-class stack registry today. |
-| Runtime and execution manager | Create sessions, allocate runtime capacity, start and stop runs, manage lifecycle | `apps/orchestrator`, `apps/worker-manager`, `apps/host-agent`, `apps/session-reaper` | Core | Hosted runtime is canonical. Isolation and capacity reporting are still incomplete. |
-| Preview system | Turn a running session into a user-facing preview URL or preview frame | `apps/gateway`, preview route repositories, web/iOS preview consumers | Core | Hosted preview is canonical. |
-| Export and deploy adapters | Hand off artifacts to Git providers, storage, or external deploy targets | `packages/adapters`, `packages/database` project repo and artifact tables | Adapter | Deployment is not the core product. |
-| Provider and secret handling | Store refs, fetch secrets, invoke providers, redact sensitive fields | `packages/adapters`, `apps/ai-orchestration` | Core | Strong boundary. Keep it. |
-| Collaboration support | Comments, presence, websocket fan-out | `apps/collaboration` | Optional | Present in code, not a defining product concept. |
-| Android client | Additional mobile surface | `apps/mobile-android` | Optional | Exists in repo. Not first-class in the canonical product story. |
+| Module                        | Purpose                                                                                            | Repo reality                                                                          | Class    | Notes                                                                                                                                                          |
+| ----------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App shell and UX              | Hosted user-facing shell for auth, projects, sessions, preview, AI surfaces                        | `apps/web`, `apps/api`, `apps/mobile-ios`                                             | Core     | Web is the primary hosted surface. iOS is a required first-class surface.                                                                                      |
+| AI orchestration              | Provider configs, roles, pipelines, run execution, invocation logging                              | `apps/ai-orchestration`, `packages/adapters`, `packages/contracts`, `packages/events` | Core     | Provider boundary and secret handling are real.                                                                                                                |
+| Project indexing and memory   | Searchable project context, code memory, retrieval state for AI workflows                          | No dedicated subsystem yet                                                            | Core     | Canonical boundary exists; implementation is incomplete. See [docs/implementation-gaps.md](./implementation-gaps.md).                                          |
+| Scaffold and template engine  | Turn an idea into a new project or a known stack template                                          | No dedicated subsystem yet                                                            | Core     | Decision made: built-in bundled templates, repo-versioned. See [docs/implementation-gaps.md](./implementation-gaps.md).                                        |
+| Stack adapters                | Detect, normalize, and operate across many stacks without leaking stack details into core services | Partially implicit in web editor stubs and service code; no registry                  | Core     | Decision made: static config-driven stack registry. See [docs/implementation-gaps.md](./implementation-gaps.md).                                               |
+| Runtime and execution manager | Create sessions, allocate runtime capacity, start and stop runs, manage lifecycle                  | `apps/orchestrator`, `apps/worker-manager`, `apps/host-agent`, `apps/session-reaper`  | Core     | Hosted runtime is canonical. Isolation approach decided: container-per-session ([ADR 014](./adr/014-container-per-session-isolation.md)). Implementation open. |
+| Preview system                | Turn a running session into a user-facing preview URL or preview frame                             | `apps/gateway`, preview route repositories, web/iOS preview consumers                 | Core     | Hosted preview is canonical.                                                                                                                                   |
+| Export and deploy adapters    | Hand off artifacts to Git providers, storage, or external deploy targets                           | `packages/adapters`, `packages/database` project repo and artifact tables             | Adapter  | Deployment is not the core product.                                                                                                                            |
+| Provider and secret handling  | Store refs, fetch secrets, invoke providers, redact sensitive fields                               | `packages/adapters`, `apps/ai-orchestration`                                          | Core     | Strong boundary. Keep it.                                                                                                                                      |
+| Collaboration support         | Comments, presence, websocket fan-out                                                              | `apps/collaboration`                                                                  | Optional | Present in code, not a defining product concept.                                                                                                               |
+| Android client                | Additional mobile surface                                                                          | `apps/mobile-android`                                                                 | Optional | Exists in repo. Not first-class in the canonical product story.                                                                                                |
 
 ## Core, adapter, and optional infrastructure
 
@@ -103,7 +103,7 @@ Local development exists to build and operate the product, and to validate stack
 
 ## Current implementation notes
 
-- The canonical model is project-centered and solo-first, but the repo still encodes `Organization -> Workspace -> Project` across schema, routes, auth claims, and UI. See [docs/domain-model.md](./domain-model.md) and [docs/implementation-gaps.md](./implementation-gaps.md).
-- Hosted runtime is canonical, but the repo does not yet implement a full scaffold engine, project memory service, or production-ready session isolation.
-- Collaboration exists as a service, but it is not part of the product center.
+- The canonical model is project-centered and solo-first, but the repo still encodes `Organization -> Workspace -> Project` across schema, routes, auth claims, and UI. Migration strategy: thin-workspace ([ADR 013](./adr/013-thin-workspace-migration-strategy.md)). See [docs/domain-model.md](./domain-model.md) and [docs/implementation-gaps.md](./implementation-gaps.md).
+- Hosted runtime is canonical. Isolation approach: container-per-session ([ADR 014](./adr/014-container-per-session-isolation.md)). Stack registry and scaffold engine decisions are made but not yet implemented.
+- Collaboration exists as a service, but it is frozen as dormant and not part of the product center.
 - Workflow files are intentionally out of scope for this pass. Any architecture drift encoded there is tracked in [docs/implementation-gaps.md](./implementation-gaps.md).

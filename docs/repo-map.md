@@ -1,16 +1,16 @@
 # Repo Map
 
-Back to [docs/_INDEX.md](./_INDEX.md).
+Back to [docs/\_INDEX.md](./_INDEX.md).
 
 ## Top-level folders
 
-| Path | What it holds | Source of truth? |
-|---|---|---|
-| `apps/` | Hosted services and client apps | Runtime and client implementation |
-| `packages/` | Shared contracts, auth, config, database, adapters, observability | Shared implementation source |
-| `docs/` | Canonical docs, ADRs, runbooks, archive | Documentation source of truth |
-| `infra/terraform/` | Hosted infrastructure definitions | Infra implementation source |
-| `.github/workflows/` | CI and deployment automation | Not authoritative for architecture; drift tracked in docs |
+| Path                 | What it holds                                                     | Source of truth?                                          |
+| -------------------- | ----------------------------------------------------------------- | --------------------------------------------------------- |
+| `apps/`              | Hosted services and client apps                                   | Runtime and client implementation                         |
+| `packages/`          | Shared contracts, auth, config, database, adapters, observability | Shared implementation source                              |
+| `docs/`              | Canonical docs, ADRs, runbooks, archive                           | Documentation source of truth                             |
+| `infra/terraform/`   | Hosted infrastructure definitions                                 | Infra implementation source                               |
+| `.github/workflows/` | CI and deployment automation                                      | Not authoritative for architecture; drift tracked in docs |
 
 ## Canonical source-of-truth files
 
@@ -37,7 +37,7 @@ Do not hand-edit generated output.
 
 ## Where templates live
 
-There is no first-class `templates/` or scaffold directory in the repo today. That is an implementation gap, not an undocumented feature.
+There is no first-class `templates/` or scaffold directory in the repo today. Decision made: built-in bundled templates will be repo-versioned. A dedicated scaffold package and templates directory are implementation tasks. See [docs/implementation-gaps.md](./implementation-gaps.md).
 
 ## Where runtime code lives
 
@@ -66,15 +66,15 @@ There is no first-class `templates/` or scaffold directory in the repo today. Th
 
 ## Practical lookup
 
-| Need | Go here |
-|---|---|
-| Web client behavior | `apps/web/` |
-| iOS client behavior | `apps/mobile-ios/` |
-| API routes | `apps/api/src/routes/` |
-| Session lifecycle | `apps/orchestrator/src/services/session.ts` |
-| Preview behavior | `apps/gateway/src/` |
-| Provider config and runs | `apps/ai-orchestration/src/routes/` |
-| Env accessors | `packages/config/src/index.ts` |
-| Shared entities and enums | `packages/contracts/src/` |
-| Schema and repositories | `packages/database/src/` |
-| Observability helpers | `packages/observability/src/` |
+| Need                      | Go here                                     |
+| ------------------------- | ------------------------------------------- |
+| Web client behavior       | `apps/web/`                                 |
+| iOS client behavior       | `apps/mobile-ios/`                          |
+| API routes                | `apps/api/src/routes/`                      |
+| Session lifecycle         | `apps/orchestrator/src/services/session.ts` |
+| Preview behavior          | `apps/gateway/src/`                         |
+| Provider config and runs  | `apps/ai-orchestration/src/routes/`         |
+| Env accessors             | `packages/config/src/index.ts`              |
+| Shared entities and enums | `packages/contracts/src/`                   |
+| Schema and repositories   | `packages/database/src/`                    |
+| Observability helpers     | `packages/observability/src/`               |

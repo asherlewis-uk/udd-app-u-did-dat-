@@ -1,7 +1,7 @@
 # Runbook: Worker Failure
 
 **Status:** Canonical  
-Back to [docs/_INDEX.md](../_INDEX.md).
+Back to [docs/\_INDEX.md](../_INDEX.md).
 
 ## Use this runbook when
 
@@ -59,5 +59,6 @@ WHERE worker_host = '<failed-worker-host>'
 
 ## Notes
 
-- Current host-agent capacity reporting is stubbed, so operator confidence should stay low until runtime isolation and capacity truth improve.
+- Current host-agent capacity reporting is stubbed, so operator confidence should stay low until container-per-session isolation ([ADR 014](../adr/014-container-per-session-isolation.md)) and capacity truth improve.
+- Session reaper canonical model: scheduled single-invocation job. Current code runs as a long-lived interval loop. If session-reaper cleanup appears stalled, check whether the scheduler trigger is firing rather than assuming the process is hung.
 - If the failure is local rather than hosted, use [local-runtime-failure.md](./local-runtime-failure.md).

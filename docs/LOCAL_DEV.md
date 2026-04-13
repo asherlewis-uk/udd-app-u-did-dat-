@@ -1,6 +1,6 @@
 # Local Development
 
-Back to [docs/_INDEX.md](./_INDEX.md).
+Back to [docs/\_INDEX.md](./_INDEX.md).
 
 ## Purpose
 
@@ -104,7 +104,7 @@ psql postgresql://udddev:udddev@localhost:5432/udd_dev -c "SELECT version, appli
 
 ## Recommended local service startup
 
-Do **not** rely on `pnpm dev` as the clean all-services entrypoint. The current repo has default port collisions.
+Do **not** rely on `pnpm dev` as the clean all-services entrypoint. The current repo has default port collisions. **Decision:** Code defaults will be changed so no two services share a default port. Until then, use explicit port overrides as shown below.
 
 ### Minimum hosted-web stack
 
@@ -165,7 +165,7 @@ pnpm test
 ### iOS surface
 
 1. On macOS, open `apps/mobile-ios/Package.swift` in Xcode.
-2. Confirm `AppConfig.swift` points DEBUG builds at the local API and gateway.
+2. Confirm `AppConfig.swift` points DEBUG builds at the local API and gateway. **Note:** Current AppConfig.swift contains placeholder values; these will be replaced with real environment-specific compile-time config using Xcode build-phase parameterization. See [docs/implementation-gaps.md](./implementation-gaps.md).
 3. Run the generated `UDDCompanion` scheme in Simulator.
 4. Sign in and verify the iOS client can load workspaces, projects, sessions, and previews against the local stack.
 

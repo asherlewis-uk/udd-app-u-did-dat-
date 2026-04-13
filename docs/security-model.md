@@ -1,6 +1,6 @@
 # Security Model
 
-Back to [docs/_INDEX.md](./_INDEX.md).
+Back to [docs/\_INDEX.md](./_INDEX.md).
 
 ## Canonical rules
 
@@ -44,7 +44,7 @@ Back to [docs/_INDEX.md](./_INDEX.md).
 ### Current repo reality
 
 - The repo has session allocation, preview binding, and host-agent heartbeat plumbing.
-- It does not yet expose a complete production-ready command-execution subsystem with verified sandbox isolation.
+- It does not yet expose a complete production-ready command-execution subsystem with verified sandbox isolation. Isolation approach: container-per-session ([ADR 014](./adr/014-container-per-session-isolation.md)). Implementation is open.
 - Treat any missing shell/runtime enforcement as an implementation gap, not as implied permission to execute outside the runtime boundary.
 
 ## Path restrictions

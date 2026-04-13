@@ -1,6 +1,6 @@
 # Execution Modes
 
-Back to [docs/_INDEX.md](./_INDEX.md).
+Back to [docs/\_INDEX.md](./_INDEX.md).
 
 ## Canonical rule
 
@@ -8,10 +8,10 @@ The product is **hosted-first**. Product docs, architecture docs, and client-sur
 
 ## Modes
 
-| Mode | Canonical? | Primary users | Primary surfaces | Trust boundary | Current repo support |
-|---|---|---|---|---|---|
-| Hosted product mode | Yes | End users and operators | Web and iOS | Hosted API, hosted runtime services, hosted preview gateway, provider adapters, secret manager | Present, but incomplete in runtime isolation and some service wiring |
-| Local development mode | Supported | Engineers and operators | Local web, local services, local iOS testing | Developer machine, local PostgreSQL/Redis, local shell, local gateway | Present, but not cleanly packaged and has port/config drift |
+| Mode                   | Canonical? | Primary users           | Primary surfaces                             | Trust boundary                                                                                 | Current repo support                                                 |
+| ---------------------- | ---------- | ----------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Hosted product mode    | Yes        | End users and operators | Web and iOS                                  | Hosted API, hosted runtime services, hosted preview gateway, provider adapters, secret manager | Present, but incomplete in runtime isolation and some service wiring |
+| Local development mode | Supported  | Engineers and operators | Local web, local services, local iOS testing | Developer machine, local PostgreSQL/Redis, local shell, local gateway                          | Present, but not cleanly packaged and has port/config drift          |
 
 ## Hosted product mode
 
@@ -83,5 +83,5 @@ The product is **hosted-first**. Product docs, architecture docs, and client-sur
 ## Current implementation notes
 
 - The repo strongly reflects hosted services, gateway previews, and internal orchestration. That aligns with the hosted-first product story.
-- Local development is possible, but `pnpm dev` is not a clean all-services entrypoint today because several services collide on default ports.
-- Runtime isolation in hosted mode is not complete. Host-agent capacity reporting is stubbed and MicroVM-level isolation is not implemented.
+- Local development is possible, but `pnpm dev` is not a clean all-services entrypoint today because several services collide on default ports. Decision: code defaults will be changed so no two services share a port.
+- Runtime isolation approach: container-per-session ([ADR 014](./adr/014-container-per-session-isolation.md)). Implementation is open. Host-agent capacity reporting is stubbed and container-per-session provisioning is not yet implemented.

@@ -1,6 +1,6 @@
 # Flows
 
-Back to [docs/_INDEX.md](./_INDEX.md).
+Back to [docs/\_INDEX.md](./_INDEX.md).
 
 ## Canonical user and system flows
 
@@ -15,7 +15,7 @@ Hosted product flows come first. Local-development flows exist to support buildi
 5. Initial files and stack defaults are produced.
 6. User lands in the hosted project view, ready to run or edit.
 
-Current repo note: project persistence exists, but a first-class scaffold engine does not. See [docs/implementation-gaps.md](./implementation-gaps.md).
+Current repo note: project persistence exists, but the scaffold engine (built-in bundled templates) is not yet implemented. See [docs/implementation-gaps.md](./implementation-gaps.md).
 
 ## Open or import existing project
 
@@ -32,7 +32,7 @@ Current repo note: the current API and UI still route through workspace-shaped o
 2. Stack adapter resolves language, framework, runtime hints, and preview defaults.
 3. Result feeds scaffolding, runtime commands, preview behavior, and AI edit safety.
 
-Current repo note: this is a canonical boundary without a first-class implementation yet.
+Current repo note: this is a canonical boundary. Decision made: static config-driven stack registry. Implementation is open.
 
 ## Scaffold from template
 
@@ -41,7 +41,7 @@ Current repo note: this is a canonical boundary without a first-class implementa
 3. Runtime and preview defaults are attached to the project.
 4. User can immediately start a hosted run or continue editing.
 
-Current repo note: template scaffolding is not implemented as a dedicated subsystem yet.
+Current repo note: template scaffolding decision made (built-in bundled templates), but not implemented as a dedicated subsystem yet.
 
 ## Apply AI edits safely
 

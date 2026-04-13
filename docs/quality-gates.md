@@ -1,6 +1,6 @@
 # Quality Gates
 
-Back to [docs/_INDEX.md](./_INDEX.md).
+Back to [docs/\_INDEX.md](./_INDEX.md).
 
 ## Canonical merge gates
 
@@ -34,7 +34,8 @@ pnpm build
 
 - Hosted-first assumptions must stay explicit in architecture and runtime docs.
 - Web and iOS remain first-class client surfaces.
-- Collaboration features must not be promoted into the product center without an ADR.
+- iOS conformance tests must verify that shared contracts from `packages/contracts` are consumed correctly by the iOS client. These tests are a required quality gate for contract changes that affect iOS.
+- Collaboration features must not be promoted into the product center without an ADR. Collaboration is currently frozen as dormant.
 - Runtime or preview behavior changes must be reflected in `docs/runtime.md`, `docs/flows.md`, and the relevant runbooks.
 
 ## Config and secret gates
