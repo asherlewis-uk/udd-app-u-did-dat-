@@ -1,7 +1,7 @@
 # Runbook: Secret Rotation
 
 **Status:** Canonical  
-Back to [docs/_INDEX.md](../_INDEX.md).
+Back to [docs/\_INDEX.md](../_INDEX.md).
 
 ## Use this runbook when
 
@@ -14,6 +14,7 @@ Back to [docs/_INDEX.md](../_INDEX.md).
 1. Revoke or replace the provider credential at the external provider.
 2. Call the rotate-secret route on the provider config:
    `POST /workspaces/:id/ai/providers/:providerConfigId/rotate-secret`
+   > **Note:** This route uses the current workspace-shaped API. The canonical model is project-first ([ADR 013](../adr/013-thin-workspace-migration-strategy.md)). Route paths will change during migration.
 3. Confirm the stored `credential_secret_ref` changed.
 4. Confirm new invocations succeed.
 

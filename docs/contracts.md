@@ -75,13 +75,13 @@ This file defines the stable internal boundaries the rest of the docs rely on. W
 
 ## Secret manager contract
 
-| Item         | Contract                                                                     |
-| ------------ | ---------------------------------------------------------------------------- |
-| Purpose      | Store and fetch secret values without persisting plaintext in product tables |
-| Inputs       | Secret write request, secret ref lookup, rotation request                    |
-| Outputs      | Secret ref, fetched secret value at call time, rotation result               |
-| Errors       | Not found, permission denied, provider unavailable, invalid ref              |
-| Current code | `GCPSecretManagerProvider`, `InMemorySecretManagerProvider`                  |
+| Item         | Contract                                                                                                                                                                                          |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Purpose      | Store and fetch secret values without persisting plaintext in product tables                                                                                                                      |
+| Inputs       | Secret write request, secret ref lookup, rotation request                                                                                                                                         |
+| Outputs      | Secret ref, fetched secret value at call time, rotation result                                                                                                                                    |
+| Errors       | Not found, permission denied, provider unavailable, invalid ref                                                                                                                                   |
+| Current code | `GCPSecretManagerProvider` (production/hosted), `InMemorySecretManagerProvider` (dev/test). Selection authority: `SECRET_MANAGER_PROVIDER` config flag. See [ENV_CONTRACT.md](./ENV_CONTRACT.md). |
 
 ## Export and deploy adapter contract
 

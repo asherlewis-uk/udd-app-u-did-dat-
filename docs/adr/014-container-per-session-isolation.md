@@ -1,7 +1,7 @@
 # ADR 014: Container-per-Session Isolation
 
 **Status:** Canonical  
-**Date:** 2025-07-14  
+**Date:** 2026-04-13  
 **Refines:** [ADR 008 — Hosted Execution Canonical](./008-hosted-execution-canonical.md)  
 **Supersedes:** [ADR 004 — MicroVM Isolation](./004-microvm-isolation.md)
 

@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Date:** 2026-04-11  
-Back to [docs/_INDEX.md](../_INDEX.md).
+Back to [docs/\_INDEX.md](../_INDEX.md).
 
 ## Context
 
@@ -16,7 +16,8 @@ Current repo reality:
 
 - Production path: `GCPSecretManagerProvider`
 - Development and test path: `InMemorySecretManagerProvider`
-- Current selection in `apps/ai-orchestration` is driven by `NODE_ENV`, not by a single fully authoritative config flag
+- **Decision (supersedes prior behavior):** `SECRET_MANAGER_PROVIDER` config flag is the sole selection authority for secret-manager provider. The legacy `NODE_ENV`-based selection in `apps/ai-orchestration` is deprecated and must be removed. See [docs/implementation-gaps.md](../implementation-gaps.md) and [docs/ENV_CONTRACT.md](../ENV_CONTRACT.md).
+- Until the implementation change is applied, `apps/ai-orchestration` still selects via `NODE_ENV`. This is a known implementation gap, not the canonical behavior.
 
 ## Consequences
 

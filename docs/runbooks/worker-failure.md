@@ -21,6 +21,8 @@ ORDER BY reported_at DESC;
 
 ### Check for stranded sessions
 
+> **Note:** The `workspace_id` column below reflects current implementation. The canonical model is project-first ([ADR 013](../adr/013-thin-workspace-migration-strategy.md)). The column remains as an internal shard key.
+
 ```sql
 SELECT id, workspace_id, state, worker_host, host_port
 FROM sessions

@@ -24,8 +24,27 @@ This index defines the canonical documentation set, the reading order for humans
 16. [implementation-gaps.md](implementation-gaps.md)
 17. [change-protocol.md](change-protocol.md)
 18. [quality-gates.md](quality-gates.md)
-19. Relevant ADRs in [adr/](adr/)
+19. Relevant ADRs in [adr/](adr/) — see index below
 20. Relevant runbooks in [runbooks/](runbooks/)
+
+## ADR Index
+
+| ADR                                                       | Title                                   | Status                          |
+| --------------------------------------------------------- | --------------------------------------- | ------------------------------- |
+| [001](adr/001-split-control-worker-plane.md)              | Split control/worker plane              | Canonical                       |
+| [002](adr/002-port-mapped-preview-proxy.md)               | Port-mapped preview proxy               | Canonical                       |
+| [003](adr/003-workspace-tenancy.md)                       | Workspace tenancy                       | Superseded by ADR 007, 010, 013 |
+| [004](adr/004-microvm-isolation.md)                       | MicroVM-per-session isolation           | Superseded by ADR 008, 014      |
+| [005](adr/005-model-provider-adapter-boundary.md)         | Model provider adapter boundary         | Canonical                       |
+| [006](adr/006-external-secret-manager.md)                 | External secret manager                 | Canonical                       |
+| [007](adr/007-solo-first-hosted-first-product-model.md)   | Solo-first hosted-first product model   | Canonical                       |
+| [008](adr/008-hosted-execution-canonical.md)              | Hosted execution canonical              | Canonical                       |
+| [009](adr/009-local-development-supported-mode.md)        | Local development supported mode        | Canonical                       |
+| [010](adr/010-project-centered-identity-model.md)         | Project-centered identity model         | Canonical                       |
+| [011](adr/011-hosted-preview-default.md)                  | Hosted preview default                  | Canonical                       |
+| [012](adr/012-web-and-ios-first-class-client-surfaces.md) | Web and iOS first-class client surfaces | Canonical                       |
+| [013](adr/013-thin-workspace-migration-strategy.md)       | Thin-workspace migration strategy       | Canonical                       |
+| [014](adr/014-container-per-session-isolation.md)         | Container-per-session isolation         | Canonical                       |
 
 ## Canonical vs Historical
 
@@ -50,6 +69,7 @@ This index defines the canonical documentation set, the reading order for humans
 ## Conflict Rules
 
 If canonical docs conflict, use this priority order:
+
 1. `docs/product-scope.md`
 2. `docs/architecture.md`
 3. `docs/domain-model.md`

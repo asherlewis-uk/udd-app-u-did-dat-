@@ -2,8 +2,8 @@
 
 **Status:** Superseded  
 **Date:** 2026-04-11  
-**Superseded by:** [ADR 008](./008-hosted-execution-canonical.md)  
-Back to [docs/_INDEX.md](../_INDEX.md).
+**Superseded by:** [ADR 008 — Hosted Execution Canonical](./008-hosted-execution-canonical.md), [ADR 014 — Container-per-Session Isolation](./014-container-per-session-isolation.md)  
+Back to [docs/\_INDEX.md](../_INDEX.md).
 
 ## Context
 

@@ -1,7 +1,7 @@
 # ADR 013: Thin-Workspace Migration Strategy
 
 **Status:** Canonical  
-**Date:** 2025-07-14  
+**Date:** 2026-04-13  
 **Builds on:** [ADR 010 — Project-Centered Identity Model](./010-project-centered-identity-model.md)  
 **Supersedes:** [ADR 003 — Workspace Tenancy](./003-workspace-tenancy.md) (already superseded by ADR 007 and 010; this ADR completes the replacement)
 

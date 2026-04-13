@@ -24,7 +24,7 @@ Back to [docs/\_INDEX.md](./_INDEX.md).
 - `apps/ai-orchestration` owns provider config writes and reads.
 - Production uses `GCPSecretManagerProvider`.
 - Development and test use `InMemorySecretManagerProvider`.
-- The effective provider selection in current code is controlled by `NODE_ENV`, not by a fully authoritative config contract. That mismatch is tracked in [docs/implementation-gaps.md](./implementation-gaps.md).
+- **Canonical selection authority:** `SECRET_MANAGER_PROVIDER` config flag. `NODE_ENV`-based selection is deprecated. Until the implementation migration is applied, `apps/ai-orchestration` still selects via `NODE_ENV`. That mismatch is tracked in [docs/implementation-gaps.md](./implementation-gaps.md).
 
 ## Secret manager rules
 

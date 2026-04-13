@@ -1,7 +1,7 @@
 # Runbook: Stuck Pipeline Run
 
 **Status:** Canonical  
-Back to [docs/_INDEX.md](../_INDEX.md).
+Back to [docs/\_INDEX.md](../_INDEX.md).
 
 ## Symptoms
 
@@ -10,6 +10,8 @@ Back to [docs/_INDEX.md](../_INDEX.md).
 - Provider calls or run state transitions stop appearing in logs
 
 ## Diagnosis
+
+> **Note:** The `workspace_id` column below reflects current implementation. The canonical model is project-first ([ADR 013](../adr/013-thin-workspace-migration-strategy.md)). The column remains as an internal shard key.
 
 ```sql
 SELECT id, pipeline_id, workspace_id, status, started_at, finished_at, error_summary

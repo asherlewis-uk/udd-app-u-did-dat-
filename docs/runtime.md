@@ -76,14 +76,14 @@ Hosted runtime is the default runtime model for the product. Local runtime exist
 
 ## Timeouts and intervals
 
-| Setting                       | Current source                        | Default         |
-| ----------------------------- | ------------------------------------- | --------------- |
-| Session reaper idle threshold | raw env `IDLE_THRESHOLD_SECONDS`      | `1800` seconds  |
-| Session reaper scan interval  | raw env `SCAN_INTERVAL_MS`            | `60000` ms      |
-| Host heartbeat interval       | `config.worker.heartbeatIntervalMs()` | `30000` ms      |
-| Pipeline stuck timeout        | `config.worker.stuckRunTimeoutMs()`   | `300000` ms     |
-| Sandbox lease TTL             | raw env `SANDBOX_LEASE_TTL_SECONDS`   | `86400` seconds |
-| Preview default TTL           | `config.preview.ttlSeconds()`         | `3600` seconds  |
+| Setting                       | Current source                        | Default                                              |
+| ----------------------------- | ------------------------------------- | ---------------------------------------------------- |
+| Session reaper idle threshold | raw env `IDLE_THRESHOLD_SECONDS`      | `1800` seconds                                       |
+| Session reaper scan interval  | raw env `SCAN_INTERVAL_MS`            | `60000` ms (becomes no-op under scheduled-job model) |
+| Host heartbeat interval       | `config.worker.heartbeatIntervalMs()` | `30000` ms                                           |
+| Pipeline stuck timeout        | `config.worker.stuckRunTimeoutMs()`   | `300000` ms                                          |
+| Sandbox lease TTL             | raw env `SANDBOX_LEASE_TTL_SECONDS`   | `86400` seconds                                      |
+| Preview default TTL           | `config.preview.ttlSeconds()`         | `3600` seconds                                       |
 
 ## Sandboxing and isolation
 
