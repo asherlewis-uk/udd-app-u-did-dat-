@@ -83,6 +83,6 @@ If canonical docs conflict, use this priority order:
 9. archived docs
 
 Root-file precedence is separate:
-`AGENTS.md` > canonical-doc priority defined here > `AI.md` > `GEMINI.md` > `README.md`
+`AGENTS.md` > canonical-doc priority defined here > `CLAUDE.md` > `AI.md` > `GEMINI.md` > `README.md`
 
 If any non-canonical file conflicts with the rules above, treat that file as stale and record the conflict in [implementation-gaps.md](implementation-gaps.md).
