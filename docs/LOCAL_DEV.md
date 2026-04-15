@@ -223,4 +223,3 @@ There is no doc-index generator in this repo. Update these files manually when d
 - `AGENTS.md`
 
 After updating links, run a quick link and terminology sweep before merging.
-

@@ -1,6 +1,6 @@
 # Codex Single-Agent Reset 2026-04
 
-Back to [docs/_INDEX.md](../../_INDEX.md).
+Back to [docs/\_INDEX.md](../../_INDEX.md).
 
 This archive preserves retired orchestration systems that have been superseded by the single instruction file at [AGENTS.md](../../../AGENTS.md).
 

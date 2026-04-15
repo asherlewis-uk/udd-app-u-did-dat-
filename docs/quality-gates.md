@@ -49,4 +49,3 @@ pnpm build
 
 - If a local workflow is required to operate or verify the repo, [docs/LOCAL_DEV.md](./LOCAL_DEV.md) must describe it.
 - If local development remains awkward because of implementation reality, document the awkwardness directly instead of hiding it.
-

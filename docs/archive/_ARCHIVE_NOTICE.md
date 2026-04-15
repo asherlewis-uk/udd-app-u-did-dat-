@@ -1,13 +1,13 @@
 # ARCHIVE NOTICE
 
-Back to [docs/_INDEX.md](../_INDEX.md).
+Back to [docs/\_INDEX.md](../_INDEX.md).
 
 Files in `docs/archive/` are historical and non-authoritative.
 
 ## Rules
 
 - Do not use archived files as implementation truth.
-- Use [docs/_INDEX.md](../_INDEX.md) to find the canonical docs.
+- Use [docs/\_INDEX.md](../_INDEX.md) to find the canonical docs.
 - When a file is archived, the replacement path must be named explicitly.
 
 ## Archived files
@@ -18,4 +18,3 @@ Files in `docs/archive/` are historical and non-authoritative.
   Replacement: [AGENTS.md](../../AGENTS.md)
 - `docs/archive/codex-single-agent-reset-2026-04/prompt-pack-single-agent/`
   Archived single-agent prompt-pack. Execution loop now lives in [AGENTS.md](../../AGENTS.md) directly.
-

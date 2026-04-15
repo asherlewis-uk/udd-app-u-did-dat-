@@ -80,6 +80,7 @@ Run the subset that applies to the changed files. Do not skip verification unles
 GitNexus is available as structural repo context. Use it when it helps. Do not treat it as a mandatory ceremony.
 
 Useful for:
+
 - Exploring unfamiliar code: `gitnexus_query`, `gitnexus_context`
 - Checking blast radius before risky edits: `gitnexus_impact`
 - Verifying change scope: `gitnexus_detect_changes`
@@ -95,6 +96,3 @@ When handing work to another engineer or agent:
 - Then [docs/product-scope.md](docs/product-scope.md) and [docs/architecture.md](docs/architecture.md).
 - Then [docs/domain-model.md](docs/domain-model.md), [docs/execution-modes.md](docs/execution-modes.md), and [docs/contracts.md](docs/contracts.md).
 - Then [docs/implementation-gaps.md](docs/implementation-gaps.md) before they trust the current repo layout.
-
-
-
