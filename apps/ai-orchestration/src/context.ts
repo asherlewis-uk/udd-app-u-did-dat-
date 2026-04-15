@@ -5,6 +5,8 @@ import {
   PgPipelineRunRepository,
   PgMembershipRepository,
   PgAuditLogRepository,
+  PgProjectRepository,
+  PgWorkspaceRepository,
 } from '@udd/database';
 import type {
   ProviderConfigRepository,
@@ -13,6 +15,8 @@ import type {
   PipelineRunRepository,
   MembershipRepository,
   AuditLogRepository,
+  ProjectRepository,
+  WorkspaceRepository,
 } from '@udd/database';
 import { createEventPublisher } from '@udd/events';
 import type { EventPublisher } from '@udd/events';
@@ -28,6 +32,8 @@ export interface AiOrchestratorContext {
   pipelineRuns: PipelineRunRepository;
   memberships: MembershipRepository;
   auditLogs: AuditLogRepository;
+  projects: ProjectRepository;
+  workspaces: WorkspaceRepository;
   events: EventPublisher;
   secrets: SecretManagerProvider;
   resolveAdapter(config: ProviderConfig): ModelProviderAdapter;
@@ -49,6 +55,8 @@ export function getContext(): AiOrchestratorContext {
       pipelineRuns: new PgPipelineRunRepository(),
       memberships: new PgMembershipRepository(),
       auditLogs: new PgAuditLogRepository(),
+      projects: new PgProjectRepository(),
+      workspaces: new PgWorkspaceRepository(),
       events: createEventPublisher(),
       secrets,
       resolveAdapter: resolveAdapterForConfig,

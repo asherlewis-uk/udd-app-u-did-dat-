@@ -61,3 +61,4 @@ local.properties
 # Test artifacts
 jest_junit/
 test-results/
+.gitnexus

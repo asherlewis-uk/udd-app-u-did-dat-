@@ -43,6 +43,7 @@ export interface ProviderConfigView extends Omit<ProviderConfig, 'credentialSecr
 export interface AgentRole {
   id: string;
   workspaceId: string;
+  projectId?: string | null;
   createdByUserId: string;
   name: string;
   description?: string | null;

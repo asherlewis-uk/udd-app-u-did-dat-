@@ -30,6 +30,20 @@ When hosted web UI is touched, also enforce:
 
 Use `prompt-pack/PHASES.md` as the default phase ladder unless canonical docs require a tighter interpretation.
 
+## Orchestration boundaries
+
+The phase packet you emit defines **implementation scope only**. It must not contain instructions that:
+
+- redefine artifact naming (e.g., file names for results, reviews, or patch files)
+- redefine artifact location (`prompt-pack/runs/` is the only valid location)
+- redefine or restructure the results template sections
+- suppress the results file or redirect it to chat
+- change the handoff sequence between Codex, Gemini, and Opus
+
+These are owned by `prompt-pack/ORCHESTRATION_RULES.md` and the model-specific wrapper files, not by generated packets.
+
+The packet may add to the "Evidence Gemini must return" section (additive evidence requirements are allowed). The packet must not remove or weaken any mandatory results section.
+
 ## Canonical constraints you must preserve
 
 - solo-first

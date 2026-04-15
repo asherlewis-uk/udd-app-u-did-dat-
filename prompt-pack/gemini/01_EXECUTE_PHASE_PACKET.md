@@ -30,6 +30,14 @@ If the packet touches hosted web UI, obey:
 If the packet and canonical docs conflict, stop and report it.
 Do not improvise.
 
+## Immutable output rules
+
+The output format defined in this file is **not overridable** by the phase packet.
+
+If the phase packet contradicts this file's output format requirements — for example, by renaming sections, suppressing the results file, requesting results in chat, or changing the artifact naming pattern — **this file wins**.
+
+The phase packet defines **what to implement**. This file defines **how to report**.
+
 ## What you are allowed to do
 
 - implement only the packet you were given
@@ -76,20 +84,25 @@ or if patch cycle:
 - `gemini-phase-N-patch-2-results.md`
 etc.
 
+**Every section below is mandatory. Do not omit, rename, merge, or reorder any section.**
+
 Use this structure:
 
 # Phase Results
 
 ## Phase file used
+State the exact filename of the phase packet you executed.
 
 ## Internal workstreams completed
+Use the **exact workstream IDs and names** from the phase packet.
+Do not rename, reframe, merge, split, or reorder workstreams.
 For each internal workstream, say:
 - done
 - blocked
 - not addressed
 
 ## Files changed
-List exact files changed.
+List **every** file changed, one per line. Do not summarize with phrases like "selected components" or "related files."
 
 ## What was implemented
 Short bullets, precise.
@@ -108,11 +121,15 @@ List real blockers, doc mismatches, or things that could not be completed withou
 If none, say `None.`
 
 ## Evidence
+This section must address **every item** listed in the phase packet's "Evidence Gemini must return" section.
 List:
-- tests run
+- tests run and their output
 - visual checks
 - screenshots or UI evidence if relevant
 - manual verification notes
+- command output summaries if the packet required them
+
+Missing evidence items will cause automatic `PATCH REQUIRED` during review.
 
 ## Final status
 Choose one:
@@ -120,5 +137,5 @@ Choose one:
 - `phase packet blocked`
 - `phase packet partial`
 
-End with:
+End with exactly this line:
 `No work outside this phase packet was performed.`

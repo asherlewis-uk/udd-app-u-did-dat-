@@ -19,10 +19,10 @@ function makeApiFetcher(token: string | null) {
   };
 }
 
-export function usePipelineRuns(token: string | null, workspaceId: string | null) {
+export function usePipelineRuns(token: string | null, projectId: string | null) {
   const fetcher = makeApiFetcher(token);
   const { data, error, isLoading, mutate } = useSWR<{ data: PipelineRunRecord[] }>(
-    token && workspaceId ? `${API_BASE}/workspaces/${workspaceId}/ai/runs` : null,
+    token && projectId ? `${API_BASE}/projects/${projectId}/ai/runs` : null,
     fetcher,
     { refreshInterval: 10_000 },
   );
@@ -35,10 +35,10 @@ export function usePipelineRuns(token: string | null, workspaceId: string | null
   };
 }
 
-export function usePipelines(token: string | null, workspaceId: string | null) {
+export function usePipelines(token: string | null, projectId: string | null) {
   const fetcher = makeApiFetcher(token);
   const { data, error, isLoading, mutate } = useSWR<{ data: PipelineDefinition[] }>(
-    token && workspaceId ? `${API_BASE}/workspaces/${workspaceId}/ai/pipelines` : null,
+    token && projectId ? `${API_BASE}/projects/${projectId}/ai/pipelines` : null,
     fetcher,
   );
 

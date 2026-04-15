@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { getContext } from '../context.js';
 import { createAppError } from '../middleware/error.js';
 import { OptimisticConcurrencyError } from '@udd/database';
+import { mapPreviewView } from './public-view-mappers.js';
 
 const router: Router = Router();
 
@@ -98,7 +99,7 @@ router.post(
         timestamp: new Date().toISOString(),
       });
 
-      return res.status(201).json({ data: binding, correlationId: req.correlationId });
+      return res.status(201).json({ data: mapPreviewView(binding), correlationId: req.correlationId });
     } catch (err) {
       return next(err);
     }
@@ -121,12 +122,7 @@ router.get('/previews/:previewId', requirePermission('preview.read'), async (req
     );
     if (!membership) return next(createAppError('Preview not found', 404, 'NOT_FOUND'));
 
-    // Never expose workerHost/hostPort to clients
-    const { workerHost: _w, hostPort: _p, ...safeBinding } = binding;
-    void _w;
-    void _p;
-
-    return res.json({ data: safeBinding, correlationId: req.correlationId });
+    return res.json({ data: mapPreviewView(binding), correlationId: req.correlationId });
   } catch (err) {
     return next(err);
   }

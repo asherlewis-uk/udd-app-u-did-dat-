@@ -19,10 +19,10 @@ function makeApiFetcher(token: string | null) {
   };
 }
 
-export function useProjects(token: string | null, workspaceId: string | null) {
+export function useProjects(token: string | null) {
   const fetcher = makeApiFetcher(token);
   const { data, error, isLoading, mutate } = useSWR<{ data: Project[] }>(
-    token && workspaceId ? `${API_BASE}/workspaces/${workspaceId}/projects` : null,
+    token ? `${API_BASE}/projects` : null,
     fetcher,
   );
 

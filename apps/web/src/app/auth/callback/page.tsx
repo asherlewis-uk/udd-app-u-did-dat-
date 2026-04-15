@@ -42,7 +42,7 @@ function AuthCallbackInner() {
 
     exchangeCode(code, state)
       .then(() => {
-        router.replace('/workspaces');
+        router.replace('/projects');
       })
       .catch((err: unknown) => {
         toast({

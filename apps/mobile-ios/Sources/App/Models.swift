@@ -46,22 +46,11 @@ struct UserResponse: Decodable, Identifiable {
     let avatarUrl: String?
 }
 
-// MARK: - Workspace
-
-struct Workspace: Decodable, Identifiable, Hashable {
-    let id: String
-    let organizationId: String
-    let name: String
-    let slug: String
-    let createdAt: String
-    let updatedAt: String
-}
-
 // MARK: - Project
 
 struct Project: Decodable, Identifiable, Hashable {
     let id: String
-    let workspaceId: String
+    let workspaceId: String?
     let name: String
     let slug: String
     let description: String?
@@ -74,7 +63,7 @@ struct Project: Decodable, Identifiable, Hashable {
 struct Session: Decodable, Identifiable, Hashable {
     let id: String
     let projectId: String
-    let workspaceId: String
+    let workspaceId: String?
     let userId: String
     let state: String
     let startedAt: String?
@@ -119,7 +108,7 @@ struct PreviewRouteBinding: Decodable, Identifiable {
     let previewId: String
     let sessionId: String
     let projectId: String
-    let workspaceId: String
+    let workspaceId: String?
     let state: String
     let boundAt: String
     let expiresAt: String?

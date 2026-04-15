@@ -5,6 +5,7 @@ import type { PlatformEvent, SessionCreatedEvent, SessionStateChangedEvent } fro
 import { getContext } from '../context.js';
 import { createAppError } from '../middleware/error.js';
 import { OptimisticConcurrencyError, withTransaction } from '@udd/database';
+import { mapSessionView } from './public-view-mappers.js';
 
 const router: Router = Router();
 
@@ -38,7 +39,7 @@ router.get(
       const page = await ctx.sessions.findByProjectId(project.id, pageOpts);
 
       return res.json({
-        data: page.items,
+        data: page.items.map(mapSessionView),
         meta: { nextCursor: page.nextCursor, hasMore: page.hasMore },
         correlationId: req.correlationId,
       });
@@ -107,7 +108,7 @@ router.post(
       };
       await ctx.events.publish(evt);
 
-      return res.status(201).json({ data: session, correlationId: req.correlationId });
+      return res.status(201).json({ data: mapSessionView(session), correlationId: req.correlationId });
     } catch (err) {
       return next(err);
     }
@@ -130,7 +131,7 @@ router.get('/sessions/:id', requirePermission('session.start'), async (req, res,
     );
     if (!membership) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
 
-    return res.json({ data: session, correlationId: req.correlationId });
+    return res.json({ data: mapSessionView(session), correlationId: req.correlationId });
   } catch (err) {
     return next(err);
   }
@@ -176,7 +177,7 @@ router.post('/sessions/:id/start', requirePermission('session.start'), async (re
     };
     await ctx.events.publish(startEvt);
 
-    return res.json({ data: updated, correlationId: req.correlationId });
+    return res.json({ data: mapSessionView(updated), correlationId: req.correlationId });
   } catch (err) {
     if (err instanceof OptimisticConcurrencyError) {
       return next(
@@ -238,7 +239,7 @@ router.post('/sessions/:id/stop', requirePermission('session.stop'), async (req,
     };
     await ctx.events.publish(stopEvt);
 
-    return res.json({ data: updated, correlationId: req.correlationId });
+    return res.json({ data: mapSessionView(updated), correlationId: req.correlationId });
   } catch (err) {
     if (err instanceof OptimisticConcurrencyError) {
       return next(

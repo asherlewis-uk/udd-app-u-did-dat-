@@ -1,4 +1,4 @@
-import type { MembershipRole, Permission, ProviderType, AuthScheme, ModelCatalogMode, PipelineRunSourceType } from './enums.js';
+import type { MembershipRole, Permission, ProviderType, AuthScheme, ModelCatalogMode, PipelineRunSourceType, PipelineRunStatus } from './enums.js';
 
 // ============================================================
 // Standardized Error Envelope
@@ -90,12 +90,22 @@ export interface UpdateMemberRoleRequest {
 
 export interface CreateProjectRequest {
   name: string;
+  slug?: string;
   description?: string;
 }
 
 export interface UpdateProjectRequest {
   name?: string;
   description?: string;
+}
+
+export interface ProjectView {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ConnectRepoRequest {
@@ -124,6 +134,19 @@ export interface CreateCheckpointRequest {
   description?: string;
 }
 
+export interface SessionView {
+  id: string;
+  projectId: string;
+  userId: string;
+  state: string; // Using string to avoid needing to import the enum directly here.
+  startedAt?: string | null;
+  stoppedAt?: string | null;
+  lastActivityAt?: string | null;
+  idleTimeoutSeconds: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ============================================================
 // Preview DTOs
 // ============================================================
@@ -133,6 +156,17 @@ export interface CreatePreviewRequest {
   sandboxPort: number;
   /** Optional TTL in seconds */
   ttlSeconds?: number;
+}
+
+export interface PreviewView {
+  id: string;
+  previewId: string;
+  sessionId: string;
+  projectId: string;
+  state: string;
+  boundAt: string;
+  expiresAt?: string | null;
+  revokedAt?: string | null;
 }
 
 // ============================================================
@@ -176,6 +210,23 @@ export interface RotateSecretRequest {
   newCredential: string;
 }
 
+// Ensure the new view explicitly omits workspaceId
+export interface ProviderConfigPublicView {
+  id: string;
+  createdByUserId: string;
+  name: string;
+  providerType: ProviderType;
+  endpointUrl: string;
+  modelCatalogMode: ModelCatalogMode;
+  authScheme: AuthScheme;
+  isActive: boolean;
+  isSystemManaged: boolean;
+  credentialStatus: 'active' | 'expired' | 'rotating' | 'unknown';
+  lastRotatedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ============================================================
 // AI Role DTOs
 // ============================================================
@@ -200,6 +251,21 @@ export interface UpdateAgentRoleRequest {
   isActive?: boolean;
 }
 
+export interface AgentRoleView {
+  id: string;
+  projectId?: string | null;
+  createdByUserId: string;
+  name: string;
+  description?: string | null;
+  providerConfigId: string;
+  modelIdentifier: string;
+  endpointOverrideUrl?: string | null;
+  roleConfigJson: Record<string, unknown>;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ============================================================
 // AI Pipeline DTOs
 // ============================================================
@@ -207,7 +273,6 @@ export interface UpdateAgentRoleRequest {
 export interface CreatePipelineRequest {
   name: string;
   description?: string;
-  projectId?: string;
   definition: {
     nodes: Array<{ id: string; agentRoleId: string; kind: 'role_step' }>;
     edges: Array<{ from: string; to: string }>;
@@ -226,6 +291,24 @@ export interface UpdatePipelineRequest {
   isActive?: boolean;
 }
 
+export interface PipelineView {
+  id: string;
+  projectId?: string | null;
+  createdByUserId: string;
+  name: string;
+  description?: string | null;
+  pipelineVersion: number;
+  pipelineDefinitionJson: {
+    nodes: Array<{ id: string; agentRoleId: string; kind: 'role_step' }>;
+    edges: Array<{ from: string; to: string }>;
+  };
+  inputSchemaJson?: Record<string, unknown>;
+  outputSchemaJson?: Record<string, unknown>;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ============================================================
 // AI Pipeline Run DTOs
 // ============================================================
@@ -235,6 +318,20 @@ export interface CreatePipelineRunRequest {
   inputPayload?: Record<string, unknown>;
   /** Idempotency key — same key returns existing run */
   idempotencyKey?: string;
+}
+
+export interface PipelineRunView {
+  id: string;
+  projectId?: string | null;
+  pipelineId: string;
+  triggeredByUserId: string;
+  sourceType: PipelineRunSourceType;
+  status: PipelineRunStatus;
+  errorSummary?: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ============================================================
@@ -283,6 +380,7 @@ export const API_ERROR_CODES = {
   PROVIDER_INACTIVE: 'PROVIDER_INACTIVE',
   INVALID_DAG: 'INVALID_DAG',
   IDEMPOTENCY_CONFLICT: 'IDEMPOTENCY_CONFLICT',
+  PROJECT_CONTAINER_UNAVAILABLE: 'PROJECT_CONTAINER_UNAVAILABLE',
 } as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES];

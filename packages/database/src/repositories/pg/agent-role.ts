@@ -7,6 +7,7 @@ function rowToAgentRole(row: Record<string, unknown>): AgentRole {
   return {
     id: row['id'] as string,
     workspaceId: row['workspace_id'] as string,
+    projectId: (row['project_id'] as string | null) ?? null,
     createdByUserId: row['created_by_user_id'] as string,
     name: row['name'] as string,
     description: (row['description'] as string | null) ?? null,
@@ -25,13 +26,14 @@ export class PgAgentRoleRepository implements AgentRoleRepository {
   async create(data: Omit<AgentRole, 'id' | 'createdAt' | 'updatedAt'>): Promise<AgentRole> {
     const row = await queryOne<Record<string, unknown>>(
       `INSERT INTO agent_roles
-         (workspace_id, created_by_user_id, name, description, provider_config_id,
+         (workspace_id, project_id, created_by_user_id, name, description, provider_config_id,
           model_identifier, endpoint_override_url, system_instructions_ref,
           role_config_json, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         data.workspaceId,
+        data.projectId ?? null,
         data.createdByUserId,
         data.name,
         data.description ?? null,
@@ -63,6 +65,29 @@ export class PgAgentRoleRepository implements AgentRoleRepository {
     const rows = await queryMany<Record<string, unknown>>(
       `SELECT * FROM agent_roles
        WHERE workspace_id = $1 ${clause}
+       ORDER BY created_at DESC, id DESC
+       LIMIT $${cursorParams.length + 1}`,
+      [...cursorParams, limit + 1],
+    );
+
+    const hasMore = rows.length > limit;
+    const items = rows.slice(0, limit).map(rowToAgentRole);
+    const nextCursor =
+      hasMore && items.length > 0
+        ? encodeCursor(items[items.length - 1]!.id, items[items.length - 1]!.createdAt)
+        : null;
+
+    return { items, nextCursor, hasMore };
+  }
+
+  async findByProjectId(projectId: string, options?: PageOptions): Promise<Page<AgentRole>> {
+    const limit = options?.limit ?? DEFAULT_PAGE_LIMIT;
+    const cursor = options?.cursor ? decodeCursor(options.cursor) : null;
+    const { clause, params: cursorParams } = buildCursorClause(cursor, [projectId]);
+
+    const rows = await queryMany<Record<string, unknown>>(
+      `SELECT * FROM agent_roles
+       WHERE project_id = $1 ${clause}
        ORDER BY created_at DESC, id DESC
        LIMIT $${cursorParams.length + 1}`,
       [...cursorParams, limit + 1],

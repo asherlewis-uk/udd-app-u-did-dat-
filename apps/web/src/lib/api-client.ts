@@ -113,55 +113,55 @@ export class ApiClient {
   }
 
   // AI Providers
-  listProviders(workspaceId: string): Promise<PaginatedResponse<ProviderConfig>> {
-    return this.request('GET', `/workspaces/${workspaceId}/ai/providers`);
+  listProviders(): Promise<PaginatedResponse<ProviderConfig>> {
+    return this.request('GET', `/me/ai/providers`);
   }
 
-  createProvider(workspaceId: string, req: CreateProviderConfigRequest): Promise<ApiResponse<ProviderConfig>> {
-    return this.request('POST', `/workspaces/${workspaceId}/ai/providers`, req);
+  createProvider(req: CreateProviderConfigRequest): Promise<ApiResponse<ProviderConfig>> {
+    return this.request('POST', `/me/ai/providers`, req);
   }
 
-  updateProvider(workspaceId: string, providerId: string, req: UpdateProviderConfigRequest): Promise<ApiResponse<ProviderConfig>> {
-    return this.request('PATCH', `/workspaces/${workspaceId}/ai/providers/${providerId}`, req);
+  updateProvider(providerId: string, req: UpdateProviderConfigRequest): Promise<ApiResponse<ProviderConfig>> {
+    return this.request('PATCH', `/me/ai/providers/${providerId}`, req);
   }
 
-  rotateProviderSecret(workspaceId: string, providerId: string, req: RotateSecretRequest): Promise<ApiResponse<void>> {
-    return this.request('POST', `/workspaces/${workspaceId}/ai/providers/${providerId}/rotate-secret`, req);
+  rotateProviderSecret(providerId: string, req: RotateSecretRequest): Promise<ApiResponse<void>> {
+    return this.request('POST', `/me/ai/providers/${providerId}/rotate-secret`, req);
   }
 
-  deleteProvider(workspaceId: string, providerId: string): Promise<ApiResponse<void>> {
-    return this.request('DELETE', `/workspaces/${workspaceId}/ai/providers/${providerId}`);
+  deleteProvider(providerId: string): Promise<ApiResponse<void>> {
+    return this.request('DELETE', `/me/ai/providers/${providerId}`);
   }
 
   // AI Roles
-  listRoles(workspaceId: string): Promise<PaginatedResponse<AgentRole>> {
-    return this.request('GET', `/workspaces/${workspaceId}/ai/roles`);
+  listRoles(projectId: string): Promise<PaginatedResponse<AgentRole>> {
+    return this.request('GET', `/projects/${projectId}/ai/roles`);
   }
 
-  createRole(workspaceId: string, req: CreateAgentRoleRequest): Promise<ApiResponse<AgentRole>> {
-    return this.request('POST', `/workspaces/${workspaceId}/ai/roles`, req);
+  createRole(projectId: string, req: CreateAgentRoleRequest): Promise<ApiResponse<AgentRole>> {
+    return this.request('POST', `/projects/${projectId}/ai/roles`, req);
   }
 
   // AI Pipelines
-  listPipelines(workspaceId: string): Promise<PaginatedResponse<PipelineDefinition>> {
-    return this.request('GET', `/workspaces/${workspaceId}/ai/pipelines`);
+  listPipelines(projectId: string): Promise<PaginatedResponse<PipelineDefinition>> {
+    return this.request('GET', `/projects/${projectId}/ai/pipelines`);
   }
 
-  createPipeline(workspaceId: string, req: CreatePipelineRequest): Promise<ApiResponse<PipelineDefinition>> {
-    return this.request('POST', `/workspaces/${workspaceId}/ai/pipelines`, req);
+  createPipeline(projectId: string, req: CreatePipelineRequest): Promise<ApiResponse<PipelineDefinition>> {
+    return this.request('POST', `/projects/${projectId}/ai/pipelines`, req);
   }
 
   // Pipeline Runs
-  listRuns(workspaceId: string): Promise<PaginatedResponse<PipelineRunRecord>> {
-    return this.request('GET', `/workspaces/${workspaceId}/ai/runs`);
+  listRuns(projectId: string): Promise<PaginatedResponse<PipelineRunRecord>> {
+    return this.request('GET', `/projects/${projectId}/ai/runs`);
   }
 
-  createRun(workspaceId: string, pipelineId: string, req: CreatePipelineRunRequest): Promise<ApiResponse<PipelineRunRecord>> {
-    return this.request('POST', `/workspaces/${workspaceId}/ai/pipelines/${pipelineId}/runs`, req);
+  createRun(projectId: string, pipelineId: string, req: CreatePipelineRunRequest): Promise<ApiResponse<PipelineRunRecord>> {
+    return this.request('POST', `/projects/${projectId}/ai/pipelines/${pipelineId}/runs`, req);
   }
 
-  cancelRun(workspaceId: string, runId: string): Promise<ApiResponse<PipelineRunRecord>> {
-    return this.request('POST', `/workspaces/${workspaceId}/ai/runs/${runId}/cancel`, {});
+  cancelRun(projectId: string, runId: string): Promise<ApiResponse<PipelineRunRecord>> {
+    return this.request('POST', `/projects/${projectId}/ai/runs/${runId}/cancel`, {});
   }
 
   // PKCE init — returns state nonce and code challenge for WorkOS auth redirect

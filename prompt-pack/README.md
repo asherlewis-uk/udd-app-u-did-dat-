@@ -32,6 +32,7 @@ Expected structure:
   README.md
   PHASES.md
   PHASE_REQUEST.md
+  ORCHESTRATION_RULES.md
   /codex/
     00_START_PHASE.md
     02_REVIEW_PHASE.md
@@ -250,6 +251,32 @@ If another patch is required, repeat with:
 Continue until Codex says:
 - `PHASE COMPLETE`
 
+### Step 5b — pre-transport checklist (before sending results to review)
+
+Before sending any Gemini results file to Codex for review, verify these five items.
+This is a mechanical check. You do not need to understand the content.
+
+1. **Correct filename?** The file is named `gemini-phase-N-results.md` or `gemini-phase-N-patch-results.md` (matching the current phase and patch number).
+2. **Correct location?** The file is saved in `prompt-pack/runs/`.
+3. **Has required sections?** Open the file and confirm it contains these headings (in any order):
+   - `## Phase file used`
+   - `## Internal workstreams completed`
+   - `## Files changed`
+   - `## Evidence`
+   - `## Final status`
+4. **Has a final status line?** The file ends with one of:
+   - `phase packet complete`
+   - `phase packet blocked`
+   - `phase packet partial`
+   followed by `No work outside this phase packet was performed.`
+5. **Not empty or obviously short?** The file is not a few-line summary. A valid results file for a multi-workstream phase will typically be 50+ lines.
+
+If **any check fails**, do not send to review. Instead, send the file back to Gemini with:
+- `prompt-pack/gemini/01_EXECUTE_PHASE_PACKET.md`
+- the original phase packet
+- the malformed results file
+- a note: "This results file does not follow the required template. Redo it following the output format in 01_EXECUTE_PHASE_PACKET.md exactly."
+
 ### Step 6 — only after successful phase completion, run Opus
 Once the latest Codex review ends with:
 - `PHASE COMPLETE`
@@ -309,6 +336,17 @@ That means, if relevant:
 - no placeholder UI
 - no undocumented behavior
 - no silent drift
+
+## Orchestration invariants
+
+The immutable orchestration rules for this system are defined in:
+- `prompt-pack/ORCHESTRATION_RULES.md`
+
+Those rules govern artifact naming, artifact location, template compliance, workstream identity, evidence requirements, and the boundary between orchestration and implementation scope.
+
+No generated phase packet, patch packet, or model output may override those rules.
+
+When in doubt, attach `prompt-pack/ORCHESTRATION_RULES.md` to the model session as supplementary context.
 
 ## Most important one-line rule
 

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authMiddleware, requirePermission } from '@udd/auth';
 import type { PlatformEvent } from '@udd/contracts';
 import { getContext } from '../context.js';
+import { mapPipelineRunView } from './public-view-mappers.js';
 
 const router: Router = Router();
 router.use(authMiddleware);
@@ -20,6 +21,7 @@ router.post(
   requirePermission('ai.pipeline.execute'),
   async (req, res, next) => {
     try {
+      res.append('Deprecation', 'true');
       const ctx = getContext();
       if (!(await assertMember(ctx, req.auth!.userId, req.params['id']!))) {
         return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
@@ -136,6 +138,7 @@ router.get(
   requirePermission('ai.run.read'),
   async (req, res, next) => {
     try {
+      res.append('Deprecation', 'true');
       const ctx = getContext();
       if (!(await assertMember(ctx, req.auth!.userId, req.params['id']!))) {
         return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
@@ -157,6 +160,7 @@ router.post(
   requirePermission('ai.run.cancel'),
   async (req, res, next) => {
     try {
+      res.append('Deprecation', 'true');
       const ctx = getContext();
       if (!(await assertMember(ctx, req.auth!.userId, req.params['id']!))) {
         return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
@@ -202,5 +206,100 @@ router.post(
     }
   },
 );
+
+
+// =======================================================
+// CANONICAL: /projects/:projectId/ai/runs
+// =======================================================
+
+router.post('/projects/:projectId/ai/pipelines/:pipelineId/runs', requirePermission('ai.pipeline.execute'), async (req, res, next) => {
+  try {
+    const ctx = getContext();
+    const project = await ctx.projects.findById(req.params['projectId']!);
+    if (!project || !(await assertMember(ctx, req.auth!.userId, project.workspaceId))) {
+      return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
+    }
+    const pipeline = await ctx.pipelines.findById(req.params['pipelineId']!);
+    if (!pipeline || pipeline.projectId !== project.id) return res.status(404).json({ code: 'NOT_FOUND' });
+    if (!pipeline.isActive) return res.status(400).json({ code: 'VALIDATION_ERROR' });
+    
+    const body = req.body;
+    if (body.idempotencyKey) {
+      const existing = await ctx.pipelineRuns.findByIdempotencyKey(pipeline.id, body.idempotencyKey);
+      if (existing) return res.status(200).json({ data: mapPipelineRunView(existing), meta: { idempotent: true }, correlationId: req.correlationId });
+    }
+    
+    const run = await ctx.pipelineRuns.create({
+      workspaceId: project.workspaceId,
+      projectId: project.id,
+      pipelineId: pipeline.id,
+      triggeredByUserId: req.auth!.userId,
+      sourceType: 'manual',
+      status: 'queued',
+      inputPayloadRef: body.inputPayloadRef ?? null,
+      outputPayloadRef: null,
+      errorSummary: null,
+      startedAt: null,
+      finishedAt: null,
+      idempotencyKey: body.idempotencyKey,
+    } as any);
+    
+    await ctx.events.publish({
+      topic: 'ai.pipeline.run.queued',
+      payload: { pipelineRunId: run.id, pipelineId: pipeline.id, workspaceId: project.workspaceId },
+      correlationId: req.correlationId ?? 'unknown',
+      timestamp: new Date().toISOString(),
+    } as any);
+
+    return res.status(202).json({ data: mapPipelineRunView(run), correlationId: req.correlationId });
+  } catch (err) { return next(err); }
+});
+
+router.get('/projects/:projectId/ai/runs', requirePermission('ai.run.read'), async (req, res, next) => {
+  try {
+    const ctx = getContext();
+    const project = await ctx.projects.findById(req.params['projectId']!);
+    if (!project || !(await assertMember(ctx, req.auth!.userId, project.workspaceId))) {
+      return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
+    }
+    const cursor = req.query['cursor'] as string | undefined;
+    const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
+    const pageOpts: { cursor?: string; limit?: number } = {};
+    if (cursor !== undefined) pageOpts.cursor = cursor;
+    if (limit !== undefined) pageOpts.limit = limit;
+    const page = await ctx.pipelineRuns.findByProjectId(project.id, pageOpts);
+    return res.json({ data: page.items.map(mapPipelineRunView), meta: { nextCursor: page.nextCursor, hasMore: page.hasMore }, correlationId: req.correlationId });
+  } catch (err) { return next(err); }
+});
+
+router.get('/projects/:projectId/ai/runs/:pipelineRunId', requirePermission('ai.run.read'), async (req, res, next) => {
+  try {
+    const ctx = getContext();
+    const run = await ctx.pipelineRuns.findById(req.params['pipelineRunId']!);
+    if (!run || run.projectId !== req.params['projectId']!) return res.status(404).json({ code: 'NOT_FOUND' });
+    const project = await ctx.projects.findById(req.params['projectId']!);
+    if (!project || !(await assertMember(ctx, req.auth!.userId, project.workspaceId))) return res.status(404).json({ code: 'NOT_FOUND' });
+    return res.json({ data: mapPipelineRunView(run), correlationId: req.correlationId });
+  } catch (err) { return next(err); }
+});
+
+router.post('/projects/:projectId/ai/runs/:pipelineRunId/cancel', requirePermission('ai.run.cancel'), async (req, res, next) => {
+  try {
+    const ctx = getContext();
+    const run = await ctx.pipelineRuns.findById(req.params['pipelineRunId']!);
+    if (!run || run.projectId !== req.params['projectId']!) return res.status(404).json({ code: 'NOT_FOUND' });
+    const project = await ctx.projects.findById(req.params['projectId']!);
+    if (!project || !(await assertMember(ctx, req.auth!.userId, project.workspaceId))) return res.status(404).json({ code: 'NOT_FOUND' });
+    
+    if (!['queued', 'preparing', 'running'].includes(run.status)) {
+      return res.status(409).json({ code: 'INVALID_STATE' });
+    }
+    const cancelled = await ctx.pipelineRuns.updateStatus(run.id, 'canceled', {
+      finishedAt: new Date().toISOString(),
+      errorSummary: 'Cancelled by user',
+    });
+    return res.json({ data: mapPipelineRunView(cancelled), correlationId: req.correlationId });
+  } catch (err) { return next(err); }
+});
 
 export default router;

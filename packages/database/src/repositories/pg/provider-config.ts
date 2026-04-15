@@ -87,6 +87,32 @@ export class PgProviderConfigRepository implements ProviderConfigRepository {
     return { items, nextCursor, hasMore };
   }
 
+  async findByUserId(
+    userId: string,
+    options?: PageOptions,
+  ): Promise<Page<ProviderConfig>> {
+    const limit = options?.limit ?? DEFAULT_PAGE_LIMIT;
+    const cursor = options?.cursor ? decodeCursor(options.cursor) : null;
+    const { clause, params: cursorParams } = buildCursorClause(cursor, [userId]);
+
+    const rows = await queryMany<Record<string, unknown>>(
+      `SELECT * FROM provider_configs
+       WHERE created_by_user_id = $1 AND deleted_at IS NULL ${clause}
+       ORDER BY created_at DESC, id DESC
+       LIMIT $${cursorParams.length + 1}`,
+      [...cursorParams, limit + 1],
+    );
+
+    const hasMore = rows.length > limit;
+    const items = rows.slice(0, limit).map(rowToConfig);
+    const nextCursor =
+      hasMore && items.length > 0
+        ? encodeCursor(items[items.length - 1]!.id, items[items.length - 1]!.createdAt)
+        : null;
+
+    return { items, nextCursor, hasMore };
+  }
+
   async update(
     id: string,
     data: Partial<

@@ -73,6 +73,7 @@ export interface ProjectRepository {
   }): Promise<Project>;
   findById(id: string): Promise<Project | null>;
   findByWorkspaceId(workspaceId: string, options?: PageOptions): Promise<Page<Project>>;
+  findByUserId(userId: string, options?: PageOptions): Promise<Page<Project>>;
   update(id: string, data: Partial<Pick<Project, 'name' | 'description'>>): Promise<Project | null>;
   softDelete(id: string): Promise<void>;
 }
@@ -198,6 +199,7 @@ export interface ProviderConfigRepository {
   create(data: Omit<ProviderConfig, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>): Promise<ProviderConfig>;
   findById(id: string): Promise<ProviderConfig | null>;
   findByWorkspaceId(workspaceId: string, options?: PageOptions): Promise<Page<ProviderConfig>>;
+  findByUserId(userId: string, options?: PageOptions): Promise<Page<ProviderConfig>>;
   update(id: string, data: Partial<Pick<ProviderConfig, 'name' | 'endpointUrl' | 'modelCatalogMode' | 'isActive' | 'credentialSecretRef'>>): Promise<ProviderConfig | null>;
   softDelete(id: string): Promise<void>;
 }
@@ -206,6 +208,7 @@ export interface AgentRoleRepository {
   create(data: Omit<AgentRole, 'id' | 'createdAt' | 'updatedAt'>): Promise<AgentRole>;
   findById(id: string): Promise<AgentRole | null>;
   findByWorkspaceId(workspaceId: string, options?: PageOptions): Promise<Page<AgentRole>>;
+  findByProjectId(projectId: string, options?: PageOptions): Promise<Page<AgentRole>>;
   update(id: string, data: Partial<Pick<AgentRole, 'name' | 'description' | 'modelIdentifier' | 'endpointOverrideUrl' | 'roleConfigJson' | 'isActive'>>): Promise<AgentRole | null>;
   delete(id: string): Promise<void>;
 }
@@ -214,6 +217,7 @@ export interface PipelineRepository {
   create(data: Omit<PipelineDefinition, 'id' | 'createdAt' | 'updatedAt' | 'pipelineVersion'>): Promise<PipelineDefinition>;
   findById(id: string): Promise<PipelineDefinition | null>;
   findByWorkspaceId(workspaceId: string, options?: PageOptions): Promise<Page<PipelineDefinition>>;
+  findByProjectId(projectId: string, options?: PageOptions): Promise<Page<PipelineDefinition>>;
   update(id: string, data: Partial<Pick<PipelineDefinition, 'name' | 'description' | 'pipelineDefinitionJson' | 'isActive'>>): Promise<PipelineDefinition | null>;
   delete(id: string): Promise<void>;
 }
@@ -223,6 +227,7 @@ export interface PipelineRunRepository {
   findById(id: string): Promise<PipelineRunRecord | null>;
   findByIdempotencyKey(pipelineId: string, key: string): Promise<PipelineRunRecord | null>;
   findByWorkspaceId(workspaceId: string, options?: PageOptions): Promise<Page<PipelineRunRecord>>;
+  findByProjectId(projectId: string, options?: PageOptions): Promise<Page<PipelineRunRecord>>;
   updateStatus(
     id: string,
     status: PipelineRunStatus,

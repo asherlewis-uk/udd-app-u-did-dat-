@@ -45,6 +45,10 @@ router.use(collaborationRouter);
 const AI_ORCHESTRATION_URL = process.env['AI_ORCHESTRATION_URL'] ?? 'http://ai-orchestration:3000';
 
 const AI_PREFIXES = [
+  '/me/ai/providers',
+  '/projects/:projectId/ai/roles',
+  '/projects/:projectId/ai/pipelines',
+  '/projects/:projectId/ai/runs',
   '/workspaces/:id/ai/providers',
   '/workspaces/:id/ai/roles',
   '/workspaces/:id/ai/pipelines',

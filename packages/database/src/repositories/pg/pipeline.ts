@@ -84,6 +84,32 @@ export class PgPipelineRepository implements PipelineRepository {
     return { items, nextCursor, hasMore };
   }
 
+  async findByProjectId(
+    projectId: string,
+    options?: PageOptions,
+  ): Promise<Page<PipelineDefinition>> {
+    const limit = options?.limit ?? DEFAULT_PAGE_LIMIT;
+    const cursor = options?.cursor ? decodeCursor(options.cursor) : null;
+    const { clause, params: cursorParams } = buildCursorClause(cursor, [projectId]);
+
+    const rows = await queryMany<Record<string, unknown>>(
+      `SELECT * FROM pipeline_definitions
+       WHERE project_id = $1 ${clause}
+       ORDER BY created_at DESC, id DESC
+       LIMIT $${cursorParams.length + 1}`,
+      [...cursorParams, limit + 1],
+    );
+
+    const hasMore = rows.length > limit;
+    const items = rows.slice(0, limit).map(rowToPipeline);
+    const nextCursor =
+      hasMore && items.length > 0
+        ? encodeCursor(items[items.length - 1]!.id, items[items.length - 1]!.createdAt)
+        : null;
+
+    return { items, nextCursor, hasMore };
+  }
+
   async update(
     id: string,
     data: Partial<

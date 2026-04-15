@@ -14,14 +14,14 @@ const CANCELABLE_STATUSES: PipelineRunStatus[] = ['queued', 'preparing', 'runnin
 interface PipelineRunCardProps {
   run: PipelineRunRecord;
   pipelines: PipelineDefinition[];
-  workspaceId: string;
+  projectId: string;
   onRefresh(): void;
 }
 
 export function PipelineRunCard({
   run,
   pipelines,
-  workspaceId,
+  projectId,
   onRefresh,
 }: PipelineRunCardProps) {
   const [isCanceling, setIsCanceling] = React.useState(false);
@@ -39,7 +39,7 @@ export function PipelineRunCard({
   async function handleCancel() {
     setIsCanceling(true);
     try {
-      await apiClient.cancelRun(workspaceId, run.id);
+      await apiClient.cancelRun(projectId, run.id);
       onRefresh();
     } catch {
       // surface error silently — run remains in cancelable state, user can retry

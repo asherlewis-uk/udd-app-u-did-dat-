@@ -26,6 +26,35 @@ Follow:
 If hosted web UI was touched, also enforce:
 - `docs/ui-material-system.md`
 
+## Step 0: Structural validation
+
+Before evaluating implementation substance, verify that the results file is structurally valid.
+
+Check all of the following:
+
+1. **Template sections present?** The results file must contain all 9 mandatory sections:
+   - `Phase file used`
+   - `Internal workstreams completed`
+   - `Files changed`
+   - `What was implemented`
+   - `Acceptance criteria check`
+   - `Accessibility and fallback check`
+   - `Drift or blocker notes`
+   - `Evidence`
+   - `Final status`
+2. **Workstream IDs match?** The workstream IDs and names in the results file must exactly match those defined in the phase packet. Renamed, reframed, merged, split, or reordered workstreams are a structural failure.
+3. **Evidence items present?** Every item listed in the phase packet's "Evidence Gemini must return" section must have a corresponding entry in the results file's `Evidence` section.
+4. **Final status line present?** The file must end with one of `phase packet complete`, `phase packet blocked`, or `phase packet partial`, followed by `No work outside this phase packet was performed.`
+
+If **any structural check fails**, immediately return a review with:
+- Verdict: `PATCH REQUIRED`
+- A section listing every structural deficiency
+- Do not evaluate implementation substance
+- In "Next required file": `next patch packet required`
+- Final instruction: `PATCH REQUIRED`
+
+Only proceed to content review if all structural checks pass.
+
 ## Review goals
 
 Judge:

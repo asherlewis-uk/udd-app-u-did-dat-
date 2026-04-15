@@ -14,7 +14,7 @@ export default function LoginPage() {
   // Redirect if already authenticated
   React.useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace('/workspaces');
+      router.replace('/projects');
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -88,7 +88,7 @@ export default function LoginPage() {
         <div className="rounded-2xl border border-white/[0.07] bg-[#18181b] p-8 shadow-2xl">
           <h2 className="mb-1 text-base font-semibold text-[#fafafa]">Welcome back</h2>
           <p className="mb-6 text-sm text-[#a1a1aa]">
-            Sign in to access your workspaces and projects.
+            Sign in to access your projects.
           </p>
 
           <Button

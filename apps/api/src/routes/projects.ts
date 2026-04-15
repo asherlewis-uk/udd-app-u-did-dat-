@@ -4,6 +4,7 @@ import { requirePermission } from '@udd/auth';
 import type { PlatformEvent } from '@udd/contracts';
 import { getContext } from '../context.js';
 import { createAppError } from '../middleware/error.js';
+import { mapProjectView } from './public-view-mappers.js';
 
 const router: Router = Router();
 
@@ -16,6 +17,7 @@ router.get(
   requirePermission('project.read'),
   async (req, res, next) => {
     try {
+      res.append('Deprecation', 'true');
       const ctx = getContext();
 
       const membership = await ctx.memberships.findByUserAndWorkspace(
@@ -49,6 +51,7 @@ router.post(
   requirePermission('project.create'),
   async (req, res, next) => {
     try {
+      res.append('Deprecation', 'true');
       const { name, slug, description } = req.body as {
         name?: string;
         slug?: string;
@@ -120,7 +123,7 @@ router.get('/projects/:id', requirePermission('project.read'), async (req, res, 
     );
     if (!membership) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
 
-    return res.json({ data: project, correlationId: req.correlationId });
+    return res.json({ data: mapProjectView(project), correlationId: req.correlationId });
   } catch (err) {
     return next(err);
   }
@@ -153,7 +156,93 @@ router.patch('/projects/:id', requirePermission('project.update'), async (req, r
       metadata: { name, description },
     });
 
-    return res.json({ data: updated, correlationId: req.correlationId });
+    return res.json({ data: mapProjectView(updated!), correlationId: req.correlationId });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// -------------------------------------------------------
+// Canonical Project Listing and Creation
+// -------------------------------------------------------
+
+router.get('/projects', requirePermission('project.read'), async (req, res, next) => {
+  try {
+    const ctx = getContext();
+    const cursor = req.query['cursor'] as string | undefined;
+    const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
+    if (limit !== undefined && isNaN(limit))
+      return next(createAppError('limit must be a positive integer', 400, 'VALIDATION_ERROR'));
+    
+    const pageOpts: { cursor?: string; limit?: number } = {};
+    if (cursor !== undefined) pageOpts.cursor = cursor;
+    if (limit !== undefined) pageOpts.limit = limit;
+
+    const page = await ctx.projects.findByUserId(req.auth!.userId, pageOpts);
+
+    return res.json({
+      data: page.items.map(mapProjectView),
+      nextCursor: page.nextCursor,
+      hasMore: page.hasMore,
+      correlationId: req.correlationId,
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.post('/projects', requirePermission('project.create'), async (req, res, next) => {
+  try {
+    const { name, slug, description } = req.body as { name?: string; slug?: string; description?: string };
+    if (!name) return next(createAppError('name is required', 400, 'VALIDATION_ERROR'));
+
+    const ctx = getContext();
+    const workspaces = await ctx.workspaces.findByUserId(req.auth!.userId);
+    const homeWorkspace = workspaces[0];
+    if (!homeWorkspace) {
+      return next(createAppError('No workspace available', 409, 'PROJECT_CONTAINER_UNAVAILABLE'));
+    }
+
+    let finalSlug = slug;
+    if (!finalSlug) {
+      finalSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      if (!finalSlug) {
+        return next(createAppError('Invalid slug derived from name', 400, 'VALIDATION_ERROR'));
+      }
+    }
+
+    const createProjectData: {
+      workspaceId: string;
+      name: string;
+      slug: string;
+      description?: string;
+    } = {
+      workspaceId: homeWorkspace.id,
+      name,
+      slug: finalSlug,
+    };
+    if (description !== undefined) createProjectData.description = description;
+    const project = await ctx.projects.create(createProjectData);
+
+    await ctx.auditLogs.append({
+      workspaceId: homeWorkspace.id,
+      actorUserId: req.auth!.userId,
+      action: 'project.created',
+      resourceType: 'project',
+      resourceId: project.id,
+      metadata: { name, slug: finalSlug },
+    });
+
+    await ctx.events.publish({
+      eventId: randomUUID(),
+      schemaVersion: 1,
+      topic: 'project.created',
+      payload: { projectId: project.id, workspaceId: project.workspaceId },
+      correlationId: req.correlationId ?? 'unknown',
+      timestamp: new Date().toISOString(),
+    } as unknown as PlatformEvent);
+
+    return res.status(201).json({ data: mapProjectView(project), correlationId: req.correlationId });
   } catch (err) {
     return next(err);
   }

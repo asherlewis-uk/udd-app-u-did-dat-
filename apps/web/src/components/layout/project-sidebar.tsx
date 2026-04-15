@@ -7,7 +7,7 @@ import type { LucideIcon } from 'lucide-react';
 import { FolderOpen, Cpu, Users, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/contexts/auth-context';
-import { useWorkspace } from '@/hooks/use-workspaces';
+import { useProject } from '@/hooks/use-projects';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -24,36 +24,36 @@ interface NavItem {
   matchPrefix?: boolean;
 }
 
-interface WorkspaceSidebarProps {
-  workspaceId: string;
+interface ProjectSidebarProps {
+  projectId: string;
 }
 
-export function WorkspaceSidebar({ workspaceId }: WorkspaceSidebarProps) {
+export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { workspace } = useWorkspace(user?.token ?? null, workspaceId);
+  const { project } = useProject(user?.token ?? null, projectId);
 
   const navItems: NavItem[] = [
     {
-      label: 'Projects',
-      href: `/workspaces/${workspaceId}`,
+      label: 'Back to Projects',
+      href: `/projects`,
       icon: FolderOpen,
     },
     {
       label: 'AI Pipelines',
-      href: `/workspaces/${workspaceId}/ai`,
+      href: `/projects/${projectId}/ai`,
       icon: Cpu,
       matchPrefix: true,
     },
     {
       label: 'Members',
-      href: `/workspaces/${workspaceId}/members`,
+      href: `/projects/${projectId}/members`,
       icon: Users,
     },
     {
-      label: 'Settings',
-      href: `/workspaces/${workspaceId}/settings`,
+      label: 'User Settings',
+      href: `/settings`,
       icon: Settings,
       matchPrefix: true,
     },
@@ -83,16 +83,16 @@ export function WorkspaceSidebar({ workspaceId }: WorkspaceSidebarProps) {
               </div>
               <div className="flex-1 overflow-hidden">
                 <p className="truncate text-sm font-semibold text-[#fafafa]">
-                  {workspace?.name ?? 'Loading…'}
+                  {project?.name ?? 'Loading…'}
                 </p>
-                <p className="truncate text-[10px] text-[#71717a]">Workspace</p>
+                <p className="truncate text-[10px] text-[#71717a]">Project</p>
               </div>
               <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[#71717a]" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-52">
-            <DropdownMenuItem onClick={() => router.push('/workspaces')}>
-              Switch workspace
+            <DropdownMenuItem onClick={() => router.push('/projects')}>
+              Switch project
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

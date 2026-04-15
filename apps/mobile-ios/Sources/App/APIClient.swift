@@ -87,8 +87,8 @@ final class APIClient {
 
     // MARK: Projects
 
-    func listProjects(workspaceId: String, cursor: String? = nil) async throws -> PaginatedResponse<Project> {
-        var path = "/v1/workspaces/\(workspaceId)/projects"
+    func listProjects(cursor: String? = nil) async throws -> PaginatedResponse<Project> {
+        var path = "/v1/projects"
         if let cursor { path += "?cursor=\(cursor)" }
         return try await performRequest(path)
     }

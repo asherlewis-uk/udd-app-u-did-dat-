@@ -13,7 +13,7 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, workspaceId, sessionCount }: ProjectCardProps) {
-  const href = `/workspaces/${workspaceId}/projects/${project.id}` as const;
+  const href = `/projects/${project.id}` as const;
 
   return (
     <Link

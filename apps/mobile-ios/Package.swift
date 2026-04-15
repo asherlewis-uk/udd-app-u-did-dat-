@@ -8,6 +8,11 @@ let package = Package(
         .executableTarget(
             name: "UDDCompanion",
             path: "Sources/App"
+        ),
+        .testTarget(
+            name: "UDDCompanionTests",
+            dependencies: ["UDDCompanion"],
+            path: "Tests"
         )
     ]
 )
