@@ -9,105 +9,6 @@ import { mapProjectView } from './public-view-mappers.js';
 const router: Router = Router();
 
 // -------------------------------------------------------
-// Project listing within a workspace
-// -------------------------------------------------------
-
-router.get(
-  '/workspaces/:id/projects',
-  requirePermission('project.read'),
-  async (req, res, next) => {
-    try {
-      res.append('Deprecation', 'true');
-      const ctx = getContext();
-
-      const membership = await ctx.memberships.findByUserAndWorkspace(
-        req.auth!.userId,
-        req.params['id']!,
-      );
-      if (!membership) return next(createAppError('Workspace not found', 404, 'NOT_FOUND'));
-
-      const cursor = req.query['cursor'] as string | undefined;
-      const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
-      if (limit !== undefined && isNaN(limit))
-        return next(createAppError('limit must be a positive integer', 400, 'VALIDATION_ERROR'));
-      const pageOpts: { cursor?: string; limit?: number } = {};
-      if (cursor !== undefined) pageOpts.cursor = cursor;
-      if (limit !== undefined) pageOpts.limit = limit;
-      const page = await ctx.projects.findByWorkspaceId(req.params['id']!, pageOpts);
-
-      return res.json({
-        data: page.items,
-        meta: { nextCursor: page.nextCursor, hasMore: page.hasMore },
-        correlationId: req.correlationId,
-      });
-    } catch (err) {
-      return next(err);
-    }
-  },
-);
-
-router.post(
-  '/workspaces/:id/projects',
-  requirePermission('project.create'),
-  async (req, res, next) => {
-    try {
-      res.append('Deprecation', 'true');
-      const { name, slug, description } = req.body as {
-        name?: string;
-        slug?: string;
-        description?: string;
-      };
-      if (!name || !slug) {
-        return next(createAppError('name and slug are required', 400, 'VALIDATION_ERROR'));
-      }
-
-      const ctx = getContext();
-
-      const membership = await ctx.memberships.findByUserAndWorkspace(
-        req.auth!.userId,
-        req.params['id']!,
-      );
-      if (!membership) return next(createAppError('Workspace not found', 404, 'NOT_FOUND'));
-
-      const createProjectData: {
-        workspaceId: string;
-        name: string;
-        slug: string;
-        description?: string;
-      } = {
-        workspaceId: req.params['id']!,
-        name,
-        slug,
-      };
-      if (description !== undefined) createProjectData.description = description;
-      const project = await ctx.projects.create(createProjectData);
-
-      await ctx.auditLogs.append({
-        workspaceId: req.params['id']!,
-        actorUserId: req.auth!.userId,
-        action: 'project.created',
-        resourceType: 'project',
-        resourceId: project.id,
-        metadata: { name, slug },
-      });
-
-      await ctx.events.publish({
-        eventId: randomUUID(),
-        schemaVersion: 1,
-        topic: 'project.created',
-        payload: { projectId: project.id, workspaceId: project.workspaceId },
-        correlationId: req.correlationId ?? 'unknown',
-        timestamp: new Date().toISOString(),
-      } as unknown as PlatformEvent);
-
-      return res.status(201).json({ data: project, correlationId: req.correlationId });
-    } catch (err) {
-      return next(err);
-    }
-  },
-);
-
-// -------------------------------------------------------
 // Project CRUD (by project ID)
 // -------------------------------------------------------
 
@@ -173,7 +74,7 @@ router.get('/projects', requirePermission('project.read'), async (req, res, next
     const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
     if (limit !== undefined && isNaN(limit))
       return next(createAppError('limit must be a positive integer', 400, 'VALIDATION_ERROR'));
-    
+
     const pageOpts: { cursor?: string; limit?: number } = {};
     if (cursor !== undefined) pageOpts.cursor = cursor;
     if (limit !== undefined) pageOpts.limit = limit;
@@ -193,7 +94,11 @@ router.get('/projects', requirePermission('project.read'), async (req, res, next
 
 router.post('/projects', requirePermission('project.create'), async (req, res, next) => {
   try {
-    const { name, slug, description } = req.body as { name?: string; slug?: string; description?: string };
+    const { name, slug, description } = req.body as {
+      name?: string;
+      slug?: string;
+      description?: string;
+    };
     if (!name) return next(createAppError('name is required', 400, 'VALIDATION_ERROR'));
 
     const ctx = getContext();
@@ -205,7 +110,10 @@ router.post('/projects', requirePermission('project.create'), async (req, res, n
 
     let finalSlug = slug;
     if (!finalSlug) {
-      finalSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      finalSlug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
       if (!finalSlug) {
         return next(createAppError('Invalid slug derived from name', 400, 'VALIDATION_ERROR'));
       }
@@ -242,7 +150,9 @@ router.post('/projects', requirePermission('project.create'), async (req, res, n
       timestamp: new Date().toISOString(),
     } as unknown as PlatformEvent);
 
-    return res.status(201).json({ data: mapProjectView(project), correlationId: req.correlationId });
+    return res
+      .status(201)
+      .json({ data: mapProjectView(project), correlationId: req.correlationId });
   } catch (err) {
     return next(err);
   }

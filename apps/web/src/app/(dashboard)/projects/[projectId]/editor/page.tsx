@@ -20,6 +20,7 @@ import { CodeEditor } from '@/components/editor/code-editor';
 import { TerminalPane } from '@/components/editor/terminal-pane';
 import { PreviewFrame } from '@/components/editor/preview-frame';
 import { SessionStatusBadge } from '@/components/sessions/session-status-badge';
+import type { SessionState } from '@udd/contracts';
 import { SessionActions } from '@/components/sessions/session-actions';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -196,7 +197,7 @@ export default function EditorPage() {
         {activeSession && (
           <>
             <ChevronRight className="h-3 w-3 text-[#3f3f46]" />
-            <SessionStatusBadge state={activeSession.state} size="sm" />
+            <SessionStatusBadge state={activeSession.state as SessionState} size="sm" />
           </>
         )}
 
@@ -281,11 +282,7 @@ export default function EditorPage() {
             </TabsContent>
 
             <TabsContent value="preview" className="mt-0 flex-1 overflow-hidden">
-              <PreviewFrame
-                {...(activeSession && activeSession.workerHost && activeSession.hostPort
-                  ? { url: `https://${activeSession.workerHost}:${activeSession.hostPort}` }
-                  : {})}
-              />
+              <PreviewFrame />
             </TabsContent>
           </Tabs>
         </aside>

@@ -49,10 +49,6 @@ const AI_PREFIXES = [
   '/projects/:projectId/ai/roles',
   '/projects/:projectId/ai/pipelines',
   '/projects/:projectId/ai/runs',
-  '/workspaces/:id/ai/providers',
-  '/workspaces/:id/ai/roles',
-  '/workspaces/:id/ai/pipelines',
-  '/workspaces/:id/ai/runs',
 ];
 
 for (const prefix of AI_PREFIXES) {

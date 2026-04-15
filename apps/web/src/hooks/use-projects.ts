@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import type { Project, Session } from '@udd/contracts';
+import type { Project, SessionView } from '@udd/contracts';
 
 const API_BASE = process.env['NEXT_PUBLIC_API_URL'] ?? '/v1';
 
@@ -50,7 +50,7 @@ export function useProject(token: string | null, projectId: string | null) {
 
 export function useProjectSessions(token: string | null, projectId: string | null) {
   const fetcher = makeApiFetcher(token);
-  const { data, error, isLoading, mutate } = useSWR<{ data: Session[] }>(
+  const { data, error, isLoading, mutate } = useSWR<{ data: SessionView[] }>(
     token && projectId ? `${API_BASE}/projects/${projectId}/sessions` : null,
     fetcher,
     { refreshInterval: 5000 }, // poll every 5s for session state changes

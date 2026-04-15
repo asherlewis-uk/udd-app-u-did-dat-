@@ -1,28 +1,20 @@
 'use client';
 
 import * as React from 'react';
-import { Play, Square, Server, Clock, CalendarClock, Timer } from 'lucide-react';
+import { Play, Square, Clock, CalendarClock, Timer } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/button';
 import { SessionStatusBadge } from './session-status-badge';
 import { apiClient } from '@/lib/api-client';
 import { formatRelativeTime, elapsedDuration } from '@/lib/format';
-import type { Session } from '@udd/contracts';
+import type { SessionView, SessionState } from '@udd/contracts';
 
 interface SessionCardProps {
-  session: Session;
+  session: SessionView;
   onRefresh(): void;
 }
 
-function MetaRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
+function MetaRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center gap-2 text-xs text-[#71717a]">
       <span className="shrink-0 text-[#52525b]">{icon}</span>
@@ -35,12 +27,9 @@ function MetaRow({
 export function SessionCard({ session, onRefresh }: SessionCardProps) {
   const [isActioning, setIsActioning] = React.useState(false);
 
-  const canStart =
-    session.state === 'stopped' || session.state === 'failed';
+  const canStart = session.state === 'stopped' || session.state === 'failed';
   const canStop =
-    session.state === 'running' ||
-    session.state === 'idle' ||
-    session.state === 'starting';
+    session.state === 'running' || session.state === 'idle' || session.state === 'starting';
 
   async function handleStart() {
     setIsActioning(true);
@@ -63,10 +52,9 @@ export function SessionCard({ session, onRefresh }: SessionCardProps) {
   }
 
   const shortId = session.id.slice(0, 8) + '…';
-  const elapsed =
-    session.startedAt
-      ? elapsedDuration(session.startedAt, session.stoppedAt ?? undefined)
-      : null;
+  const elapsed = session.startedAt
+    ? elapsedDuration(session.startedAt, session.stoppedAt ?? undefined)
+    : null;
 
   return (
     <div
@@ -80,22 +68,11 @@ export function SessionCard({ session, onRefresh }: SessionCardProps) {
           {/* ID + badge */}
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="font-mono text-sm font-medium text-[#fafafa]">{shortId}</span>
-            <SessionStatusBadge state={session.state} size="sm" />
+            <SessionStatusBadge state={session.state as SessionState} size="sm" />
           </div>
 
           {/* Meta rows */}
           <div className="space-y-1.5">
-            {session.workerHost && (
-              <MetaRow
-                icon={<Server className="h-3 w-3" />}
-                label="Host"
-                value={
-                  session.hostPort
-                    ? `${session.workerHost}:${session.hostPort}`
-                    : session.workerHost
-                }
-              />
-            )}
             {session.startedAt && (
               <MetaRow
                 icon={<CalendarClock className="h-3 w-3" />}
@@ -111,11 +88,7 @@ export function SessionCard({ session, onRefresh }: SessionCardProps) {
               />
             )}
             {elapsed && (
-              <MetaRow
-                icon={<Timer className="h-3 w-3" />}
-                label="Duration"
-                value={elapsed}
-              />
+              <MetaRow icon={<Timer className="h-3 w-3" />} label="Duration" value={elapsed} />
             )}
           </div>
         </div>

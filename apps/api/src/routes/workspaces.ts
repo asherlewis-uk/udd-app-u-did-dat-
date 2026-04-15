@@ -8,11 +8,17 @@ import { createAppError } from '../middleware/error.js';
 const router: Router = Router();
 
 // -------------------------------------------------------
-// Workspaces
+// Workspaces — DEPRECATED
+//
+// These routes are retained temporarily for internal workspace
+// provisioning (user onboarding auto-creates the home workspace).
+// No active public client surface consumes these routes.
+// See ADR 013: thin-workspace migration strategy.
 // -------------------------------------------------------
 
 router.get('/workspaces', async (req, res, next) => {
   try {
+    res.append('Deprecation', 'true');
     const ctx = getContext();
     const workspaces = await ctx.workspaces.findByUserId(req.auth!.userId);
     return res.json({ data: workspaces, correlationId: req.correlationId });
@@ -23,6 +29,7 @@ router.get('/workspaces', async (req, res, next) => {
 
 router.post('/workspaces', requirePermission('workspace.create'), async (req, res, next) => {
   try {
+    res.append('Deprecation', 'true');
     const { name, slug } = req.body as { name?: string; slug?: string };
     if (!name || !slug) {
       return next(createAppError('name and slug are required', 400, 'VALIDATION_ERROR'));
@@ -73,6 +80,7 @@ router.post('/workspaces', requirePermission('workspace.create'), async (req, re
 
 router.get('/workspaces/:id', requirePermission('workspace.read'), async (req, res, next) => {
   try {
+    res.append('Deprecation', 'true');
     const ctx = getContext();
     const workspace = await ctx.workspaces.findById(req.params['id']!);
     if (!workspace) return next(createAppError('Workspace not found', 404, 'NOT_FOUND'));
@@ -87,7 +95,7 @@ router.get('/workspaces/:id', requirePermission('workspace.read'), async (req, r
 });
 
 // -------------------------------------------------------
-// Members
+// Members - DEPRECATED
 // -------------------------------------------------------
 
 router.get(
@@ -95,6 +103,7 @@ router.get(
   requirePermission('workspace.read'),
   async (req, res, next) => {
     try {
+      res.append('Deprecation', 'true');
       const ctx = getContext();
       const membership = await ctx.memberships.findByUserAndWorkspace(
         req.auth!.userId,
@@ -127,6 +136,7 @@ router.post(
   requirePermission('member.invite'),
   async (req, res, next) => {
     try {
+      res.append('Deprecation', 'true');
       const { userId, role } = req.body as { userId?: string; role?: string };
       if (!userId || !role) {
         return next(createAppError('userId and role are required', 400, 'VALIDATION_ERROR'));

@@ -7,7 +7,6 @@ import type {
   ExchangeTokenRequest,
   ExchangeTokenResponse,
   MeResponse,
-  CreateWorkspaceRequest,
   CreateProjectRequest,
   CreateSessionRequest,
   CreatePreviewRequest,
@@ -27,7 +26,6 @@ import type {
   PipelineView,
   PipelineRunView,
 } from '@udd/contracts';
-import type { Workspace } from '@udd/contracts';
 
 const API_BASE_URL = process.env['NEXT_PUBLIC_API_URL'] ?? '/v1';
 
@@ -65,7 +63,7 @@ export class ApiClient {
       body: body !== undefined ? JSON.stringify(body) : null,
     });
 
-    const json = await res.json() as T;
+    const json = (await res.json()) as T;
 
     if (!res.ok) {
       throw Object.assign(new Error((json as { message?: string }).message ?? 'API error'), {
@@ -84,19 +82,6 @@ export class ApiClient {
 
   getMe(): Promise<ApiResponse<MeResponse>> {
     return this.request('GET', '/me');
-  }
-
-  // Workspaces
-  listWorkspaces(): Promise<PaginatedResponse<Workspace>> {
-    return this.request('GET', '/workspaces');
-  }
-
-  createWorkspace(req: CreateWorkspaceRequest): Promise<ApiResponse<Workspace>> {
-    return this.request('POST', '/workspaces', req);
-  }
-
-  getWorkspace(id: string): Promise<ApiResponse<Workspace>> {
-    return this.request('GET', `/workspaces/${id}`);
   }
 
   // Projects
@@ -135,11 +120,17 @@ export class ApiClient {
     return this.request('POST', '/me/ai/providers', req);
   }
 
-  updateProvider(providerId: string, req: UpdateProviderConfigRequest): Promise<ApiResponse<ProviderConfigPublicView | null>> {
+  updateProvider(
+    providerId: string,
+    req: UpdateProviderConfigRequest,
+  ): Promise<ApiResponse<ProviderConfigPublicView | null>> {
     return this.request('PATCH', `/me/ai/providers/${providerId}`, req);
   }
 
-  rotateProviderSecret(providerId: string, req: RotateSecretRequest): Promise<ApiResponse<{ rotatedAt: string }>> {
+  rotateProviderSecret(
+    providerId: string,
+    req: RotateSecretRequest,
+  ): Promise<ApiResponse<{ rotatedAt: string }>> {
     return this.request('POST', `/me/ai/providers/${providerId}/rotate-secret`, req);
   }
 
@@ -161,7 +152,10 @@ export class ApiClient {
     return this.request('GET', `/projects/${projectId}/ai/pipelines`);
   }
 
-  createPipeline(projectId: string, req: CreatePipelineRequest): Promise<ApiResponse<PipelineView>> {
+  createPipeline(
+    projectId: string,
+    req: CreatePipelineRequest,
+  ): Promise<ApiResponse<PipelineView>> {
     return this.request('POST', `/projects/${projectId}/ai/pipelines`, req);
   }
 
@@ -170,7 +164,11 @@ export class ApiClient {
     return this.request('GET', `/projects/${projectId}/ai/runs`);
   }
 
-  createRun(projectId: string, pipelineId: string, req: CreatePipelineRunRequest): Promise<ApiResponse<PipelineRunView>> {
+  createRun(
+    projectId: string,
+    pipelineId: string,
+    req: CreatePipelineRunRequest,
+  ): Promise<ApiResponse<PipelineRunView>> {
     return this.request('POST', `/projects/${projectId}/ai/pipelines/${pipelineId}/runs`, req);
   }
 
@@ -179,12 +177,17 @@ export class ApiClient {
   }
 
   // PKCE init — returns state nonce and code challenge for WorkOS auth redirect
-  async pkceInit(): Promise<{ data: { state: string; codeChallenge: string; codeChallengeMethod: string } }> {
+  async pkceInit(): Promise<{
+    data: { state: string; codeChallenge: string; codeChallengeMethod: string };
+  }> {
     return this.request('POST', '/auth/session/pkce-init');
   }
 
   // Exchange authorization code + PKCE state for a session JWT
-  async exchangeCode(code: string, state: string): Promise<{ data: { token: string; userId: string } }> {
+  async exchangeCode(
+    code: string,
+    state: string,
+  ): Promise<{ data: { token: string; userId: string } }> {
     return this.request('POST', '/auth/session/exchange', { code, state });
   }
 }

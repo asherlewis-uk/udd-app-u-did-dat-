@@ -1,4 +1,12 @@
-import type { MembershipRole, Permission, ProviderType, AuthScheme, ModelCatalogMode, PipelineRunSourceType, PipelineRunStatus } from './enums.js';
+import type {
+  MembershipRole,
+  Permission,
+  ProviderType,
+  AuthScheme,
+  ModelCatalogMode,
+  PipelineRunSourceType,
+  PipelineRunStatus,
+} from './enums.js';
 
 // ============================================================
 // Standardized Error Envelope
@@ -63,23 +71,30 @@ export interface MeResponse {
 }
 
 // ============================================================
-// Workspace DTOs
+// Workspace DTOs — DEPRECATED
+// These DTOs back deprecated workspace routes retained for
+// internal provisioning only. No active public client surface
+// consumes them. See ADR 013: thin-workspace migration strategy.
 // ============================================================
 
+/** @deprecated Workspace routes are deprecated per ADR 013. */
 export interface CreateWorkspaceRequest {
   name: string;
   organizationId: string;
 }
 
+/** @deprecated Workspace routes are deprecated per ADR 013. */
 export interface UpdateWorkspaceRequest {
   name?: string;
 }
 
+/** @deprecated Workspace routes are deprecated per ADR 013. */
 export interface InviteMemberRequest {
   email: string;
   role: MembershipRole;
 }
 
+/** @deprecated Workspace routes are deprecated per ADR 013. */
 export interface UpdateMemberRoleRequest {
   role: MembershipRole;
 }
@@ -339,7 +354,13 @@ export interface PipelineRunView {
 // ============================================================
 
 export type PresenceEvent =
-  | { type: 'user_joined'; userId: string; displayName: string; avatarUrl?: string | null; timestamp: string }
+  | {
+      type: 'user_joined';
+      userId: string;
+      displayName: string;
+      avatarUrl?: string | null;
+      timestamp: string;
+    }
   | { type: 'user_left'; userId: string; timestamp: string }
   | { type: 'cursor_moved'; userId: string; filePath: string; line: number; column: number };
 
