@@ -167,8 +167,11 @@ export interface SessionView {
 // ============================================================
 
 export interface CreatePreviewRequest {
-  /** Port on the sandbox that the preview app is listening on */
-  sandboxPort: number;
+  /**
+   * Port on the sandbox that the preview app is listening on.
+   * Optional until container-per-session isolation is implemented (ADR 014).
+   */
+  sandboxPort?: number;
   /** Optional TTL in seconds */
   ttlSeconds?: number;
 }
@@ -182,6 +185,13 @@ export interface PreviewView {
   boundAt: string;
   expiresAt?: string | null;
   revokedAt?: string | null;
+}
+
+export interface PreviewTokenResponse {
+  /** Short-lived JWT for iframe/WKWebView preview access */
+  token: string;
+  /** ISO 8601 expiry timestamp */
+  expiresAt: string;
 }
 
 // ============================================================

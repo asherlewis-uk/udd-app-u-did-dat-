@@ -19,6 +19,7 @@ import { useProject, useProjectSessions } from '@/hooks/use-projects';
 import { CodeEditor } from '@/components/editor/code-editor';
 import { TerminalPane } from '@/components/editor/terminal-pane';
 import { PreviewFrame } from '@/components/editor/preview-frame';
+import type { PreviewStatus } from '@/components/editor/preview-frame';
 import { SessionStatusBadge } from '@/components/sessions/session-status-badge';
 import type { SessionState } from '@udd/contracts';
 import { SessionActions } from '@/components/sessions/session-actions';
@@ -164,6 +165,93 @@ export default function EditorPage() {
   // Active session = first running or idle session
   const activeSession = sessions.find((s) => s.state === 'running' || s.state === 'idle');
 
+  // Preview token state
+  const GATEWAY_BASE = process.env['NEXT_PUBLIC_GATEWAY_URL'] ?? '';
+  const API_BASE = process.env['NEXT_PUBLIC_API_URL'] ?? '/v1';
+  const [previewId, setPreviewId] = React.useState<string | null>(null);
+  const [previewToken, setPreviewToken] = React.useState<string | null>(null);
+  const [previewTokenExpiresAt, setPreviewTokenExpiresAt] = React.useState<string | null>(null);
+
+  // Fetch preview token for the active session
+  const fetchPreviewToken = React.useCallback(async () => {
+    if (!activeSession || !token || !GATEWAY_BASE) return;
+
+    try {
+      // If we don't have a previewId yet, create a preview binding
+      let currentPreviewId = previewId;
+      if (!currentPreviewId) {
+        const res = await fetch(`${API_BASE}/sessions/${activeSession.id}/previews`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) {
+          setPreviewId(null);
+          return;
+        }
+        const body = (await res.json()) as { data: { previewId: string } };
+        currentPreviewId = body.data.previewId;
+        setPreviewId(currentPreviewId);
+      }
+
+      // Fetch a short-lived preview token
+      const tokenRes = await fetch(`${API_BASE}/previews/${currentPreviewId}/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!tokenRes.ok) {
+        setPreviewToken(null);
+        return;
+      }
+      const tokenBody = (await tokenRes.json()) as { data: { token: string; expiresAt: string } };
+      setPreviewToken(tokenBody.data.token);
+      setPreviewTokenExpiresAt(tokenBody.data.expiresAt);
+    } catch {
+      setPreviewToken(null);
+    }
+  }, [activeSession, token, GATEWAY_BASE, API_BASE, previewId]);
+
+  // Fetch token when session becomes active
+  React.useEffect(() => {
+    if (activeSession && token) {
+      void fetchPreviewToken();
+    } else {
+      setPreviewId(null);
+      setPreviewToken(null);
+      setPreviewTokenExpiresAt(null);
+    }
+  }, [activeSession?.id, token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Refresh token before expiry (refresh at 80% of TTL)
+  React.useEffect(() => {
+    if (!previewTokenExpiresAt || !previewToken) return;
+    const expiresMs = new Date(previewTokenExpiresAt).getTime() - Date.now();
+    const refreshMs = Math.max(expiresMs * 0.8, 5_000); // at least 5s
+    const timer = setTimeout(() => void fetchPreviewToken(), refreshMs);
+    return () => clearTimeout(timer);
+  }, [previewTokenExpiresAt, previewToken, fetchPreviewToken]);
+
+  // Derive preview status
+  const previewStatus: PreviewStatus = !activeSession
+    ? 'no-session'
+    : !previewId
+      ? 'no-binding'
+      : previewToken
+        ? 'available'
+        : 'no-binding';
+
+  // Build preview URLs
+  const displayUrl = previewId && GATEWAY_BASE ? `${GATEWAY_BASE}/preview/${previewId}` : undefined;
+  const previewUrl =
+    previewId && previewToken && GATEWAY_BASE
+      ? `${GATEWAY_BASE}/preview/${previewId}?preview_token=${encodeURIComponent(previewToken)}`
+      : undefined;
+
   const [selectedFile, setSelectedFile] = React.useState('index.ts');
   const [editorValue, setEditorValue] = React.useState(SAMPLE_CODE);
   const [editorLanguage, setEditorLanguage] = React.useState('typescript');
@@ -282,7 +370,12 @@ export default function EditorPage() {
             </TabsContent>
 
             <TabsContent value="preview" className="mt-0 flex-1 overflow-hidden">
-              <PreviewFrame />
+              <PreviewFrame
+                status={previewStatus}
+                previewUrl={previewUrl}
+                displayUrl={displayUrl}
+                onRefreshToken={fetchPreviewToken}
+              />
             </TabsContent>
           </Tabs>
         </aside>

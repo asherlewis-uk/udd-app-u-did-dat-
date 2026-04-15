@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requirePermission } from '@udd/auth';
+import { requirePermission, signPreviewToken } from '@udd/auth';
 import type { PlatformEvent } from '@udd/contracts';
 import { randomUUID } from 'crypto';
 import { getContext } from '../context.js';
@@ -99,7 +99,9 @@ router.post(
         timestamp: new Date().toISOString(),
       });
 
-      return res.status(201).json({ data: mapPreviewView(binding), correlationId: req.correlationId });
+      return res
+        .status(201)
+        .json({ data: mapPreviewView(binding), correlationId: req.correlationId });
     } catch (err) {
       return next(err);
     }
@@ -179,6 +181,45 @@ router.delete(
           createAppError('Concurrent modification detected, please retry', 409, 'CONFLICT'),
         );
       }
+      return next(err);
+    }
+  },
+);
+
+// -------------------------------------------------------
+// Issue a short-lived preview token for iframe/WKWebView access
+// -------------------------------------------------------
+
+router.post(
+  '/previews/:previewId/token',
+  requirePermission('preview.read'),
+  async (req, res, next) => {
+    try {
+      const ctx = getContext();
+      const binding = await ctx.previewRoutes.findByPreviewId(req.params['previewId']!);
+      if (!binding) return next(createAppError('Preview not found', 404, 'NOT_FOUND'));
+
+      if (binding.state !== 'active') {
+        return next(createAppError(`Preview is ${binding.state}`, 410, 'PREVIEW_EXPIRED'));
+      }
+
+      if (binding.expiresAt && new Date(binding.expiresAt) < new Date()) {
+        return next(createAppError('Preview has expired', 410, 'PREVIEW_EXPIRED'));
+      }
+
+      const membership = await ctx.memberships.findByUserAndWorkspace(
+        req.auth!.userId,
+        binding.workspaceId,
+      );
+      if (!membership) return next(createAppError('Preview not found', 404, 'NOT_FOUND'));
+
+      const { token, expiresAt } = signPreviewToken(req.auth!.userId, binding.previewId);
+
+      return res.json({
+        data: { token, expiresAt },
+        correlationId: req.correlationId,
+      });
+    } catch (err) {
       return next(err);
     }
   },

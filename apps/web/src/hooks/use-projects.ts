@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import type { Project, SessionView } from '@udd/contracts';
+import type { ProjectView, SessionView } from '@udd/contracts';
 
 const API_BASE = process.env['NEXT_PUBLIC_API_URL'] ?? '/v1';
 
@@ -21,7 +21,7 @@ function makeApiFetcher(token: string | null) {
 
 export function useProjects(token: string | null) {
   const fetcher = makeApiFetcher(token);
-  const { data, error, isLoading, mutate } = useSWR<{ data: Project[] }>(
+  const { data, error, isLoading, mutate } = useSWR<{ data: ProjectView[] }>(
     token ? `${API_BASE}/projects` : null,
     fetcher,
   );
@@ -36,7 +36,7 @@ export function useProjects(token: string | null) {
 
 export function useProject(token: string | null, projectId: string | null) {
   const fetcher = makeApiFetcher(token);
-  const { data, error, isLoading } = useSWR<{ data: Project }>(
+  const { data, error, isLoading } = useSWR<{ data: ProjectView }>(
     token && projectId ? `${API_BASE}/projects/${projectId}` : null,
     fetcher,
   );

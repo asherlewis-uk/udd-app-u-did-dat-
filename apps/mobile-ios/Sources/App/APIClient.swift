@@ -136,4 +136,8 @@ final class APIClient {
     func getPreview(_ previewId: String) async throws -> APIResponse<PreviewRouteBinding> {
         try await performRequest("/v1/previews/\(previewId)")
     }
+
+    func getPreviewToken(previewId: String) async throws -> APIResponse<PreviewTokenResponse> {
+        try await performRequest("/v1/previews/\(previewId)/token", method: "POST")
+    }
 }

@@ -21,6 +21,7 @@ import type {
   ProjectView,
   SessionView,
   PreviewView,
+  PreviewTokenResponse,
   ProviderConfigPublicView,
   AgentRoleView,
   PipelineView,
@@ -107,8 +108,12 @@ export class ApiClient {
   }
 
   // Previews
-  createPreview(sessionId: string, req: CreatePreviewRequest): Promise<ApiResponse<PreviewView>> {
-    return this.request('POST', `/sessions/${sessionId}/previews`, req);
+  createPreview(sessionId: string, req?: CreatePreviewRequest): Promise<ApiResponse<PreviewView>> {
+    return this.request('POST', `/sessions/${sessionId}/previews`, req ?? {});
+  }
+
+  getPreviewToken(previewId: string): Promise<ApiResponse<PreviewTokenResponse>> {
+    return this.request('POST', `/previews/${previewId}/token`);
   }
 
   // AI Providers

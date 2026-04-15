@@ -106,3 +106,8 @@ struct PreviewRouteBinding: Decodable, Identifiable {
     let expiresAt: String?
     let revokedAt: String?
 }
+
+struct PreviewTokenResponse: Decodable {
+    let token: String
+    let expiresAt: String
+}
