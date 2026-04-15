@@ -2,10 +2,26 @@ import XCTest
 @testable import UDDCompanion
 
 final class ProjectFirstContractDecodingTests: XCTestCase {
-    
-    // MARK: - Project decoding
-    
-    func testProjectDecoding_withWorkspaceId() throws {
+
+    func testProjectDecoding_canonicalShape() throws {
+        let json = """
+        {
+            "id": "proj_124",
+            "name": "My Project No WS",
+            "slug": "my-project-no-ws",
+            "description": "Test project isolated",
+            "createdAt": "2023-01-01T00:00:00Z",
+            "updatedAt": "2023-01-01T00:00:00Z"
+        }
+        """.data(using: .utf8)!
+
+        let project = try JSONDecoder().decode(Project.self, from: json)
+
+        XCTAssertEqual(project.id, "proj_124")
+        XCTAssertEqual(project.slug, "my-project-no-ws")
+    }
+
+    func testProjectDecoding_ignoresLegacyWorkspaceId() throws {
         let json = """
         {
             "id": "proj_123",
@@ -17,36 +33,14 @@ final class ProjectFirstContractDecodingTests: XCTestCase {
             "updatedAt": "2023-01-01T00:00:00Z"
         }
         """.data(using: .utf8)!
-        
-        let decoder = JSONDecoder()
-        let project = try decoder.decode(Project.self, from: json)
-        
+
+        let project = try JSONDecoder().decode(Project.self, from: json)
+
         XCTAssertEqual(project.id, "proj_123")
-        XCTAssertEqual(project.workspaceId, "ws_123")
+        XCTAssertEqual(project.name, "My Project")
     }
-    
-    func testProjectDecoding_withoutWorkspaceId() throws {
-        let json = """
-        {
-            "id": "proj_124",
-            "name": "My Project No WS",
-            "slug": "my-project-no-ws",
-            "description": "Test project isolated",
-            "createdAt": "2023-01-01T00:00:00Z",
-            "updatedAt": "2023-01-01T00:00:00Z"
-        }
-        """.data(using: .utf8)!
-        
-        let decoder = JSONDecoder()
-        let project = try decoder.decode(Project.self, from: json)
-        
-        XCTAssertEqual(project.id, "proj_124")
-        XCTAssertNil(project.workspaceId)
-    }
-    
-    // MARK: - Session decoding
-    
-    func testSessionDecoding_withoutWorkspaceId() throws {
+
+    func testSessionDecoding_canonicalShape() throws {
         let json = """
         {
             "id": "sess_123",
@@ -54,23 +48,19 @@ final class ProjectFirstContractDecodingTests: XCTestCase {
             "userId": "user_1",
             "state": "running",
             "idleTimeoutSeconds": 300,
-            "version": 1,
             "createdAt": "2023-01-01T00:00:00Z",
             "updatedAt": "2023-01-01T00:00:00Z"
         }
         """.data(using: .utf8)!
-        
-        let decoder = JSONDecoder()
-        let session = try decoder.decode(Session.self, from: json)
-        
+
+        let session = try JSONDecoder().decode(Session.self, from: json)
+
         XCTAssertEqual(session.id, "sess_123")
         XCTAssertEqual(session.projectId, "proj_124")
-        XCTAssertNil(session.workspaceId)
+        XCTAssertEqual(session.state, "running")
     }
-    
-    // MARK: - Preview binding decoding
-    
-    func testPreviewBindingDecoding_withoutWorkspaceId() throws {
+
+    func testPreviewBindingDecoding_canonicalShape() throws {
         let json = """
         {
             "id": "prev_001",
@@ -82,17 +72,16 @@ final class ProjectFirstContractDecodingTests: XCTestCase {
             "expiresAt": "2023-06-01T13:00:00Z"
         }
         """.data(using: .utf8)!
-        
-        let decoder = JSONDecoder()
-        let binding = try decoder.decode(PreviewRouteBinding.self, from: json)
-        
+
+        let binding = try JSONDecoder().decode(PreviewRouteBinding.self, from: json)
+
         XCTAssertEqual(binding.id, "prev_001")
         XCTAssertEqual(binding.projectId, "proj_124")
         XCTAssertEqual(binding.sessionId, "sess_123")
-        XCTAssertNil(binding.workspaceId)
+        XCTAssertNil(binding.revokedAt)
     }
-    
-    func testPreviewBindingDecoding_withWorkspaceId() throws {
+
+    func testPreviewBindingDecoding_ignoresLegacyWorkspaceId() throws {
         let json = """
         {
             "id": "prev_002",
@@ -104,20 +93,41 @@ final class ProjectFirstContractDecodingTests: XCTestCase {
             "boundAt": "2023-06-01T12:00:00Z"
         }
         """.data(using: .utf8)!
-        
-        let decoder = JSONDecoder()
-        let binding = try decoder.decode(PreviewRouteBinding.self, from: json)
-        
+
+        let binding = try JSONDecoder().decode(PreviewRouteBinding.self, from: json)
+
         XCTAssertEqual(binding.id, "prev_002")
-        XCTAssertEqual(binding.workspaceId, "ws_200")
+        XCTAssertEqual(binding.previewId, "pv_101")
         XCTAssertNil(binding.expiresAt)
     }
-    
-    // MARK: - Provider config view decoding
-    
-    /// Provider config views returned by canonical `/me/ai/providers` omit
-    /// credentialSecretRef and workspaceId. The iOS client must decode this
-    /// shape without crashing. We test against a minimal provider-view JSON.
+
+    func testPaginatedResponseDecoding_usesTopLevelPaginationFields() throws {
+        let json = """
+        {
+            "data": [
+                {
+                    "id": "proj_200",
+                    "name": "Paged Project",
+                    "slug": "paged-project",
+                    "description": null,
+                    "createdAt": "2023-01-01T00:00:00Z",
+                    "updatedAt": "2023-01-02T00:00:00Z"
+                }
+            ],
+            "nextCursor": "cursor_2",
+            "hasMore": true,
+            "correlationId": "corr_123"
+        }
+        """.data(using: .utf8)!
+
+        let response = try JSONDecoder().decode(PaginatedResponse<Project>.self, from: json)
+
+        XCTAssertEqual(response.data.count, 1)
+        XCTAssertEqual(response.nextCursor, "cursor_2")
+        XCTAssertTrue(response.hasMore)
+        XCTAssertEqual(response.correlationId, "corr_123")
+    }
+
     func testProviderConfigViewDecoding() throws {
         let json = """
         {
@@ -129,12 +139,12 @@ final class ProjectFirstContractDecodingTests: XCTestCase {
             "authScheme": "api_key_header",
             "isActive": true,
             "isSystemManaged": false,
-            "status": "active",
+            "credentialStatus": "active",
             "createdAt": "2023-01-15T10:30:00Z",
             "updatedAt": "2023-01-15T10:30:00Z"
         }
         """.data(using: .utf8)!
-        
+
         struct ProviderConfigView: Decodable {
             let id: String
             let name: String
@@ -144,17 +154,17 @@ final class ProjectFirstContractDecodingTests: XCTestCase {
             let authScheme: String
             let isActive: Bool
             let isSystemManaged: Bool
-            let status: String
+            let credentialStatus: String
             let createdAt: String
             let updatedAt: String
         }
-        
-        let decoder = JSONDecoder()
-        let config = try decoder.decode(ProviderConfigView.self, from: json)
-        
+
+        let config = try JSONDecoder().decode(ProviderConfigView.self, from: json)
+
         XCTAssertEqual(config.id, "prov_001")
         XCTAssertEqual(config.name, "My OpenAI Key")
         XCTAssertEqual(config.providerType, "openai")
+        XCTAssertEqual(config.credentialStatus, "active")
         XCTAssertTrue(config.isActive)
     }
 }

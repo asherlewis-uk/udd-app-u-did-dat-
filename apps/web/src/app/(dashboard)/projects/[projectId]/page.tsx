@@ -47,7 +47,7 @@ export default function ProjectPage() {
   const { sessions, isLoading: sessionsLoading, mutate } = useProjectSessions(token, projectId);
 
   const breadcrumbs = [
-    { label: 'Workspaces', href: '/workspaces' },
+    { label: 'Projects', href: '/projects' },
     { label: project?.name ?? projectId },
   ];
 

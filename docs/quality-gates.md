@@ -26,9 +26,10 @@ pnpm build
 ## Doc gates
 
 - `docs/_INDEX.md` stays the single docs entrypoint.
-- Root instruction precedence must remain: `AGENTS.md` > canonical-doc priority in `_INDEX` > `AI.md` > `GEMINI.md` > `README.md`.
+- Root instruction precedence must remain: `AGENTS.md` > canonical-doc priority in `_INDEX` > `README.md`.
 - If any file conflicts with that precedence, the file is stale and must be logged in [docs/implementation-gaps.md](./implementation-gaps.md).
 - ADRs and runbooks must carry explicit status headers.
+- The single-agent execution loop is documented in [AGENTS.md](../AGENTS.md). No separate runbook or prompt-pack is required.
 
 ## Runtime and client gates
 
@@ -48,3 +49,4 @@ pnpm build
 
 - If a local workflow is required to operate or verify the repo, [docs/LOCAL_DEV.md](./LOCAL_DEV.md) must describe it.
 - If local development remains awkward because of implementation reality, document the awkwardness directly instead of hiding it.
+

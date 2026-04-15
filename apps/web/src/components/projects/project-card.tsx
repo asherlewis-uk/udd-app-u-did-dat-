@@ -4,15 +4,14 @@ import Link from 'next/link';
 import { Layers, CalendarDays, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { formatRelativeTime } from '@/lib/format';
-import type { Project } from '@udd/contracts';
+import type { ProjectView } from '@udd/contracts';
 
 interface ProjectCardProps {
-  project: Project;
-  workspaceId: string;
+  project: ProjectView;
   sessionCount?: number;
 }
 
-export function ProjectCard({ project, workspaceId, sessionCount }: ProjectCardProps) {
+export function ProjectCard({ project, sessionCount }: ProjectCardProps) {
   const href = `/projects/${project.id}` as const;
 
   return (
@@ -25,24 +24,22 @@ export function ProjectCard({ project, workspaceId, sessionCount }: ProjectCardP
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]',
       )}
     >
-      {/* Icon + name */}
       <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#6366f1]/10 text-[#6366f1] group-hover:bg-[#6366f1]/15 transition-colors">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#6366f1]/10 text-[#6366f1] transition-colors group-hover:bg-[#6366f1]/15">
           <FolderOpen className="h-4 w-4" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-[#fafafa] leading-tight">
+          <p className="truncate text-sm font-semibold leading-tight text-[#fafafa]">
             {project.name}
           </p>
           {project.description && (
-            <p className="mt-0.5 line-clamp-2 text-xs text-[#71717a] leading-relaxed">
+            <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-[#71717a]">
               {project.description}
             </p>
           )}
         </div>
       </div>
 
-      {/* Footer meta */}
       <div className="mt-auto flex items-center justify-between gap-2 text-[11px] text-[#52525b]">
         <div className="flex items-center gap-1.5">
           <CalendarDays className="h-3 w-3 shrink-0" />

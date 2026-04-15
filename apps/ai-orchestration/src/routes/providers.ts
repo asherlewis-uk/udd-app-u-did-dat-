@@ -438,10 +438,10 @@ router.post('/me/ai/providers/:providerConfigId/rotate-secret', async (req, res,
     if (!config || config.createdByUserId !== req.auth!.userId) {
       return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
     }
-    const { credential } = req.body as any;
-    if (!credential) return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'credential missing', correlationId: req.correlationId });
+    const { newCredential } = req.body as { newCredential?: string };
+    if (!newCredential) return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'newCredential missing', correlationId: req.correlationId });
     
-    const newSecretRef = await ctx.secrets.rotateSecret(config.credentialSecretRef, credential);
+    const newSecretRef = await ctx.secrets.rotateSecret(config.credentialSecretRef, newCredential);
     await ctx.providerConfigs.update(config.id, { credentialSecretRef: newSecretRef });
     return res.json({ data: { rotatedAt: new Date().toISOString() }, correlationId: req.correlationId });
   } catch (err) { return next(err); }

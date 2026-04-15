@@ -6,7 +6,6 @@ import useSWR from 'swr';
 import { Plus, Trash2, RefreshCw, Key, Settings, Cpu, Shield } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/contexts/auth-context';
-import { useWorkspace } from '@/hooks/use-workspaces';
 import { apiClient } from '@/lib/api-client';
 import { formatRelativeTime } from '@/lib/format';
 import { PageHeader } from '@/components/layout/page-header';
@@ -120,7 +119,7 @@ function AddProviderDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add AI Provider</DialogTitle>
-          <DialogDescription>Configure a new AI provider for this workspace.</DialogDescription>
+          <DialogDescription>Configure a new AI provider for your account.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -55,6 +55,7 @@ Do not archive, supersede, or stub a file before those steps are complete.
 
 If root instruction files disagree:
 
-`AGENTS.md` > canonical-doc priority from [docs/_INDEX.md](./_INDEX.md) > `AI.md` > `GEMINI.md` > `README.md`
+`AGENTS.md` > canonical-doc priority from [docs/_INDEX.md](./_INDEX.md) > `README.md`
 
 Any conflicting lower-priority file is stale by definition.
+

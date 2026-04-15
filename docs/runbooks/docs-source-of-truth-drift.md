@@ -14,9 +14,7 @@ Back to [docs/_INDEX.md](../_INDEX.md).
 
 1. `AGENTS.md`
 2. canonical-doc priority from [docs/_INDEX.md](../_INDEX.md)
-3. `AI.md`
-4. `GEMINI.md`
-5. `README.md`
+3. `README.md`
 
 ## Procedure
 
@@ -31,3 +29,4 @@ Back to [docs/_INDEX.md](../_INDEX.md).
 
 - Archived docs are lower-priority than canonical docs by definition.
 - Do not let README-style files become silent architecture sources.
+

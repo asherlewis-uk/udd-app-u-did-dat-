@@ -4,16 +4,30 @@
 // ============================================================
 
 import type {
-  ExchangeTokenRequest, ExchangeTokenResponse,
-  MeResponse, CreateWorkspaceRequest, CreateProjectRequest,
-  CreateSessionRequest, CreatePreviewRequest,
-  CreateProviderConfigRequest, UpdateProviderConfigRequest,
-  RotateSecretRequest, CreateAgentRoleRequest,
-  CreatePipelineRequest, CreatePipelineRunRequest,
-  ApiResponse, PaginatedResponse,
+  ExchangeTokenRequest,
+  ExchangeTokenResponse,
+  MeResponse,
+  CreateWorkspaceRequest,
+  CreateProjectRequest,
+  CreateSessionRequest,
+  CreatePreviewRequest,
+  CreateProviderConfigRequest,
+  UpdateProviderConfigRequest,
+  RotateSecretRequest,
+  CreateAgentRoleRequest,
+  CreatePipelineRequest,
+  CreatePipelineRunRequest,
+  ApiResponse,
+  PaginatedResponse,
+  ProjectView,
+  SessionView,
+  PreviewView,
+  ProviderConfigPublicView,
+  AgentRoleView,
+  PipelineView,
+  PipelineRunView,
 } from '@udd/contracts';
-import type { Workspace, Project, Session, PreviewRouteBinding } from '@udd/contracts';
-import type { ProviderConfig, AgentRole, PipelineDefinition, PipelineRunRecord } from '@udd/contracts';
+import type { Workspace } from '@udd/contracts';
 
 const API_BASE_URL = process.env['NEXT_PUBLIC_API_URL'] ?? '/v1';
 
@@ -86,46 +100,46 @@ export class ApiClient {
   }
 
   // Projects
-  listProjects(workspaceId: string): Promise<PaginatedResponse<Project>> {
-    return this.request('GET', `/workspaces/${workspaceId}/projects`);
+  listProjects(): Promise<PaginatedResponse<ProjectView>> {
+    return this.request('GET', '/projects');
   }
 
-  createProject(workspaceId: string, req: CreateProjectRequest): Promise<ApiResponse<Project>> {
-    return this.request('POST', `/workspaces/${workspaceId}/projects`, req);
+  createProject(req: CreateProjectRequest): Promise<ApiResponse<ProjectView>> {
+    return this.request('POST', '/projects', req);
   }
 
   // Sessions
-  createSession(projectId: string, req?: CreateSessionRequest): Promise<ApiResponse<Session>> {
+  createSession(projectId: string, req?: CreateSessionRequest): Promise<ApiResponse<SessionView>> {
     return this.request('POST', `/projects/${projectId}/sessions`, req ?? {});
   }
 
-  startSession(sessionId: string): Promise<ApiResponse<Session>> {
+  startSession(sessionId: string): Promise<ApiResponse<SessionView>> {
     return this.request('POST', `/sessions/${sessionId}/start`, {});
   }
 
-  stopSession(sessionId: string): Promise<ApiResponse<Session>> {
+  stopSession(sessionId: string): Promise<ApiResponse<SessionView>> {
     return this.request('POST', `/sessions/${sessionId}/stop`, {});
   }
 
   // Previews
-  createPreview(sessionId: string, req: CreatePreviewRequest): Promise<ApiResponse<PreviewRouteBinding>> {
+  createPreview(sessionId: string, req: CreatePreviewRequest): Promise<ApiResponse<PreviewView>> {
     return this.request('POST', `/sessions/${sessionId}/previews`, req);
   }
 
   // AI Providers
-  listProviders(): Promise<PaginatedResponse<ProviderConfig>> {
-    return this.request('GET', `/me/ai/providers`);
+  listProviders(): Promise<PaginatedResponse<ProviderConfigPublicView>> {
+    return this.request('GET', '/me/ai/providers');
   }
 
-  createProvider(req: CreateProviderConfigRequest): Promise<ApiResponse<ProviderConfig>> {
-    return this.request('POST', `/me/ai/providers`, req);
+  createProvider(req: CreateProviderConfigRequest): Promise<ApiResponse<ProviderConfigPublicView>> {
+    return this.request('POST', '/me/ai/providers', req);
   }
 
-  updateProvider(providerId: string, req: UpdateProviderConfigRequest): Promise<ApiResponse<ProviderConfig>> {
+  updateProvider(providerId: string, req: UpdateProviderConfigRequest): Promise<ApiResponse<ProviderConfigPublicView | null>> {
     return this.request('PATCH', `/me/ai/providers/${providerId}`, req);
   }
 
-  rotateProviderSecret(providerId: string, req: RotateSecretRequest): Promise<ApiResponse<void>> {
+  rotateProviderSecret(providerId: string, req: RotateSecretRequest): Promise<ApiResponse<{ rotatedAt: string }>> {
     return this.request('POST', `/me/ai/providers/${providerId}/rotate-secret`, req);
   }
 
@@ -134,33 +148,33 @@ export class ApiClient {
   }
 
   // AI Roles
-  listRoles(projectId: string): Promise<PaginatedResponse<AgentRole>> {
+  listRoles(projectId: string): Promise<PaginatedResponse<AgentRoleView>> {
     return this.request('GET', `/projects/${projectId}/ai/roles`);
   }
 
-  createRole(projectId: string, req: CreateAgentRoleRequest): Promise<ApiResponse<AgentRole>> {
+  createRole(projectId: string, req: CreateAgentRoleRequest): Promise<ApiResponse<AgentRoleView>> {
     return this.request('POST', `/projects/${projectId}/ai/roles`, req);
   }
 
   // AI Pipelines
-  listPipelines(projectId: string): Promise<PaginatedResponse<PipelineDefinition>> {
+  listPipelines(projectId: string): Promise<PaginatedResponse<PipelineView>> {
     return this.request('GET', `/projects/${projectId}/ai/pipelines`);
   }
 
-  createPipeline(projectId: string, req: CreatePipelineRequest): Promise<ApiResponse<PipelineDefinition>> {
+  createPipeline(projectId: string, req: CreatePipelineRequest): Promise<ApiResponse<PipelineView>> {
     return this.request('POST', `/projects/${projectId}/ai/pipelines`, req);
   }
 
   // Pipeline Runs
-  listRuns(projectId: string): Promise<PaginatedResponse<PipelineRunRecord>> {
+  listRuns(projectId: string): Promise<PaginatedResponse<PipelineRunView>> {
     return this.request('GET', `/projects/${projectId}/ai/runs`);
   }
 
-  createRun(projectId: string, pipelineId: string, req: CreatePipelineRunRequest): Promise<ApiResponse<PipelineRunRecord>> {
+  createRun(projectId: string, pipelineId: string, req: CreatePipelineRunRequest): Promise<ApiResponse<PipelineRunView>> {
     return this.request('POST', `/projects/${projectId}/ai/pipelines/${pipelineId}/runs`, req);
   }
 
-  cancelRun(projectId: string, runId: string): Promise<ApiResponse<PipelineRunRecord>> {
+  cancelRun(projectId: string, runId: string): Promise<ApiResponse<PipelineRunView>> {
     return this.request('POST', `/projects/${projectId}/ai/runs/${runId}/cancel`, {});
   }
 

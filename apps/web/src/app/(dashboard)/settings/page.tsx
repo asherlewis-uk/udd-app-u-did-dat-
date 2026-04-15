@@ -71,7 +71,7 @@ export default function SettingsPage() {
     <div className="flex flex-col">
       <PageHeader
         title="Settings"
-        description="Configure your workspace settings."
+        description="Manage your account and provider settings."
         breadcrumbs={breadcrumbs}
       />
 

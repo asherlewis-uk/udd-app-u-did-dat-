@@ -40,7 +40,8 @@ router.get(
 
       return res.json({
         data: page.items.map(mapSessionView),
-        meta: { nextCursor: page.nextCursor, hasMore: page.hasMore },
+        nextCursor: page.nextCursor,
+        hasMore: page.hasMore,
         correlationId: req.correlationId,
       });
     } catch (err) {

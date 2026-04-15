@@ -79,12 +79,6 @@ final class APIClient {
         try await performRequest("/v1/me")
     }
 
-    // MARK: Workspaces
-
-    func listWorkspaces() async throws -> APIResponse<[Workspace]> {
-        try await performRequest("/v1/workspaces")
-    }
-
     // MARK: Projects
 
     func listProjects(cursor: String? = nil) async throws -> PaginatedResponse<Project> {

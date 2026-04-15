@@ -7,7 +7,7 @@ struct ContentView: View {
     var body: some View {
         TabView {
             NavigationStack {
-                WorkspacesView()
+                ProjectsView()
             }
             .tabItem { Label("Projects", systemImage: "folder") }
 

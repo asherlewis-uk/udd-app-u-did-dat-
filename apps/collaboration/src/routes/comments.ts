@@ -39,7 +39,8 @@ router.get('/projects/:id/comments', requirePermission('comment.read'), async (r
 
     return res.json({
       data: page.items,
-      meta: { nextCursor: page.nextCursor, hasMore: page.hasMore },
+      nextCursor: page.nextCursor,
+      hasMore: page.hasMore,
       correlationId: req.correlationId,
     });
   } catch (err) {

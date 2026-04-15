@@ -14,3 +14,8 @@ Files in `docs/archive/` are historical and non-authoritative.
 
 - `docs/archive/solo-first-reset-2026-04/priority-map.md`
   Replacement: [docs/implementation-gaps.md](../implementation-gaps.md)
+- `docs/archive/codex-single-agent-reset-2026-04/README.md`
+  Replacement: [AGENTS.md](../../AGENTS.md)
+- `docs/archive/codex-single-agent-reset-2026-04/prompt-pack-single-agent/`
+  Archived single-agent prompt-pack. Execution loop now lives in [AGENTS.md](../../AGENTS.md) directly.
+

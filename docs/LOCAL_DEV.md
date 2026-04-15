@@ -221,7 +221,6 @@ There is no doc-index generator in this repo. Update these files manually when d
 - `docs/_INDEX.md`
 - `README.md`
 - `AGENTS.md`
-- `AI.md`
-- `GEMINI.md`
 
 After updating links, run a quick link and terminology sweep before merging.
+

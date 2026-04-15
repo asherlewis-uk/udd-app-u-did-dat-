@@ -9,13 +9,9 @@ struct APIResponse<T: Decodable>: Decodable {
 
 struct PaginatedResponse<T: Decodable>: Decodable {
     let data: [T]
-    let meta: PaginationMeta?
-    let correlationId: String?
-}
-
-struct PaginationMeta: Decodable {
     let nextCursor: String?
     let hasMore: Bool
+    let correlationId: String?
 }
 
 struct APIErrorResponse: Decodable {
@@ -50,7 +46,6 @@ struct UserResponse: Decodable, Identifiable {
 
 struct Project: Decodable, Identifiable, Hashable {
     let id: String
-    let workspaceId: String?
     let name: String
     let slug: String
     let description: String?
@@ -63,14 +58,12 @@ struct Project: Decodable, Identifiable, Hashable {
 struct Session: Decodable, Identifiable, Hashable {
     let id: String
     let projectId: String
-    let workspaceId: String?
     let userId: String
     let state: String
     let startedAt: String?
     let stoppedAt: String?
     let lastActivityAt: String?
     let idleTimeoutSeconds: Int
-    let version: Int
     let createdAt: String
     let updatedAt: String
 }
@@ -108,8 +101,8 @@ struct PreviewRouteBinding: Decodable, Identifiable {
     let previewId: String
     let sessionId: String
     let projectId: String
-    let workspaceId: String?
     let state: String
     let boundAt: String
     let expiresAt: String?
+    let revokedAt: String?
 }
