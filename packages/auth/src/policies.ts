@@ -1,74 +1,47 @@
-import type { AuthContext, WorkspaceAuthContext } from './types.js';
+import type { AuthContext } from './types.js';
 import { hasPermission } from './rbac.js';
+import type { Permission } from '@udd/contracts';
+
+// ============================================================
+// Project-scoped authorization policies (ADR 013 Phase 2)
+//
+// Authorization decisions are based on the authenticated user's
+// resolved permissions (carried as grantedPermissions in the JWT)
+// and user-to-resource access verified via internal tenancy.
+//
+// Workspace is NOT an authority primitive — it is an internal
+// shard/tenancy key only.  See ADR 013 and docs/domain-model.md.
+// ============================================================
 
 /**
- * Verify the auth context has a workspace context matching the given workspaceId.
- * Returns typed WorkspaceAuthContext if valid, null otherwise.
+ * Check if the authenticated user has a specific permission.
+ *
+ * Permissions are resolved at token-issuance time and embedded in
+ * grantedPermissions.  The workspaceRole fallback in hasPermission
+ * exists only for backward compatibility with pre-migration tokens.
  */
-export function requireWorkspaceContext(
-  ctx: AuthContext,
-  workspaceId: string,
-): WorkspaceAuthContext | null {
-  if (ctx.workspaceId !== workspaceId || !ctx.workspaceRole) {
-    return null;
-  }
-  return ctx as WorkspaceAuthContext;
+export function canPerform(ctx: AuthContext, permission: Permission): boolean {
+  return hasPermission(ctx, permission);
 }
 
 /**
- * Check if the user can read a given project.
- * User must be in the workspace and have project.read permission.
+ * Verify the user has access to a resource's tenancy scope.
+ *
+ * In the solo-first model, this checks that the user is a member
+ * of the tenancy scope (home workspace) that owns the resource.
+ * This is an internal tenancy check — the workspace is a
+ * shard/persistence key per ADR 013, not an authority primitive.
+ *
+ * @param userId - The authenticated user's ID
+ * @param resourceWorkspaceId - The workspace_id from the resource's internal data
+ * @param membershipLookup - Function to check internal tenancy membership
+ * @returns true if the user has access to the resource's tenancy scope
  */
-export function canReadProject(ctx: AuthContext, workspaceId: string): boolean {
-  if (ctx.workspaceId !== workspaceId) return false;
-  return hasPermission(ctx, 'project.read');
-}
-
-/**
- * Check if the user can manage (create/update/delete) a project.
- */
-export function canManageProject(ctx: AuthContext, workspaceId: string): boolean {
-  if (ctx.workspaceId !== workspaceId) return false;
-  return hasPermission(ctx, 'project.update');
-}
-
-/**
- * Check if user can create or manage sessions.
- */
-export function canManageSession(ctx: AuthContext, workspaceId: string): boolean {
-  if (ctx.workspaceId !== workspaceId) return false;
-  return hasPermission(ctx, 'session.create');
-}
-
-/**
- * Check if user can access preview routes.
- * Requires: authenticated + in correct workspace + preview.read permission.
- */
-export function canAccessPreview(ctx: AuthContext, workspaceId: string): boolean {
-  if (ctx.workspaceId !== workspaceId) return false;
-  return hasPermission(ctx, 'preview.read');
-}
-
-/**
- * Check if user can manage AI providers.
- */
-export function canManageProviders(ctx: AuthContext, workspaceId: string): boolean {
-  if (ctx.workspaceId !== workspaceId) return false;
-  return hasPermission(ctx, 'ai.provider.create');
-}
-
-/**
- * Check if user can execute pipelines.
- */
-export function canExecutePipeline(ctx: AuthContext, workspaceId: string): boolean {
-  if (ctx.workspaceId !== workspaceId) return false;
-  return hasPermission(ctx, 'ai.pipeline.execute');
-}
-
-/**
- * Check if user can access admin/ops surfaces.
- */
-export function canAccessAdminWorkers(ctx: AuthContext, workspaceId: string): boolean {
-  if (ctx.workspaceId !== workspaceId) return false;
-  return hasPermission(ctx, 'admin.workers');
+export async function verifyResourceAccess(
+  userId: string,
+  resourceWorkspaceId: string,
+  membershipLookup: (userId: string, workspaceId: string) => Promise<unknown | null>,
+): Promise<boolean> {
+  const membership = await membershipLookup(userId, resourceWorkspaceId);
+  return membership !== null;
 }

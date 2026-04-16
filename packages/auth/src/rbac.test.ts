@@ -88,4 +88,37 @@ describe('hasPermission', () => {
       expect(hasPermission(ctx, 'workspace.read')).toBe(false);
     });
   });
+
+  describe('grantedPermissions-only (ADR 013 Phase 2)', () => {
+    // New tokens carry grantedPermissions without workspaceRole.
+    // hasPermission must respect grantedPermissions even when
+    // workspaceRole is absent.
+    function makePermOnlyCtx(perms: Permission[]): AuthContext {
+      return {
+        userId: 'u-perm',
+        email: 'perm@example.com',
+        displayName: 'PermOnly',
+        grantedPermissions: perms,
+        // no workspaceId, no workspaceRole
+      };
+    }
+
+    it('grants permission present in grantedPermissions', () => {
+      const ctx = makePermOnlyCtx(['project.read', 'session.create']);
+      expect(hasPermission(ctx, 'project.read')).toBe(true);
+      expect(hasPermission(ctx, 'session.create')).toBe(true);
+    });
+
+    it('denies permission not present in grantedPermissions', () => {
+      const ctx = makePermOnlyCtx(['project.read']);
+      expect(hasPermission(ctx, 'admin.workers')).toBe(false);
+      expect(hasPermission(ctx, 'session.create')).toBe(false);
+    });
+
+    it('denies all when grantedPermissions is empty and no role', () => {
+      const ctx = makePermOnlyCtx([]);
+      expect(hasPermission(ctx, 'project.read')).toBe(false);
+      expect(hasPermission(ctx, 'workspace.read')).toBe(false);
+    });
+  });
 });

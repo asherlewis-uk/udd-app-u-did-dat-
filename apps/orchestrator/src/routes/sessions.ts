@@ -1,11 +1,13 @@
 import { Router, type Router as RouterType } from 'express';
 import { authMiddleware, requirePermission } from '@udd/auth';
 import { PgSessionService, OptimisticConcurrencyError } from '../services/session.js';
+import { PgProjectRepository } from '@udd/database';
 
 const router: RouterType = Router();
 router.use(authMiddleware);
 
 const sessionService = new PgSessionService();
+const projects = new PgProjectRepository();
 
 function nextWithConcurrencyGuard(err: unknown, next: (e: unknown) => void): void {
   if (err instanceof OptimisticConcurrencyError) {
@@ -20,9 +22,18 @@ function nextWithConcurrencyGuard(err: unknown, next: (e: unknown) => void): voi
 router.post('/projects/:projectId/sessions', requirePermission('session.create'), async (req, res, next) => {
   try {
     const { idleTimeoutSeconds } = req.body as { idleTimeoutSeconds?: number };
+    // Resolve workspace from the project (internal tenancy key, ADR 013).
+    // Do NOT read workspace from JWT claims — tokens no longer carry it.
+    const project = await projects.findById(req.params['projectId']!);
+    if (!project) {
+      const err = new Error('Project not found') as Error & { statusCode: number; code: string };
+      err.statusCode = 404;
+      err.code = 'NOT_FOUND';
+      return next(err);
+    }
     const createParams: Parameters<typeof sessionService.createSession>[0] = {
-      projectId: req.params['projectId']!,
-      workspaceId: req.auth!.workspaceId ?? '',
+      projectId: project.id,
+      workspaceId: project.workspaceId,
       userId: req.auth!.userId,
       correlationId: req.correlationId ?? 'unknown',
     };

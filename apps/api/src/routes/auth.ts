@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { randomBytes, createHash } from 'crypto';
-import { signSessionToken } from '@udd/auth';
+import { signSessionToken, getEffectivePermissions } from '@udd/auth';
+import type { AuthContext } from '@udd/auth';
 import { getContext } from '../context.js';
 import { createAppError } from '../middleware/error.js';
 
@@ -139,11 +140,33 @@ router.post('/auth/session/exchange', authRateLimit, async (req, res, next) => {
       avatarUrl: workosUser.profilePictureUrl ?? null,
     });
 
-    // Issue session JWT (no workspace context at exchange time)
+    // Issue session JWT with resolved permissions (ADR 013 Phase 2).
+    // Look up the user's home workspace membership and resolve effective
+    // permissions at token-issuance time.  The JWT carries grantedPermissions
+    // instead of workspace identity — workspace is internal tenancy only.
+    const workspaces = await ctx.workspaces.findByUserId(user.id);
+    const homeWorkspace = workspaces[0];
+
+    let resolvedPermissions: import('@udd/contracts').Permission[] = [];
+    if (homeWorkspace) {
+      const membership = await ctx.memberships.findByUserAndWorkspace(user.id, homeWorkspace.id);
+      if (membership) {
+        const tempCtx: AuthContext = {
+          userId: user.id,
+          email: user.email,
+          displayName: user.displayName,
+          workspaceRole: membership.role,
+          grantedPermissions: [],
+        };
+        resolvedPermissions = getEffectivePermissions(tempCtx);
+      }
+    }
+
     const token = signSessionToken({
       sub: user.id,
       email: user.email,
       displayName: user.displayName,
+      grantedPermissions: resolvedPermissions,
     });
 
     return res.json({

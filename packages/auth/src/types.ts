@@ -7,11 +7,18 @@ export interface SessionClaims {
   email: string;
   /** Display name */
   displayName: string;
-  /** Workspace context (may be empty if cross-workspace request) */
+  /**
+   * @deprecated Internal tenancy key only. Not an authority primitive.
+   * Retained for backward compatibility with pre-migration tokens.
+   * New tokens should not include this field (ADR 013 Phase 2).
+   */
   workspaceId?: string;
-  /** Membership role in the current workspace context */
+  /**
+   * @deprecated Retained for backward compatibility with pre-migration tokens.
+   * New tokens carry resolved permissions in grantedPermissions instead.
+   */
   workspaceRole?: MembershipRole;
-  /** Explicit permission grants beyond role defaults */
+  /** Resolved permission set — primary authority source for permission checks */
   grantedPermissions?: Permission[];
   /** Token issued-at and expiry (epoch seconds) */
   iat: number;
@@ -22,14 +29,18 @@ export interface AuthContext {
   userId: string;
   email: string;
   displayName: string;
+  /**
+   * @deprecated Internal tenancy key only. Not an authority primitive.
+   * Retained for backward compatibility with pre-migration tokens (ADR 013).
+   */
   workspaceId?: string;
+  /**
+   * @deprecated Retained for backward compatibility with pre-migration tokens.
+   * New tokens carry resolved permissions in grantedPermissions instead.
+   */
   workspaceRole?: MembershipRole;
+  /** Resolved permission set — primary authority source for permission checks */
   grantedPermissions: Permission[];
-}
-
-export interface WorkspaceAuthContext extends AuthContext {
-  workspaceId: string;
-  workspaceRole: MembershipRole;
 }
 
 /** Roles that exist but are not a MembershipRole — internal service identities */
