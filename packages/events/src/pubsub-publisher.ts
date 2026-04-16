@@ -1,4 +1,5 @@
 import { PubSub, type Topic } from '@google-cloud/pubsub';
+import { config } from '@udd/config';
 import type { PlatformEvent } from '@udd/contracts';
 import type { EventPublisher } from './interfaces.js';
 
@@ -29,10 +30,10 @@ export class PubSubEventPublisher implements EventPublisher {
   private readonly topicCache = new Map<string, Topic>();
 
   constructor() {
-    const projectId = process.env['GCP_PROJECT_ID'];
+    const projectId = config.gcp.projectId();
     if (!projectId) throw new Error('GCP_PROJECT_ID environment variable is required');
     this.pubsub = new PubSub({ projectId });
-    this.prefix = process.env['PUBSUB_TOPIC_PREFIX'] ?? 'udd';
+    this.prefix = config.queue.pubsubTopicPrefix();
   }
 
   private getTopic(eventTopic: string): Topic {

@@ -20,7 +20,7 @@ output "session_reaper_job_name" {
   value       = google_cloud_run_v2_job.session_reaper.name
 }
 
-output "worker_manager_job_name" {
-  description = "Name of the worker-manager Cloud Run Job"
-  value       = google_cloud_run_v2_job.worker_manager.name
+output "worker_manager_service_url" {
+  description = "URL of the worker-manager Cloud Run service"
+  value       = google_cloud_run_v2_service.worker_manager.uri
 }

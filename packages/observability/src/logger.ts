@@ -4,6 +4,8 @@
 // Secrets must NEVER be passed to the logger — callers are responsible.
 // ============================================================
 
+import { config } from '@udd/config';
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 export interface LogContext {
@@ -29,9 +31,7 @@ const LEVEL_RANKS: Record<LogLevel, number> = {
 };
 
 function getMinLevel(): LogLevel {
-  const level = process.env['LOG_LEVEL'] ?? 'info';
-  if (level in LEVEL_RANKS) return level as LogLevel;
-  return 'info';
+  return config.telemetry.logLevel();
 }
 
 function formatError(err: unknown): NonNullable<LogEntry['err']> {
@@ -39,7 +39,7 @@ function formatError(err: unknown): NonNullable<LogEntry['err']> {
     const result: NonNullable<LogEntry['err']> = { message: err.message };
     const code = (err as NodeJS.ErrnoException).code;
     if (code !== undefined) result.code = code;
-    if (process.env['NODE_ENV'] !== 'production' && err.stack !== undefined) {
+    if (config.env !== 'production' && err.stack !== undefined) {
       result.stack = err.stack;
     }
     return result;
@@ -95,7 +95,7 @@ export class Logger {
 }
 
 // Default root logger — services should create a child with their service name
-export const rootLogger = new Logger({ service: process.env['OTEL_SERVICE_NAME'] ?? 'udd' });
+export const rootLogger = new Logger({ service: config.telemetry.serviceName() });
 
 export function createLogger(service: string, ctx?: LogContext): Logger {
   return rootLogger.child({ service, ...ctx });

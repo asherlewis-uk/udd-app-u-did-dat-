@@ -1,4 +1,5 @@
 import { WorkOS } from '@workos-inc/node';
+import { config } from '@udd/config';
 import type { AuthProvider, WorkOSUser } from './interfaces.js';
 
 // ============================================================
@@ -7,15 +8,11 @@ import type { AuthProvider, WorkOSUser } from './interfaces.js';
 // ============================================================
 
 function getClientId(): string {
-  const id = process.env['WORKOS_CLIENT_ID'];
-  if (!id) throw new Error('WORKOS_CLIENT_ID environment variable is required');
-  return id;
+  return config.auth.workosClientId();
 }
 
 function getWorkOS(): WorkOS {
-  const apiKey = process.env['WORKOS_API_KEY'];
-  if (!apiKey) throw new Error('WORKOS_API_KEY environment variable is required');
-  return new WorkOS(apiKey);
+  return new WorkOS(config.auth.workosApiKey());
 }
 
 function mapUser(user: {

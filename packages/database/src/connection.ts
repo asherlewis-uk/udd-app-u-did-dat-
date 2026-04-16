@@ -1,19 +1,16 @@
 import { Pool, type PoolClient, type QueryResult, type QueryResultRow } from 'pg';
+import { config } from '@udd/config';
 
 let pool: Pool | null = null;
 
 export function getPool(): Pool {
   if (!pool) {
-    const connectionString = process.env['DATABASE_URL'];
-    if (!connectionString) {
-      throw new Error('DATABASE_URL environment variable is required');
-    }
     pool = new Pool({
-      connectionString,
-      max: parseInt(process.env['DATABASE_POOL_MAX'] ?? '10', 10),
+      connectionString: config.database.url(),
+      max: config.database.poolMax(),
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
-      ssl: process.env['DATABASE_SSL'] === 'true' ? { rejectUnauthorized: true } : undefined,
+      ssl: config.database.ssl() ? { rejectUnauthorized: true } : undefined,
     });
     pool.on('error', (err) => {
       console.error('[database] unexpected pool error:', err);

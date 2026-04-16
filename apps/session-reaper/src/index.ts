@@ -8,7 +8,6 @@ import type { SessionStateChangedEvent } from '@udd/contracts';
 const logger = createLogger('session-reaper');
 
 const IDLE_THRESHOLD_SECONDS = config.runtime.idleThresholdSeconds();
-const SCAN_INTERVAL_MS = config.runtime.scanIntervalMs();
 
 const sessions = new PgSessionRepository();
 const leases = new PgSandboxLeaseRepository();
@@ -93,23 +92,23 @@ async function runReaperCycle(): Promise<void> {
   await Promise.allSettled([reapIdleSessions(), reapOrphanedLeases()]);
 }
 
-const timer = setInterval(() => {
-  runReaperCycle().catch((err) => {
-    logger.error('Reaper cycle failed', { err });
+async function main(): Promise<void> {
+  logger.info('Session reaper started (single-cycle mode)', {
+    idleThresholdSeconds: IDLE_THRESHOLD_SECONDS,
   });
-}, SCAN_INTERVAL_MS);
 
-logger.info('Session reaper started', {
-  scanIntervalMs: SCAN_INTERVAL_MS,
-  idleThresholdSeconds: IDLE_THRESHOLD_SECONDS,
+  try {
+    await runReaperCycle();
+    logger.info('Session reaper cycle completed successfully');
+  } catch (err) {
+    logger.error('Reaper cycle failed', { err });
+    process.exitCode = 1;
+  } finally {
+    await closePool();
+  }
+}
+
+main().catch((err) => {
+  logger.error('Session reaper fatal error', { err });
+  process.exit(1);
 });
-
-const shutdown = async (): Promise<void> => {
-  clearInterval(timer);
-  await closePool();
-  logger.info('Session reaper stopped');
-  process.exit(0);
-};
-
-process.on('SIGTERM', () => void shutdown());
-process.on('SIGINT', () => void shutdown());

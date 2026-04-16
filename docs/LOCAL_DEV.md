@@ -104,8 +104,6 @@ psql postgresql://udddev:udddev@localhost:5432/udd_dev -c "SELECT version, appli
 
 ## Recommended local service startup
 
-Do **not** rely on `pnpm dev` as the clean all-services entrypoint. The current repo has default port collisions. **Decision:** Code defaults will be changed so no two services share a default port. Until then, use explicit port overrides as shown below.
-
 ### Minimum hosted-web stack
 
 Start these in separate terminals:
@@ -116,25 +114,17 @@ pnpm --filter @udd/orchestrator dev
 pnpm --filter @udd/ai-orchestration dev
 pnpm --filter @udd/worker-manager dev
 pnpm --filter @udd/gateway dev
+pnpm --filter @udd/web dev
 ```
 
-Start the web app on a non-conflicting port:
-
-```powershell
-$env:PORT='3006'; pnpm --filter @udd/web dev
-```
+Each service has a unique default port — no manual overrides needed. See [docs/ENV_CONTRACT.md](./ENV_CONTRACT.md) for the full port map.
 
 ### Optional supporting services
 
 ```bash
 pnpm --filter @udd/collaboration dev
 pnpm --filter @udd/host-agent dev
-```
-
-Run usage meter on a non-conflicting port:
-
-```powershell
-$env:PORT='3007'; pnpm --filter @udd/usage-meter dev
+pnpm --filter @udd/usage-meter dev
 ```
 
 Run session reaper in a dedicated terminal:
@@ -158,7 +148,7 @@ pnpm test
 ### Hosted web surface
 
 1. Start the minimum hosted-web stack above.
-2. Open the local web app at `http://localhost:3006`.
+2. Open the local web app at `http://localhost:3007`.
 3. Sign in through the local auth flow.
 4. Verify project and workspace pages load against the local API.
 

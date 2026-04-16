@@ -1,4 +1,5 @@
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
+import { config } from '@udd/config';
 import type { SecretManagerProvider } from './interfaces.js';
 
 // ============================================================
@@ -23,7 +24,7 @@ function parseRef(ref: string): { projectId: string; secretId: string } {
 }
 
 function getProjectId(): string {
-  const projectId = process.env['GCP_PROJECT_ID'];
+  const projectId = config.gcp.projectId();
   if (!projectId) throw new Error('GCP_PROJECT_ID environment variable is required');
   return projectId;
 }

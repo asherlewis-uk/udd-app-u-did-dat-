@@ -9,7 +9,8 @@ on:
 env:
   REGISTRY: gcr.io
   GCP_REGION: europe-west1
-  SERVICES: api gateway orchestrator collaboration ai-orchestration worker-manager session-reaper usage-meter
+  SERVICES: api gateway orchestrator collaboration ai-orchestration worker-manager usage-meter
+  JOBS: session-reaper
 
 jobs:
   build-and-push:
@@ -44,7 +45,7 @@ jobs:
           IMAGE_TAG: ${{ steps.meta.outputs.sha }}
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         run: |
-          for svc in $SERVICES; do
+          for svc in $SERVICES $JOBS; do
             IMAGE="${REGISTRY}/${GCP_PROJECT_ID}/udd-${svc}:${IMAGE_TAG}"
             docker buildx build \
               --platform linux/amd64 \
@@ -88,6 +89,21 @@ jobs:
               --quiet
           done
 
+      - name: Deploy jobs to Cloud Run (dev)
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          NAME_PREFIX: udd-dev
+        run: |
+          for job in $JOBS; do
+            IMAGE="${REGISTRY}/${GCP_PROJECT_ID}/udd-${job}:${IMAGE_TAG}"
+            gcloud run jobs deploy "${NAME_PREFIX}-${job}" \
+              --image "${IMAGE}" \
+              --region "${GCP_REGION}" \
+              --project "${GCP_PROJECT_ID}" \
+              --quiet
+          done
+
   deploy-staging:
     name: Deploy → staging
     runs-on: ubuntu-latest
@@ -122,6 +138,21 @@ jobs:
               --quiet
           done
 
+      - name: Deploy jobs to Cloud Run (staging)
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          NAME_PREFIX: udd-staging
+        run: |
+          for job in $JOBS; do
+            IMAGE="${REGISTRY}/${GCP_PROJECT_ID}/udd-${job}:${IMAGE_TAG}"
+            gcloud run jobs deploy "${NAME_PREFIX}-${job}" \
+              --image "${IMAGE}" \
+              --region "${GCP_REGION}" \
+              --project "${GCP_PROJECT_ID}" \
+              --quiet
+          done
+
   deploy-prod:
     name: Deploy → prod
     runs-on: ubuntu-latest
@@ -153,5 +184,20 @@ jobs:
               --region "${GCP_REGION}" \
               --project "${GCP_PROJECT_ID}" \
               --platform managed \
+              --quiet
+          done
+
+      - name: Deploy jobs to Cloud Run (prod)
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          NAME_PREFIX: udd-prod
+        run: |
+          for job in $JOBS; do
+            IMAGE="${REGISTRY}/${GCP_PROJECT_ID}/udd-${job}:${IMAGE_TAG}"
+            gcloud run jobs deploy "${NAME_PREFIX}-${job}" \
+              --image "${IMAGE}" \
+              --region "${GCP_REGION}" \
+              --project "${GCP_PROJECT_ID}" \
               --quiet
           done

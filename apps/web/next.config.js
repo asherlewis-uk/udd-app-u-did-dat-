@@ -23,6 +23,7 @@ const nextConfig = {
     return [
       {
         source: '/preview/:path*',
+        // GATEWAY_URL points to the gateway service (port 3000), not to this web app (port 3007).
         destination: `${process.env.GATEWAY_URL ?? 'http://localhost:3000'}/preview/:path*`,
       },
     ];

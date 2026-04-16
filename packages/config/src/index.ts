@@ -71,6 +71,7 @@ export const config = {
     provider: () => optional('QUEUE_PROVIDER', 'pubsub') as 'pubsub' | 'sqs' | 'noop',
     awsRegion: () => optional('AWS_REGION', 'us-east-1'),
     queueUrlPrefix: () => optional('SQS_QUEUE_URL_PREFIX', ''),
+    pubsubTopicPrefix: () => optional('PUBSUB_TOPIC_PREFIX', 'udd'),
   },
 
   telemetry: {
@@ -97,6 +98,9 @@ export const config = {
     heartbeatIntervalMs: () => optionalInt('WORKER_HEARTBEAT_INTERVAL_MS', 30_000),
     idleSessionScanIntervalMs: () => optionalInt('IDLE_SESSION_SCAN_INTERVAL_MS', 60_000),
     stuckRunTimeoutMs: () => optionalInt('STUCK_RUN_TIMEOUT_MS', 300_000),
+    totalSlots: () => optionalInt('WORKER_TOTAL_SLOTS', 10),
+    portRangeStart: () => optionalInt('WORKER_PORT_RANGE_START', 32100),
+    portRangeSize: () => optionalInt('WORKER_PORT_RANGE_SIZE', 100),
   },
 
   runtime: {
@@ -110,6 +114,15 @@ export const config = {
   preview: {
     domain: () => optional('PREVIEW_DOMAIN', 'localhost:3000'),
     ttlSeconds: () => optionalInt('PREVIEW_DEFAULT_TTL_SECONDS', 3600),
+    tokenTtlSeconds: () => optionalInt('PREVIEW_TOKEN_TTL_SECONDS', 300),
+  },
+
+  gcp: {
+    projectId: () => optional('GCP_PROJECT_ID', ''),
+  },
+
+  organization: {
+    defaultId: () => optional('DEFAULT_ORGANIZATION_ID', ''),
   },
 } as const;
 

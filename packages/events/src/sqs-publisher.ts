@@ -2,6 +2,7 @@ import {
   SQSClient,
   SendMessageCommand,
 } from '@aws-sdk/client-sqs';
+import { config } from '@udd/config';
 import type { EventPublisher, PublishOptions } from './interfaces.js';
 import type { PlatformEvent } from '@udd/contracts';
 
@@ -13,7 +14,7 @@ import type { PlatformEvent } from '@udd/contracts';
 
 function getSQSClient(): SQSClient {
   return new SQSClient({
-    region: process.env['AWS_REGION'] ?? 'us-east-1',
+    region: config.queue.awsRegion(),
   });
 }
 
@@ -22,7 +23,7 @@ export class SqsEventPublisher implements EventPublisher {
   private readonly client: SQSClient;
 
   constructor(queueUrl?: string) {
-    this.queueUrl = queueUrl ?? process.env['SQS_EVENTS_QUEUE_URL'] ?? '';
+    this.queueUrl = queueUrl ?? config.queue.queueUrlPrefix();
     if (!this.queueUrl) {
       throw new Error(
         'SQS_EVENTS_QUEUE_URL environment variable is required for SqsEventPublisher',

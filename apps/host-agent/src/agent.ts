@@ -1,3 +1,5 @@
+import os from 'node:os';
+import net from 'node:net';
 import { createLogger } from '@udd/observability';
 import { config } from '@udd/config';
 
@@ -14,6 +16,118 @@ const logger = createLogger('host-agent');
 
 const WORKER_HOST = config.worker.host();
 const WORKER_MANAGER_URL = config.services.workerManagerBaseUrl();
+
+// ============================================================
+// Slot & port tracking
+// ============================================================
+
+/**
+ * In-memory set of active slot identifiers (e.g. container IDs or session
+ * IDs). Other parts of the agent call `allocateSlot` / `releaseSlot` when
+ * containers are started / stopped.
+ */
+const activeSlots = new Set<string>();
+
+/**
+ * In-memory set of ports currently allocated to running containers.
+ * Mirrors `activeSlots` lifecycle — callers use `allocatePort` /
+ * `releasePort`.
+ */
+const allocatedPorts = new Set<number>();
+
+/** Register a slot as active. Returns `false` if capacity is full. */
+export function allocateSlot(id: string): boolean {
+  const totalSlots = config.worker.totalSlots();
+  if (activeSlots.size >= totalSlots) return false;
+  activeSlots.add(id);
+  return true;
+}
+
+/** Release a previously-allocated slot. */
+export function releaseSlot(id: string): void {
+  activeSlots.delete(id);
+}
+
+/**
+ * Reserve a port from the configured range.
+ * Returns the port number, or `null` if the range is exhausted.
+ */
+export function allocatePort(): number | null {
+  const start = config.worker.portRangeStart();
+  const size = config.worker.portRangeSize();
+  for (let port = start; port < start + size; port++) {
+    if (!allocatedPorts.has(port)) {
+      allocatedPorts.add(port);
+      return port;
+    }
+  }
+  return null;
+}
+
+/** Release a previously-allocated port back to the pool. */
+export function releasePort(port: number): void {
+  allocatedPorts.delete(port);
+}
+
+// ============================================================
+// Health helpers
+// ============================================================
+
+const MEMORY_UNHEALTHY_THRESHOLD = 0.10; // < 10 % free → unhealthy
+
+function isSystemHealthy(): boolean {
+  const freeMem = os.freemem();
+  const totalMem = os.totalmem();
+  if (totalMem === 0) return false;
+  return freeMem / totalMem >= MEMORY_UNHEALTHY_THRESHOLD;
+}
+
+// ============================================================
+// Port availability check
+// ============================================================
+
+/**
+ * Probes whether a single port is genuinely available by briefly
+ * binding a TCP server to it.
+ */
+function isPortAvailable(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.once('error', () => resolve(false));
+    server.listen(port, '0.0.0.0', () => {
+      server.close(() => resolve(true));
+    });
+  });
+}
+
+/**
+ * Returns the subset of un-allocated ports in the configured range that are
+ * also genuinely free on the OS (not bound by another process).
+ */
+async function getAvailablePorts(): Promise<number[]> {
+  const start = config.worker.portRangeStart();
+  const size = config.worker.portRangeSize();
+  const totalSlots = config.worker.totalSlots();
+
+  const candidates: number[] = [];
+  for (let port = start; port < start + size; port++) {
+    if (!allocatedPorts.has(port)) {
+      candidates.push(port);
+    }
+  }
+
+  // Probe at most `totalSlots` candidates to keep the check bounded
+  const toProbe = candidates.slice(0, totalSlots);
+  const results = await Promise.all(
+    toProbe.map(async (port) => ({ port, free: await isPortAvailable(port) })),
+  );
+
+  return results.filter((r) => r.free).map((r) => r.port);
+}
+
+// ============================================================
+// Snapshot & heartbeat
+// ============================================================
 
 async function postSnapshot(
   snapshot: Awaited<ReturnType<typeof collectCapacitySnapshot>>,
@@ -50,13 +164,17 @@ export async function collectCapacitySnapshot(): Promise<{
   availablePorts: number[];
   healthy: boolean;
 }> {
-  // Phase 2: query the host OS / container runtime for actual state
+  const totalSlots = config.worker.totalSlots();
+  const usedSlots = activeSlots.size;
+  const availablePorts = await getAvailablePorts();
+  const healthy = isSystemHealthy();
+
   return {
     workerHost: WORKER_HOST,
-    totalSlots: 10,
-    usedSlots: 0,
-    availablePorts: Array.from({ length: 10 }, (_, i) => 32100 + i),
-    healthy: true,
+    totalSlots,
+    usedSlots,
+    availablePorts,
+    healthy,
   };
 }
 

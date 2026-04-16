@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { config } from '@udd/config';
 import type { Permission } from '@udd/contracts';
 import type { AuthContext, SessionClaims } from './types.js';
 import { hasPermission } from './rbac.js';
@@ -17,8 +18,7 @@ declare global {
 const MIN_JWT_SECRET_LENGTH = 32; // 256 bits minimum entropy
 
 function getJwtSecret(): string {
-  const secret = process.env['JWT_SECRET'];
-  if (!secret) throw new Error('JWT_SECRET environment variable is required');
+  const secret = config.auth.jwtSecret();
   if (secret.length < MIN_JWT_SECRET_LENGTH) {
     throw new Error(
       `JWT_SECRET must be at least ${MIN_JWT_SECRET_LENGTH} characters (got ${secret.length}). ` +
@@ -101,6 +101,6 @@ export function requirePermission(permission: Permission) {
  * Used by the session exchange endpoint.
  */
 export function signSessionToken(claims: Omit<SessionClaims, 'iat' | 'exp'>): string {
-  const expiresIn = parseInt(process.env['JWT_EXPIRES_IN_SECONDS'] ?? '86400', 10);
+  const expiresIn = config.auth.jwtExpiresInSeconds();
   return jwt.sign(claims, getJwtSecret(), { algorithm: 'HS256', expiresIn });
 }

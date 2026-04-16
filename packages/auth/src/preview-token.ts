@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { config } from '@udd/config';
 import type { AuthContext } from './types.js';
 
 // ============================================================
@@ -36,8 +37,7 @@ const PREVIEW_TOKEN_TTL_SECONDS = 300; // 5 minutes
 const MIN_JWT_SECRET_LENGTH = 32;
 
 function getJwtSecret(): string {
-  const secret = process.env['JWT_SECRET'];
-  if (!secret) throw new Error('JWT_SECRET environment variable is required');
+  const secret = config.auth.jwtSecret();
   if (secret.length < MIN_JWT_SECRET_LENGTH) {
     throw new Error(
       `JWT_SECRET must be at least ${MIN_JWT_SECRET_LENGTH} characters (got ${secret.length}). ` +
@@ -60,10 +60,7 @@ export function signPreviewToken(
     previewId,
     type: 'preview',
   };
-  const ttl = parseInt(
-    process.env['PREVIEW_TOKEN_TTL_SECONDS'] ?? String(PREVIEW_TOKEN_TTL_SECONDS),
-    10,
-  );
+  const ttl = config.preview.tokenTtlSeconds();
   const token = jwt.sign(payload, getJwtSecret(), { algorithm: 'HS256', expiresIn: ttl });
   const expiresAt = new Date(Date.now() + ttl * 1000).toISOString();
   return { token, expiresAt };

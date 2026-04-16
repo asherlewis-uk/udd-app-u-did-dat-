@@ -18,6 +18,7 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
+    "@udd/config": "workspace:*",
     "@udd/contracts": "workspace:*",
     "@udd/observability": "workspace:*",
     "@google-cloud/secret-manager": "^5.6.0",
