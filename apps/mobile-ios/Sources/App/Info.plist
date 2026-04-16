@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  iOS App Configuration — Build-Phase Parameterization
+
+  Each UDD_* key references an Xcode build setting of the same name.
+  Set these in the active scheme (or an xcconfig file) to inject
+  environment-specific values at compile time.
+
+  When building via SPM without Xcode schemes, these keys resolve to
+  the literal "$(…)" string; AppConfig.swift detects that pattern and
+  falls back to local-dev defaults.
+
+  See docs/ENV_CONTRACT.md § "Non-env configuration note".
+-->
+<plist version="1.0">
+<dict>
+	<key>UDD_API_BASE_URL</key>
+	<string>$(UDD_API_BASE_URL)</string>
+	<key>UDD_GATEWAY_BASE_URL</key>
+	<string>$(UDD_GATEWAY_BASE_URL)</string>
+	<key>UDD_WORKOS_CLIENT_ID</key>
+	<string>$(UDD_WORKOS_CLIENT_ID)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>uddcompanion</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>com.uddplatform.companion.auth</string>
+		</dict>
+	</array>
+</dict>
+</plist>

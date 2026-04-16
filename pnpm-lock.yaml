@@ -585,6 +585,9 @@ importers:
       '@google-cloud/pubsub':
         specifier: ^4.7.0
         version: 4.11.0
+      '@udd/config':
+        specifier: workspace:*
+        version: link:../config
       '@udd/contracts':
         specifier: workspace:*
         version: link:../contracts

@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import type { Session, SessionState, SessionCreatedEvent, SessionStateChangedEvent } from '@udd/contracts';
+import type {
+  Session,
+  SessionState,
+  SessionCreatedEvent,
+  SessionStateChangedEvent,
+} from '@udd/contracts';
 import { SESSION_TRANSITIONS } from '@udd/contracts';
 import {
   PgSessionRepository,
@@ -13,10 +18,11 @@ import {
 import { NoopEventPublisher } from '@udd/events';
 import type { EventPublisher } from '@udd/events';
 import { createLogger } from '@udd/observability';
+import { config } from '@udd/config';
 
 const logger = createLogger('orchestrator:session');
 
-const LEASE_TTL_SECONDS = parseInt(process.env['SANDBOX_LEASE_TTL_SECONDS'] ?? '86400', 10);
+const LEASE_TTL_SECONDS = config.runtime.sandboxLeaseTtlSeconds();
 
 export interface SessionService {
   createSession(params: {
@@ -27,10 +33,7 @@ export interface SessionService {
     correlationId: string;
   }): Promise<Session>;
 
-  startSession(params: {
-    sessionId: string;
-    correlationId: string;
-  }): Promise<Session>;
+  startSession(params: { sessionId: string; correlationId: string }): Promise<Session>;
 
   stopSession(params: {
     sessionId: string;
@@ -72,7 +75,8 @@ export class PgSessionService implements SessionService {
       workspaceId: params.workspaceId,
       userId: params.userId,
     };
-    if (params.idleTimeoutSeconds !== undefined) createData.idleTimeoutSeconds = params.idleTimeoutSeconds;
+    if (params.idleTimeoutSeconds !== undefined)
+      createData.idleTimeoutSeconds = params.idleTimeoutSeconds;
     const session = await this.sessions.create(createData);
 
     await this.auditLogs.append({
@@ -119,10 +123,7 @@ export class PgSessionService implements SessionService {
    * acceptable; losing a COMMIT and re-running is safer than publishing
    * before the row is durable).
    */
-  async startSession(params: {
-    sessionId: string;
-    correlationId: string;
-  }): Promise<Session> {
+  async startSession(params: { sessionId: string; correlationId: string }): Promise<Session> {
     const started = await withTransaction(async (client) => {
       // Lock this session row — prevents concurrent startSession calls from
       // reading the same version and racing on the state transition.

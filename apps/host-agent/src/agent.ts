@@ -12,7 +12,7 @@ const logger = createLogger('host-agent');
 //   4. Detect orphaned sandboxes
 // ============================================================
 
-const WORKER_HOST = process.env['WORKER_HOST'] ?? 'localhost';
+const WORKER_HOST = config.worker.host();
 const WORKER_MANAGER_URL = config.services.workerManagerBaseUrl();
 
 async function postSnapshot(

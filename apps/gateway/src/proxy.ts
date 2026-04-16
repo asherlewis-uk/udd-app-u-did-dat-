@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { createLogger } from '@udd/observability';
+import { config } from '@udd/config';
 import type { AuthContext } from '@udd/auth';
 import type { PreviewRouteBinding } from '@udd/contracts';
 
@@ -71,7 +72,11 @@ export async function authorizePreviewRequest(
   }
 
   if (binding.expiresAt && new Date(binding.expiresAt) < new Date()) {
-    logger.info('Preview route expired', { previewId, expiresAt: binding.expiresAt, correlationId });
+    logger.info('Preview route expired', {
+      previewId,
+      expiresAt: binding.expiresAt,
+      correlationId,
+    });
     return { allowed: false, denyCode: 'PREVIEW_EXPIRED', denyMessage: 'Preview has expired' };
   }
 
@@ -137,15 +142,15 @@ export function previewProxyMiddleware(registry: PreviewRouteRegistry) {
     });
 
     if (!result) {
-      res.status(500).json({ code: 'INTERNAL_ERROR', correlationId: req.correlationId ?? 'unknown' });
+      res
+        .status(500)
+        .json({ code: 'INTERNAL_ERROR', correlationId: req.correlationId ?? 'unknown' });
       return;
     }
 
     if (!result.allowed || !result.target) {
       const statusCode =
-        result.denyCode === 'PREVIEW_NOT_FOUND' ? 404
-        : result.denyCode === 'FORBIDDEN' ? 403
-        : 410; // revoked or expired
+        result.denyCode === 'PREVIEW_NOT_FOUND' ? 404 : result.denyCode === 'FORBIDDEN' ? 403 : 410; // revoked or expired
 
       res.status(statusCode).json({
         code: result.denyCode,
@@ -171,7 +176,7 @@ export function previewProxyMiddleware(registry: PreviewRouteRegistry) {
     // SECURITY: Validate the worker target is within the expected private subnet.
     // Even though the target comes from DB, defense-in-depth requires we verify
     // it is not pointing to cloud metadata, loopback, or unexpected networks.
-    const allowedWorkerSubnet = process.env['WORKER_SUBNET_PREFIX'] ?? '10.';
+    const allowedWorkerSubnet = config.gateway.workerSubnetPrefix();
     if (
       !host.startsWith(allowedWorkerSubnet) ||
       host === 'localhost' ||

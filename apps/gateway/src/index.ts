@@ -2,9 +2,10 @@ import { createApp } from './app.js';
 import { createLogger } from '@udd/observability';
 import { closePool } from '@udd/database';
 import { PgPreviewRouteRegistry } from './registry.js';
+import { config } from '@udd/config';
 
 const logger = createLogger('gateway');
-const PORT = parseInt(process.env['PORT'] ?? '3000', 10);
+const PORT = config.port(3000);
 
 const registry = new PgPreviewRouteRegistry();
 const app = createApp(registry);

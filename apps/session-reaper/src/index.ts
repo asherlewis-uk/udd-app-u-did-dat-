@@ -2,12 +2,13 @@ import { randomUUID } from 'node:crypto';
 import { createLogger } from '@udd/observability';
 import { PgSessionRepository, PgSandboxLeaseRepository, closePool } from '@udd/database';
 import { createEventPublisher } from '@udd/events';
+import { config } from '@udd/config';
 import type { SessionStateChangedEvent } from '@udd/contracts';
 
 const logger = createLogger('session-reaper');
 
-const IDLE_THRESHOLD_SECONDS = parseInt(process.env['IDLE_THRESHOLD_SECONDS'] ?? '1800', 10);
-const SCAN_INTERVAL_MS = parseInt(process.env['SCAN_INTERVAL_MS'] ?? '60000', 10);
+const IDLE_THRESHOLD_SECONDS = config.runtime.idleThresholdSeconds();
+const SCAN_INTERVAL_MS = config.runtime.scanIntervalMs();
 
 const sessions = new PgSessionRepository();
 const leases = new PgSandboxLeaseRepository();

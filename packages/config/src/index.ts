@@ -34,6 +34,9 @@ function flag(key: string, fallback: boolean): boolean {
 export const config = {
   env: optional('NODE_ENV', 'development') as 'development' | 'staging' | 'production' | 'test',
 
+  /** Listener port — each service passes its own fallback for local dev. */
+  port: (fallback: number) => optionalInt('PORT', fallback),
+
   database: {
     url: () => required('DATABASE_URL'),
     poolMax: () => optionalInt('DATABASE_POOL_MAX', 10),
@@ -53,19 +56,19 @@ export const config = {
   },
 
   secrets: {
-    provider: () => optional('SECRET_MANAGER_PROVIDER', 'aws'),
+    provider: () => optional('SECRET_MANAGER_PROVIDER', 'gcp') as 'gcp' | 'aws' | 'memory',
     awsRegion: () => optional('AWS_REGION', 'us-east-1'),
     awsSecretsPrefix: () => optional('AWS_SECRETS_PREFIX', '/udd/'),
   },
 
   storage: {
-    provider: () => optional('OBJECT_STORAGE_PROVIDER', 'aws'),
+    provider: () => optional('OBJECT_STORAGE_PROVIDER', 'gcs') as 'gcs' | 'aws' | 'local',
     bucket: () => required('OBJECT_STORAGE_BUCKET'),
     awsRegion: () => optional('AWS_REGION', 'us-east-1'),
   },
 
   queue: {
-    provider: () => optional('QUEUE_PROVIDER', 'sqs'),
+    provider: () => optional('QUEUE_PROVIDER', 'pubsub') as 'pubsub' | 'sqs' | 'noop',
     awsRegion: () => optional('AWS_REGION', 'us-east-1'),
     queueUrlPrefix: () => optional('SQS_QUEUE_URL_PREFIX', ''),
   },
@@ -85,10 +88,23 @@ export const config = {
     gatewayBaseUrl: () => optional('GATEWAY_BASE_URL', 'http://localhost:3000'),
   },
 
+  gateway: {
+    workerSubnetPrefix: () => optional('WORKER_SUBNET_PREFIX', '10.'),
+  },
+
   worker: {
+    host: () => optional('WORKER_HOST', 'localhost'),
     heartbeatIntervalMs: () => optionalInt('WORKER_HEARTBEAT_INTERVAL_MS', 30_000),
     idleSessionScanIntervalMs: () => optionalInt('IDLE_SESSION_SCAN_INTERVAL_MS', 60_000),
     stuckRunTimeoutMs: () => optionalInt('STUCK_RUN_TIMEOUT_MS', 300_000),
+  },
+
+  runtime: {
+    idleThresholdSeconds: () => optionalInt('IDLE_THRESHOLD_SECONDS', 1_800),
+    scanIntervalMs: () => optionalInt('SCAN_INTERVAL_MS', 60_000),
+    sandboxLeaseTtlSeconds: () => optionalInt('SANDBOX_LEASE_TTL_SECONDS', 86_400),
+    pipelineMaxNodes: () => optionalInt('PIPELINE_MAX_NODES', 500),
+    pipelineMaxEdges: () => optionalInt('PIPELINE_MAX_EDGES', 5_000),
   },
 
   preview: {

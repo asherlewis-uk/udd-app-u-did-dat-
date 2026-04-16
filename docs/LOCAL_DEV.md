@@ -74,7 +74,7 @@ $env:NEXT_PUBLIC_API_URL='http://localhost:8080'
 $env:GATEWAY_URL='http://localhost:3000'
 $env:OBJECT_STORAGE_PROVIDER='local'
 $env:OBJECT_STORAGE_BUCKET='udd-local'
-$env:QUEUE_PROVIDER='sqs'
+$env:QUEUE_PROVIDER='noop'
 $env:WORKER_HOST='10.0.0.10'
 $env:WORKER_SUBNET_PREFIX='10.'
 ```

@@ -14,10 +14,9 @@ Use an external secret manager for production provider credentials and store onl
 
 Current repo reality:
 
-- Production path: `GCPSecretManagerProvider`
-- Development and test path: `InMemorySecretManagerProvider`
-- **Decision (supersedes prior behavior):** `SECRET_MANAGER_PROVIDER` config flag is the sole selection authority for secret-manager provider. The legacy `NODE_ENV`-based selection in `apps/ai-orchestration` is deprecated and must be removed. See [docs/implementation-gaps.md](../implementation-gaps.md) and [docs/ENV_CONTRACT.md](../ENV_CONTRACT.md).
-- Until the implementation change is applied, `apps/ai-orchestration` still selects via `NODE_ENV`. This is a known implementation gap, not the canonical behavior.
+- Production/hosted path: `GCPSecretManagerProvider` (default when `SECRET_MANAGER_PROVIDER` is unset or `gcp`).
+- Development and test path: `InMemorySecretManagerProvider` (when `SECRET_MANAGER_PROVIDER=memory`).
+- Selection authority: `SECRET_MANAGER_PROVIDER` config flag via `config.secrets.provider()`. `NODE_ENV`-based selection has been removed from `apps/ai-orchestration`. See [docs/ENV_CONTRACT.md](../ENV_CONTRACT.md).
 
 ## Consequences
 

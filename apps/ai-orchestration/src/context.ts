@@ -24,6 +24,7 @@ import { InMemorySecretManagerProvider, GCPSecretManagerProvider } from '@udd/ad
 import type { SecretManagerProvider } from '@udd/adapters';
 import { resolveAdapterForConfig } from '@udd/adapters';
 import type { ModelProviderAdapter, ProviderConfig } from '@udd/contracts';
+import { config } from '@udd/config';
 
 export interface AiOrchestratorContext {
   providerConfigs: ProviderConfigRepository;
@@ -43,10 +44,9 @@ let _ctx: AiOrchestratorContext | null = null;
 
 export function getContext(): AiOrchestratorContext {
   if (!_ctx) {
+    const provider = config.secrets.provider();
     const secrets: SecretManagerProvider =
-      process.env['NODE_ENV'] === 'production'
-        ? new GCPSecretManagerProvider()
-        : new InMemorySecretManagerProvider();
+      provider === 'gcp' ? new GCPSecretManagerProvider() : new InMemorySecretManagerProvider();
 
     _ctx = {
       providerConfigs: new PgProviderConfigRepository(),

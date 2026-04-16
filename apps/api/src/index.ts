@@ -1,8 +1,9 @@
 import { createApp } from './app.js';
 import { createLogger } from '@udd/observability';
+import { config } from '@udd/config';
 
 const logger = createLogger('api');
-const PORT = parseInt(process.env['PORT'] ?? '8080', 10);
+const PORT = config.port(8080);
 
 const app = createApp();
 

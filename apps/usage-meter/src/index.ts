@@ -1,5 +1,6 @@
 import { createLogger } from '@udd/observability';
 import { PgUsageMeterRepository, closePool } from '@udd/database';
+import { config } from '@udd/config';
 
 const logger = createLogger('usage-meter');
 
@@ -36,7 +37,13 @@ app.post('/internal/usage', async (req, res, next) => {
       metadata?: Record<string, unknown>;
     };
 
-    if (!body.workspaceId || !body.eventType || !body.resourceId || body.quantity == null || !body.unit) {
+    if (
+      !body.workspaceId ||
+      !body.eventType ||
+      !body.resourceId ||
+      body.quantity == null ||
+      !body.unit
+    ) {
       return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'Missing required fields' });
     }
 
@@ -55,7 +62,7 @@ app.post('/internal/usage', async (req, res, next) => {
   }
 });
 
-const PORT = parseInt(process.env['PORT'] ?? '3000', 10);
+const PORT = config.port(3006);
 const server = app.listen(PORT, () => {
   logger.info('Usage meter started', { port: PORT });
 });

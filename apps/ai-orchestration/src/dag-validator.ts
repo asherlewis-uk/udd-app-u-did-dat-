@@ -1,5 +1,6 @@
 import type { PipelineDefinitionJson } from '@udd/contracts';
 import type { AgentRoleRepository } from '@udd/database';
+import { config } from '@udd/config';
 
 export interface DagValidationResult {
   valid: boolean;
@@ -30,8 +31,8 @@ export async function validateDag(
   }
 
   // Rule 2: maximum size limits (configurable via env; lower-bound guard prevents 0)
-  const MAX_NODES = Math.max(1, parseInt(process.env['PIPELINE_MAX_NODES'] ?? '500', 10) || 500);
-  const MAX_EDGES = Math.max(1, parseInt(process.env['PIPELINE_MAX_EDGES'] ?? '5000', 10) || 5000);
+  const MAX_NODES = Math.max(1, config.runtime.pipelineMaxNodes());
+  const MAX_EDGES = Math.max(1, config.runtime.pipelineMaxEdges());
 
   if (nodes.length > MAX_NODES) {
     errors.push(`Pipeline exceeds the maximum of ${MAX_NODES} nodes (got ${nodes.length})`);
