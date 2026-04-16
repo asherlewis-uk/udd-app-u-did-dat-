@@ -33,17 +33,16 @@ The canonical model is solo-first and project-centered.
 
 ## Current Implementation Reality
 
-The current codebase still models core data as `Organization -> Workspace -> Project`.
+ADR 013 Phase 1 and Phase 2 are complete. The product surface is project-first. `workspaceId` is retained as an internal tenancy and shard key only. New tokens use `grantedPermissions` in JWT claims; `workspaceId`/`workspaceRole` are deprecated.
 
-| Current code entity              | Current role                      | Canonical interpretation                                        |
-| -------------------------------- | --------------------------------- | --------------------------------------------------------------- |
-| `organizations`                  | top-level DB tenancy container    | legacy implementation detail, not the canonical product center  |
-| `workspaces`                     | main access and routing container | legacy implementation detail, not the canonical product center  |
-| `projects`                       | work unit inside a workspace      | closest current implementation to the canonical project         |
-| `memberships` and `role_grants`  | workspace-scoped access model     | legacy access model                                             |
-| `workspaceId` in JWTs and routes | primary scoping mechanism in code | implementation gap against the canonical project-centered model |
-
-See [implementation-gaps.md](implementation-gaps.md) for the exact mismatch record.
+| Current code entity              | Current role                                   | Canonical interpretation                                        |
+| -------------------------------- | ---------------------------------------------- | --------------------------------------------------------------- |
+| `organizations`                  | top-level DB tenancy container                 | internal implementation detail, not the canonical product center |
+| `workspaces`                     | internal tenancy and shard key                 | internal implementation detail, not the canonical product center |
+| `projects`                       | primary product entity                         | the canonical project                                           |
+| `memberships` and `role_grants`  | workspace-scoped access model (deprecated)     | legacy access model; project access now via workspace membership |
+| `grantedPermissions` in JWTs     | primary authorization mechanism in new tokens  | canonical auth model                                            |
+| `workspaceId` in DB and internal routes | internal tenancy key                    | retained for sharding; removed from product API surface         |
 
 ## Thin-workspace migration strategy
 

@@ -15,7 +15,7 @@ Hosted product flows come first. Local-development flows exist to support buildi
 5. Initial files and stack defaults are produced.
 6. User lands in the hosted project view, ready to run or edit.
 
-Current repo note: project persistence exists, but the scaffold engine (built-in bundled templates) is not yet implemented. See [docs/implementation-gaps.md](./implementation-gaps.md).
+Current repo note: project persistence exists, and the scaffold engine is implemented at `packages/scaffold/` with built-in bundled templates (4 templates, `scaffold`/`getTemplate`/`getAllTemplates`).
 
 ## Open or import existing project
 
@@ -24,7 +24,7 @@ Current repo note: project persistence exists, but the scaffold engine (built-in
 3. User opens an existing project or imports a repo-backed project.
 4. Project metadata, recent sessions, previews, and AI history are loaded.
 
-Current repo note: the current API and UI still route through workspace-shaped ownership.
+Current repo note: ADR 013 Phase 2 is complete. New tokens use `grantedPermissions` in JWT claims. Project-first routes are active. Workspace-scoped routes are deprecated and retained only for internal tenancy.
 
 ## Detect stack
 
@@ -32,7 +32,7 @@ Current repo note: the current API and UI still route through workspace-shaped o
 2. Stack adapter resolves language, framework, runtime hints, and preview defaults.
 3. Result feeds scaffolding, runtime commands, preview behavior, and AI edit safety.
 
-Current repo note: this is a canonical boundary. Decision made: static config-driven stack registry. Implementation is open.
+Current repo note: this is a canonical boundary. The stack registry is implemented at `packages/stack-registry/` with 10 stacks and `getStack`/`getAllStacks`/`detectStack` APIs.
 
 ## Scaffold from template
 
@@ -41,7 +41,7 @@ Current repo note: this is a canonical boundary. Decision made: static config-dr
 3. Runtime and preview defaults are attached to the project.
 4. User can immediately start a hosted run or continue editing.
 
-Current repo note: template scaffolding decision made (built-in bundled templates), but not implemented as a dedicated subsystem yet.
+Current repo note: the scaffold engine is implemented at `packages/scaffold/` with built-in bundled templates (4 templates, `scaffold`/`getTemplate`/`getAllTemplates`).
 
 ## Apply AI edits safely
 
@@ -61,7 +61,7 @@ Current repo note: provider-backed invocation exists. Dedicated project memory a
 4. Session state advances through the runtime lifecycle.
 5. User observes status and logs from the hosted product surfaces.
 
-Current repo note: hosted session lifecycle exists, but runtime isolation and capacity truth are incomplete.
+Current repo note: hosted session lifecycle exists. Capacity reporting is real (OS-level CPU, memory, port probing via host-agent). Container-per-session isolation remains unimplemented ([ADR 014](./adr/014-container-per-session-isolation.md)).
 
 ## Preview in hosted mode
 

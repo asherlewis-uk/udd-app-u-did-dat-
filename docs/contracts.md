@@ -31,7 +31,7 @@ This file defines the stable internal boundaries the rest of the docs rely on. W
 | Inputs       | Project files, explicit stack hint, run or build intent                                                                                 |
 | Outputs      | Detected stack, commands, preview defaults, adapter-specific capabilities                                                               |
 | Errors       | Unknown stack, ambiguous stack, unsupported stack, invalid adapter output                                                               |
-| Current code | No first-class registry yet; decision made: static config-driven registry. See [docs/implementation-gaps.md](./implementation-gaps.md). |
+| Current code | Implemented at `packages/stack-registry/` with 10 stacks and `getStack`/`getAllStacks`/`detectStack` APIs. |
 
 ## Scaffold contract
 
@@ -41,7 +41,7 @@ This file defines the stable internal boundaries the rest of the docs rely on. W
 | Inputs       | Idea, template ID, stack choice, project metadata                                                                                           |
 | Outputs      | Project skeleton, stack metadata, initial files, next recommended run path                                                                  |
 | Errors       | Unknown template, unsupported stack, invalid scaffold parameters                                                                            |
-| Current code | No first-class scaffold engine yet; decision made: built-in bundled templates. See [docs/implementation-gaps.md](./implementation-gaps.md). |
+| Current code | Implemented at `packages/scaffold/` with 4 built-in bundled templates and `scaffold`/`getTemplate`/`getAllTemplates` APIs. |
 
 ## Runtime contract
 
@@ -103,6 +103,6 @@ This file defines the stable internal boundaries the rest of the docs rely on. W
 ## Current implementation notes
 
 - `packages/contracts` remains the code-level contract base for entities, DTOs, events, and enums.
-- The current external API still reflects workspace ownership and workspace-scoped routes. Migration to project-first routes follows [ADR 013](./adr/013-thin-workspace-migration-strategy.md).
+- ADR 013 Phase 2 is complete. Project-first routes are active; workspace-scoped routes are deprecated. `workspaceId` remains as an internal tenancy key only. New tokens use `grantedPermissions` in JWT claims.
 - Web and iOS must consume the same project-centered contracts. Shared contracts plus iOS conformance tests enforce parity.
 - The canonical contract set in this file is stricter and more stable than the current route layout. See [docs/implementation-gaps.md](./implementation-gaps.md).

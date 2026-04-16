@@ -58,13 +58,12 @@ Hosted runtime is the default runtime model for the product. Local runtime exist
 | `apps/collaboration`    | `3003`                                      |
 | `apps/ai-orchestration` | `3004`                                      |
 | `apps/worker-manager`   | `3005`                                      |
-| `apps/web`              | `3000` by Next.js default unless overridden |
-| `apps/usage-meter`      | `3000` unless overridden                    |
+| `apps/web`              | `3007`                                      |
+| `apps/usage-meter`      | `3006`                                      |
 
 ### Runtime consequence
 
-- Local all-services startup collides on port `3000` (gateway, web, usage-meter all default to `3000`).
-- **Decision:** Code defaults will be changed so no two services share a default port. See [docs/implementation-gaps.md](./implementation-gaps.md).
+- All services have unique default ports; no collisions exist in local all-services startup.
 - Hosted infrastructure may override ports through deployment config.
 - Docs must reflect both the code defaults and the operational need to override them locally.
 
@@ -102,7 +101,7 @@ Hosted runtime is the default runtime model for the product. Local runtime exist
 ### Current repo reality
 
 - Host-agent heartbeats and capacity ingestion exist.
-- Capacity reporting is stubbed.
+- Capacity reporting is real: host-agent reports OS-level CPU, memory, and port availability (`os.cpus`, `os.freemem`, port probing). Slot allocation and release are in-memory set operations.
 - Container-per-session isolation is not yet implemented.
 - Worker target safety checks in the gateway are real and valuable, but they do not replace runtime isolation.
 
@@ -123,6 +122,6 @@ Hosted runtime is the default runtime model for the product. Local runtime exist
 
 - The repo is hosted-runtime oriented, not local-first.
 - Runtime isolation approach: container-per-session ([ADR 014](./adr/014-container-per-session-isolation.md)). Implementation open.
-- Session reaper canonical model: scheduled single-invocation job. Code currently runs as a long-lived interval loop; refactor is an open implementation task.
+- Session reaper canonical model: scheduled single-invocation job. Code has been refactored to single-cycle-and-exit mode.
 - Runtime safety and hosted topology are only partially complete. See [docs/implementation-gaps.md](./implementation-gaps.md).
 - Workflow files and Terraform still disagree with some runtime service shapes. That drift is documented, not fixed, in this pass.

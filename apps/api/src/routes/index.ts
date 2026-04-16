@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware } from '@udd/auth';
+import { config } from '@udd/config';
 import authRouter from './auth.js';
 import workspacesRouter from './workspaces.js';
 import projectsRouter from './projects.js';
@@ -42,7 +43,7 @@ router.use(collaborationRouter);
 // The ai-orchestration service itself enforces auth/RBAC.
 // -------------------------------------------------------
 
-const AI_ORCHESTRATION_URL = process.env['AI_ORCHESTRATION_URL'] ?? 'http://ai-orchestration:3000';
+const AI_ORCHESTRATION_URL = config.services.aiOrchestrationBaseUrl();
 
 const AI_PREFIXES = [
   '/me/ai/providers',

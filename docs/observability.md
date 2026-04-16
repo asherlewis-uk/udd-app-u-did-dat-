@@ -89,6 +89,6 @@ Observability must answer five questions:
 ## Current implementation notes
 
 - The repo defines a good logging and correlation baseline.
-- Metrics and traces are only partially wired; many alert conditions still require log-based or DB-based diagnosis rather than exported metrics.
-- **Decision:** Log-based alerts for critical conditions (from the core alerts table above) are the first implementation step. Full metrics export (wiring the noop exporter to a real backend) follows as a second step.
+- Metrics are wired via `prom-client` adapters (`PromCounter`, `PromHistogram`, `PromGauge`) with a `/metrics` endpoint. The noop implementation remains the default; real exporters are opt-in at startup. Traces remain partially wired; many alert conditions still require log-based or DB-based diagnosis in addition to exported metrics.
+- **Decision:** Log-based alerts for critical conditions (from the core alerts table above) remain the first implementation step. `prom-client` adapters are implemented and available for opt-in at startup.
 - Hosted observability is stronger in intent than in implementation. Treat missing dashboards, exporters, or alert plumbing as implementation gaps, not as hidden features. See [docs/implementation-gaps.md](./implementation-gaps.md).

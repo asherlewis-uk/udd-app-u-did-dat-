@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { requirePermission } from '@udd/auth';
+import { config } from '@udd/config';
 import type { PlatformEvent } from '@udd/contracts';
 import { getContext } from '../context.js';
 import { createAppError } from '../middleware/error.js';
@@ -40,7 +41,7 @@ router.post('/workspaces', requirePermission('workspace.create'), async (req, re
     // We need an organization. For now derive it from env or use userId as org placeholder.
     const organizationId =
       (req.body as { organizationId?: string }).organizationId ??
-      process.env['DEFAULT_ORGANIZATION_ID'];
+      config.organization.defaultId();
     if (!organizationId) {
       return next(createAppError('organizationId is required', 400, 'VALIDATION_ERROR'));
     }

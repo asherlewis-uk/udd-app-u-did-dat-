@@ -55,7 +55,7 @@ The product is **hosted-first**. Product docs, architecture docs, and client-sur
 
 - Easier debugging and lower iteration cost.
 - Less representative of final hosted isolation and capacity behavior.
-- Requires explicit port management because several apps default to overlapping ports.
+- All services now have unique default ports; explicit port management is no longer required for local startup.
 
 ## Trust boundaries
 
@@ -83,5 +83,5 @@ The product is **hosted-first**. Product docs, architecture docs, and client-sur
 ## Current implementation notes
 
 - The repo strongly reflects hosted services, gateway previews, and internal orchestration. That aligns with the hosted-first product story.
-- Local development is possible, but `pnpm dev` is not a clean all-services entrypoint today because several services collide on default ports. Decision: code defaults will be changed so no two services share a port.
-- Runtime isolation approach: container-per-session ([ADR 014](./adr/014-container-per-session-isolation.md)). Implementation is open. Host-agent capacity reporting is stubbed and container-per-session provisioning is not yet implemented.
+- Local development is possible. All services have unique default ports; no port collisions remain.
+- Runtime isolation approach: container-per-session ([ADR 014](./adr/014-container-per-session-isolation.md)). Implementation is open. Host-agent capacity reporting is real (OS-level CPU, memory, port probing). Container-per-session provisioning is not yet implemented.
