@@ -23,11 +23,9 @@ router.get(
       const project = await ctx.projects.findById(req.params['id']!);
       if (!project) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
 
-      const membership = await ctx.memberships.findByUserAndWorkspace(
-        req.auth!.userId,
-        project.workspaceId,
-      );
-      if (!membership) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+      if (!(await ctx.projects.isAccessibleByUser(project.id, req.auth!.userId))) {
+        return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+      }
 
       const cursor = req.query['cursor'] as string | undefined;
       const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : undefined;
@@ -64,11 +62,9 @@ router.post(
       const project = await ctx.projects.findById(req.params['id']!);
       if (!project) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
 
-      const membership = await ctx.memberships.findByUserAndWorkspace(
-        req.auth!.userId,
-        project.workspaceId,
-      );
-      if (!membership) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+      if (!(await ctx.projects.isAccessibleByUser(project.id, req.auth!.userId))) {
+        return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+      }
 
       const { idleTimeoutSeconds } = req.body as { idleTimeoutSeconds?: number };
 
@@ -126,11 +122,9 @@ router.get('/sessions/:id', requirePermission('session.start'), async (req, res,
     const session = await ctx.sessions.findById(req.params['id']!);
     if (!session) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
 
-    const membership = await ctx.memberships.findByUserAndWorkspace(
-      req.auth!.userId,
-      session.workspaceId,
-    );
-    if (!membership) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
+    if (!(await ctx.projects.isAccessibleByUser(session.projectId, req.auth!.userId))) {
+      return next(createAppError('Session not found', 404, 'NOT_FOUND'));
+    }
 
     return res.json({ data: mapSessionView(session), correlationId: req.correlationId });
   } catch (err) {
@@ -148,11 +142,9 @@ router.post('/sessions/:id/start', requirePermission('session.start'), async (re
     const session = await ctx.sessions.findById(req.params['id']!);
     if (!session) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
 
-    const membership = await ctx.memberships.findByUserAndWorkspace(
-      req.auth!.userId,
-      session.workspaceId,
-    );
-    if (!membership) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
+    if (!(await ctx.projects.isAccessibleByUser(session.projectId, req.auth!.userId))) {
+      return next(createAppError('Session not found', 404, 'NOT_FOUND'));
+    }
 
     if (session.state !== 'creating' && session.state !== 'idle') {
       return next(
@@ -195,11 +187,9 @@ router.post('/sessions/:id/stop', requirePermission('session.stop'), async (req,
     const session = await ctx.sessions.findById(req.params['id']!);
     if (!session) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
 
-    const membership = await ctx.memberships.findByUserAndWorkspace(
-      req.auth!.userId,
-      session.workspaceId,
-    );
-    if (!membership) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
+    if (!(await ctx.projects.isAccessibleByUser(session.projectId, req.auth!.userId))) {
+      return next(createAppError('Session not found', 404, 'NOT_FOUND'));
+    }
 
     if (!['running', 'idle', 'starting'].includes(session.state)) {
       return next(
@@ -260,11 +250,9 @@ router.post(
       const session = await ctx.sessions.findById(req.params['id']!);
       if (!session) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
 
-      const membership = await ctx.memberships.findByUserAndWorkspace(
-        req.auth!.userId,
-        session.workspaceId,
-      );
-      if (!membership) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
+      if (!(await ctx.projects.isAccessibleByUser(session.projectId, req.auth!.userId))) {
+        return next(createAppError('Session not found', 404, 'NOT_FOUND'));
+      }
 
       // Emit checkpoint event — actual snapshotting is done by the host-agent
       await ctx.events.publish({
@@ -292,11 +280,9 @@ router.get('/sessions/:id/logs', requirePermission('session.start'), async (req,
     const session = await ctx.sessions.findById(req.params['id']!);
     if (!session) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
 
-    const membership = await ctx.memberships.findByUserAndWorkspace(
-      req.auth!.userId,
-      session.workspaceId,
-    );
-    if (!membership) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
+    if (!(await ctx.projects.isAccessibleByUser(session.projectId, req.auth!.userId))) {
+      return next(createAppError('Session not found', 404, 'NOT_FOUND'));
+    }
 
     // Streaming logs are served by the host-agent; API returns 501 until Phase 3 wires streaming
     return res.status(501).json({

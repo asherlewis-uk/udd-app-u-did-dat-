@@ -29,10 +29,7 @@ router.post(
         );
       }
 
-      const membership = await ctx.memberships.findByUserAndWorkspace(
-        req.auth!.userId,
-        session.workspaceId,
-      );
+      const membership = await ctx.projects.isAccessibleByUser(session.projectId, req.auth!.userId);
       if (!membership) return next(createAppError('Session not found', 404, 'NOT_FOUND'));
 
       if (!session.workerHost || session.hostPort == null) {
@@ -118,11 +115,8 @@ router.get('/previews/:previewId', requirePermission('preview.read'), async (req
     const binding = await ctx.previewRoutes.findByPreviewId(req.params['previewId']!);
     if (!binding) return next(createAppError('Preview not found', 404, 'NOT_FOUND'));
 
-    const membership = await ctx.memberships.findByUserAndWorkspace(
-      req.auth!.userId,
-      binding.workspaceId,
-    );
-    if (!membership) return next(createAppError('Preview not found', 404, 'NOT_FOUND'));
+    const hasAccess = await ctx.projects.isAccessibleByUser(binding.projectId, req.auth!.userId);
+    if (!hasAccess) return next(createAppError('Preview not found', 404, 'NOT_FOUND'));
 
     return res.json({ data: mapPreviewView(binding), correlationId: req.correlationId });
   } catch (err) {
@@ -143,11 +137,8 @@ router.delete(
       const binding = await ctx.previewRoutes.findByPreviewId(req.params['previewId']!);
       if (!binding) return next(createAppError('Preview not found', 404, 'NOT_FOUND'));
 
-      const membership = await ctx.memberships.findByUserAndWorkspace(
-        req.auth!.userId,
-        binding.workspaceId,
-      );
-      if (!membership) return next(createAppError('Preview not found', 404, 'NOT_FOUND'));
+      const hasAccess = await ctx.projects.isAccessibleByUser(binding.projectId, req.auth!.userId);
+      if (!hasAccess) return next(createAppError('Preview not found', 404, 'NOT_FOUND'));
 
       await ctx.previewRoutes.updateState(binding.id, 'revoking', binding.version);
 
@@ -207,11 +198,8 @@ router.post(
         return next(createAppError('Preview has expired', 410, 'PREVIEW_EXPIRED'));
       }
 
-      const membership = await ctx.memberships.findByUserAndWorkspace(
-        req.auth!.userId,
-        binding.workspaceId,
-      );
-      if (!membership) return next(createAppError('Preview not found', 404, 'NOT_FOUND'));
+      const hasAccess = await ctx.projects.isAccessibleByUser(binding.projectId, req.auth!.userId);
+      if (!hasAccess) return next(createAppError('Preview not found', 404, 'NOT_FOUND'));
 
       const { token, expiresAt } = signPreviewToken(req.auth!.userId, binding.previewId);
 

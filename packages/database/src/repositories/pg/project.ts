@@ -91,6 +91,17 @@ export class PgProjectRepository implements ProjectRepository {
     return { items, nextCursor, hasMore };
   }
 
+  async isAccessibleByUser(projectId: string, userId: string): Promise<boolean> {
+    const row = await queryOne<Record<string, unknown>>(
+      `SELECT 1 FROM projects p
+       INNER JOIN memberships m ON m.workspace_id = p.workspace_id
+       WHERE p.id = $1 AND m.user_id = $2 AND p.deleted_at IS NULL
+       LIMIT 1`,
+      [projectId, userId],
+    );
+    return row !== null;
+  }
+
   async update(
     id: string,
     data: Partial<Pick<Project, 'name' | 'description'>>,

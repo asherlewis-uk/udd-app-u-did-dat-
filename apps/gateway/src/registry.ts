@@ -1,4 +1,4 @@
-import { PgPreviewRouteRepository, PgMembershipRepository } from '@udd/database';
+import { PgPreviewRouteRepository, PgProjectRepository } from '@udd/database';
 import type { PreviewRouteRegistry } from './proxy.js';
 import type { PreviewRouteBinding } from '@udd/contracts';
 
@@ -11,19 +11,18 @@ import type { PreviewRouteBinding } from '@udd/contracts';
 
 export class PgPreviewRouteRegistry implements PreviewRouteRegistry {
   private readonly routes: PgPreviewRouteRepository;
-  private readonly memberships: PgMembershipRepository;
+  private readonly projects: PgProjectRepository;
 
   constructor() {
     this.routes = new PgPreviewRouteRepository();
-    this.memberships = new PgMembershipRepository();
+    this.projects = new PgProjectRepository();
   }
 
   async findActiveRoute(previewId: string): Promise<PreviewRouteBinding | null> {
     return this.routes.findByPreviewId(previewId);
   }
 
-  async isMember(userId: string, workspaceId: string): Promise<boolean> {
-    const membership = await this.memberships.findByUserAndWorkspace(userId, workspaceId);
-    return membership !== null;
+  async canAccessProject(userId: string, projectId: string): Promise<boolean> {
+    return this.projects.isAccessibleByUser(projectId, userId);
   }
 }

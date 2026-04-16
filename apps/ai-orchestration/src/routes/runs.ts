@@ -7,14 +7,6 @@ import { mapPipelineRunView } from './public-view-mappers.js';
 const router: Router = Router();
 router.use(authMiddleware);
 
-async function assertMember(
-  ctx: ReturnType<typeof getContext>,
-  userId: string,
-  workspaceId: string,
-) {
-  return ctx.memberships.findByUserAndWorkspace(userId, workspaceId);
-}
-
 // =======================================================
 // CANONICAL: /projects/:projectId/ai/runs
 // =======================================================
@@ -26,7 +18,7 @@ router.post(
     try {
       const ctx = getContext();
       const project = await ctx.projects.findById(req.params['projectId']!);
-      if (!project || !(await assertMember(ctx, req.auth!.userId, project.workspaceId))) {
+      if (!project || !(await ctx.projects.isAccessibleByUser(project.id, req.auth!.userId))) {
         return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
       }
 
@@ -124,7 +116,7 @@ router.get(
     try {
       const ctx = getContext();
       const project = await ctx.projects.findById(req.params['projectId']!);
-      if (!project || !(await assertMember(ctx, req.auth!.userId, project.workspaceId))) {
+      if (!project || !(await ctx.projects.isAccessibleByUser(project.id, req.auth!.userId))) {
         return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
       }
 
@@ -168,7 +160,7 @@ router.get(
       }
 
       const project = await ctx.projects.findById(req.params['projectId']!);
-      if (!project || !(await assertMember(ctx, req.auth!.userId, project.workspaceId))) {
+      if (!project || !(await ctx.projects.isAccessibleByUser(project.id, req.auth!.userId))) {
         return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
       }
 
@@ -191,7 +183,7 @@ router.post(
       }
 
       const project = await ctx.projects.findById(req.params['projectId']!);
-      if (!project || !(await assertMember(ctx, req.auth!.userId, project.workspaceId))) {
+      if (!project || !(await ctx.projects.isAccessibleByUser(project.id, req.auth!.userId))) {
         return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
       }
 

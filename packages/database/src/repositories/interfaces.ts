@@ -74,6 +74,14 @@ export interface ProjectRepository {
   findById(id: string): Promise<Project | null>;
   findByWorkspaceId(workspaceId: string, options?: PageOptions): Promise<Page<Project>>;
   findByUserId(userId: string, options?: PageOptions): Promise<Page<Project>>;
+  /**
+   * Project-scoped access check (ADR 013).
+   *
+   * Returns true if the user has access to the given project.
+   * This is the canonical resource-scoped authority primitive —
+   * callers must not use workspace membership as the access decision.
+   */
+  isAccessibleByUser(projectId: string, userId: string): Promise<boolean>;
   update(id: string, data: Partial<Pick<Project, 'name' | 'description'>>): Promise<Project | null>;
   softDelete(id: string): Promise<void>;
 }

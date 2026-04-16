@@ -1,12 +1,11 @@
 import { Router, type Router as RouterType } from 'express';
 import { authMiddleware, requirePermission } from '@udd/auth';
-import { PgProjectRepository, PgMembershipRepository, PgCommentRepository } from '@udd/database';
+import { PgProjectRepository, PgCommentRepository } from '@udd/database';
 
 const router: RouterType = Router();
 router.use(authMiddleware);
 
 const projects = new PgProjectRepository();
-const memberships = new PgMembershipRepository();
 const comments = new PgCommentRepository();
 
 router.get('/projects/:id/comments', requirePermission('comment.read'), async (req, res, next) => {
@@ -15,11 +14,8 @@ router.get('/projects/:id/comments', requirePermission('comment.read'), async (r
     if (!project)
       return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
 
-    const membership = await memberships.findByUserAndWorkspace(
-      req.auth!.userId,
-      project.workspaceId,
-    );
-    if (!membership)
+    const hasAccess = await projects.isAccessibleByUser(project.id, req.auth!.userId);
+    if (!hasAccess)
       return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
 
     const cursor = req.query['cursor'] as string | undefined;
@@ -72,11 +68,8 @@ router.post(
       if (!project)
         return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
 
-      const membership = await memberships.findByUserAndWorkspace(
-        req.auth!.userId,
-        project.workspaceId,
-      );
-      if (!membership)
+      const hasAccess = await projects.isAccessibleByUser(project.id, req.auth!.userId);
+      if (!hasAccess)
         return res.status(404).json({ code: 'NOT_FOUND', correlationId: req.correlationId });
 
       let resolvedThreadId = threadId;

@@ -24,7 +24,7 @@ const HOP_BY_HOP = new Set([
 //
 // Security model (ALL checks must pass):
 //   1. Request must carry a valid session token (authenticated)
-//   2. User must be a member of the workspace that owns the preview
+//   2. User must have access to the project that owns the preview
 //   3. The preview route must exist in the authoritative DB registry
 //   4. The route state must be 'active' (not revoked, expired, or binding)
 //   5. The lease for the backing session must still be active
@@ -37,8 +37,8 @@ const HOP_BY_HOP = new Set([
 export interface PreviewRouteRegistry {
   /** Fetch the preview route binding from the authoritative DB */
   findActiveRoute(previewId: string): Promise<PreviewRouteBinding | null>;
-  /** Check that the requesting user is a member of the workspace */
-  isMember(userId: string, workspaceId: string): Promise<boolean>;
+  /** Check that the requesting user has access to the project that owns the preview */
+  canAccessProject(userId: string, projectId: string): Promise<boolean>;
 }
 
 export interface ProxyResult {
@@ -80,11 +80,11 @@ export async function authorizePreviewRequest(
     return { allowed: false, denyCode: 'PREVIEW_EXPIRED', denyMessage: 'Preview has expired' };
   }
 
-  const isMember = await registry.isMember(auth.userId, binding.workspaceId);
-  if (!isMember) {
-    logger.warn('Preview access denied — not a workspace member', {
+  const hasAccess = await registry.canAccessProject(auth.userId, binding.projectId);
+  if (!hasAccess) {
+    logger.warn('Preview access denied — user cannot access project', {
       previewId,
-      workspaceId: binding.workspaceId,
+      projectId: binding.projectId,
       userId: auth.userId,
       correlationId,
     });

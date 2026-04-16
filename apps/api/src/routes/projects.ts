@@ -18,11 +18,9 @@ router.get('/projects/:id', requirePermission('project.read'), async (req, res, 
     const project = await ctx.projects.findById(req.params['id']!);
     if (!project) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
 
-    const membership = await ctx.memberships.findByUserAndWorkspace(
-      req.auth!.userId,
-      project.workspaceId,
-    );
-    if (!membership) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+    if (!(await ctx.projects.isAccessibleByUser(project.id, req.auth!.userId))) {
+      return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+    }
 
     return res.json({ data: mapProjectView(project), correlationId: req.correlationId });
   } catch (err) {
@@ -36,11 +34,9 @@ router.patch('/projects/:id', requirePermission('project.update'), async (req, r
     const project = await ctx.projects.findById(req.params['id']!);
     if (!project) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
 
-    const membership = await ctx.memberships.findByUserAndWorkspace(
-      req.auth!.userId,
-      project.workspaceId,
-    );
-    if (!membership) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+    if (!(await ctx.projects.isAccessibleByUser(project.id, req.auth!.userId))) {
+      return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+    }
 
     const { name, description } = req.body as { name?: string; description?: string };
     const updateData: Partial<Pick<import('@udd/contracts').Project, 'name' | 'description'>> = {};

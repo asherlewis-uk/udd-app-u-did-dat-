@@ -17,7 +17,7 @@ function makeAuthContext(overrides: Partial<AuthContext> = {}): AuthContext {
 function makeRegistry(overrides: Partial<PreviewRouteRegistry> = {}): PreviewRouteRegistry {
   return {
     findActiveRoute: async () => null,
-    isMember: async () => true,
+    canAccessProject: async () => true,
     ...overrides,
   };
 }
@@ -55,12 +55,12 @@ describe('authorizePreviewRequest', () => {
     expect(result.denyCode).toBe('PREVIEW_EXPIRED');
   });
 
-  it('denies when user is not a workspace member', async () => {
+  it('denies when user cannot access project', async () => {
     const binding = makePreviewRoute({ state: 'active', expiresAt: null });
     const auth = makeAuthContext();
     const registry = makeRegistry({
       findActiveRoute: async () => binding,
-      isMember: async () => false,
+      canAccessProject: async () => false,
     });
 
     const result = await authorizePreviewRequest(binding.previewId, auth, registry, 'corr-4');
@@ -78,7 +78,7 @@ describe('authorizePreviewRequest', () => {
     const auth = makeAuthContext();
     const registry = makeRegistry({
       findActiveRoute: async () => binding,
-      isMember: async () => true,
+      canAccessProject: async () => true,
     });
 
     const result = await authorizePreviewRequest(binding.previewId, auth, registry, 'corr-5');

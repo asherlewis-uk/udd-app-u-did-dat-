@@ -16,10 +16,7 @@ router.get('/projects/:id/comments', requirePermission('comment.read'), async (r
     const project = await ctx.projects.findById(req.params['id']!);
     if (!project) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
 
-    const membership = await ctx.memberships.findByUserAndWorkspace(
-      req.auth!.userId,
-      project.workspaceId,
-    );
+    const membership = await ctx.projects.isAccessibleByUser(project.id, req.auth!.userId);
     if (!membership) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
 
     const cursor = req.query['cursor'] as string | undefined;
@@ -62,11 +59,8 @@ router.post(
       const project = await ctx.projects.findById(req.params['id']!);
       if (!project) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
 
-      const membership = await ctx.memberships.findByUserAndWorkspace(
-        req.auth!.userId,
-        project.workspaceId,
-      );
-      if (!membership) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
+      const hasAccess = await ctx.projects.isAccessibleByUser(project.id, req.auth!.userId);
+      if (!hasAccess) return next(createAppError('Project not found', 404, 'NOT_FOUND'));
 
       // If no threadId, create a new thread first
       let resolvedThreadId = threadId;
