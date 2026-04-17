@@ -112,6 +112,15 @@ resource "google_cloud_run_v2_service" "control_plane" {
         name  = "GCP_REGION"
         value = var.region
       }
+
+      # Service discovery — wire cross-service URLs where needed
+      dynamic "env" {
+        for_each = each.key == "api" ? [1] : []
+        content {
+          name  = "AI_ORCHESTRATION_BASE_URL"
+          value = google_cloud_run_v2_service.control_plane["ai-orchestration"].uri
+        }
+      }
     }
 
     labels = var.labels

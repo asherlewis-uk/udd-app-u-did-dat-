@@ -27,6 +27,19 @@ function flag(key: string, fallback: boolean): boolean {
   return val === 'true' || val === '1';
 }
 
+/**
+ * Required in production, optional with a dev-friendly fallback otherwise.
+ * Prevents silent localhost fallbacks in deployed environments.
+ */
+function requiredInProduction(key: string, devFallback: string): string {
+  const val = process.env[key];
+  if (val) return val;
+  if (process.env['NODE_ENV'] === 'production') {
+    throw new Error(`Missing required production environment variable: ${key}`);
+  }
+  return devFallback;
+}
+
 // ============================================================
 // Shared config accessors — call at startup, not in hot paths
 // ============================================================
@@ -91,12 +104,12 @@ export const config = {
   },
 
   services: {
-    apiBaseUrl: () => optional('API_BASE_URL', 'http://localhost:3001'),
-    orchestratorBaseUrl: () => optional('ORCHESTRATOR_BASE_URL', 'http://localhost:3002'),
-    collaborationBaseUrl: () => optional('COLLABORATION_BASE_URL', 'http://localhost:3003'),
-    aiOrchestrationBaseUrl: () => optional('AI_ORCHESTRATION_BASE_URL', 'http://localhost:3004'),
-    workerManagerBaseUrl: () => optional('WORKER_MANAGER_BASE_URL', 'http://localhost:3005'),
-    gatewayBaseUrl: () => optional('GATEWAY_BASE_URL', 'http://localhost:3000'),
+    apiBaseUrl: () => requiredInProduction('API_BASE_URL', 'http://localhost:3001'),
+    orchestratorBaseUrl: () => requiredInProduction('ORCHESTRATOR_BASE_URL', 'http://localhost:3002'),
+    collaborationBaseUrl: () => requiredInProduction('COLLABORATION_BASE_URL', 'http://localhost:3003'),
+    aiOrchestrationBaseUrl: () => requiredInProduction('AI_ORCHESTRATION_BASE_URL', 'http://localhost:3004'),
+    workerManagerBaseUrl: () => requiredInProduction('WORKER_MANAGER_BASE_URL', 'http://localhost:3005'),
+    gatewayBaseUrl: () => requiredInProduction('GATEWAY_BASE_URL', 'http://localhost:3000'),
   },
 
   gateway: {
