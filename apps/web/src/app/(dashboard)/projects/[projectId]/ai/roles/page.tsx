@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
-import { Plus, Shield, Settings, Cpu, ShieldCheck } from 'lucide-react';
+import { Plus, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProject } from '@/hooks/use-projects';
 import { apiClient } from '@/lib/api-client';
@@ -176,7 +176,7 @@ export default function RolesPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const token = user?.token ?? null;
-  const { project } = useProject(token, projectId);
+  useProject(token, projectId);
 
   const fetcher = React.useCallback(
     async (url: string) => {

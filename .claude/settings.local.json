@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(pnpm test:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(gh run:*)",
+      "Bash(node -e \"require\\('fs'\\).cpSync || console.log\\('no cpSync'\\)\")",
+      "Bash(pnpm --filter @udd/database build)",
+      "Bash(pnpm lint:*)"
     ]
   }
 }

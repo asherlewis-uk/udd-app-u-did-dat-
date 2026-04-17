@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { requirePermission, signPreviewToken } from '@udd/auth';
-import type { PlatformEvent } from '@udd/contracts';
 import { randomUUID } from 'crypto';
 import { getContext } from '../context.js';
 import { createAppError } from '../middleware/error.js';

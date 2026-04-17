@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r src/migrations dist/",
     "typecheck": "tsc --noEmit",
     "migrate": "node dist/migrate.js",
     "dev": "tsc --watch",

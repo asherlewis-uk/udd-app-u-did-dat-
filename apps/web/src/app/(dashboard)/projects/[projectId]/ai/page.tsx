@@ -25,7 +25,7 @@ export default function AiHubPage() {
   const { user } = useAuth();
   const token = user?.token ?? null;
 
-  const { pipelines, isLoading: pipelinesLoading, mutate: mutatePipelines } = usePipelines(token, projectId);
+  const { pipelines, isLoading: pipelinesLoading } = usePipelines(token, projectId);
   const { runs, isLoading: runsLoading, mutate: mutateRuns } = usePipelineRuns(token, projectId);
 
   const sortedRuns = [...runs].sort(

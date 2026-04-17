@@ -23,7 +23,6 @@ import type { PreviewStatus } from '@/components/editor/preview-frame';
 import { SessionStatusBadge } from '@/components/sessions/session-status-badge';
 import type { SessionState } from '@udd/contracts';
 import { SessionActions } from '@/components/sessions/session-actions';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 

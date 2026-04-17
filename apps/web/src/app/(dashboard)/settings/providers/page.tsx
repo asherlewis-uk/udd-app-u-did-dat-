@@ -1,9 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { useParams } from 'next/navigation';
 import useSWR from 'swr';
-import { Plus, Trash2, RefreshCw, Key, Settings, Cpu, Shield } from 'lucide-react';
+import { Plus, Trash2, RefreshCw, Key, Settings, Cpu } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/contexts/auth-context';
 import { apiClient } from '@/lib/api-client';

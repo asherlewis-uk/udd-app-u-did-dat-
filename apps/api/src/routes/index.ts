@@ -53,7 +53,7 @@ const AI_PREFIXES = [
 ];
 
 for (const prefix of AI_PREFIXES) {
-  router.all(`${prefix}*` as string, async (req, res, next) => {
+  router.all(`${prefix}*`, async (req, res, next) => {
     try {
       const targetPath = req.originalUrl.replace(/^\/v1/, '');
       const targetUrl = `${AI_ORCHESTRATION_URL}/v1${targetPath}`;

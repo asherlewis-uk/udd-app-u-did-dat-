@@ -1,16 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { useParams } from 'next/navigation';
-import { Settings, Cpu, Shield, Copy, Check, CalendarDays, Users, Sparkles } from 'lucide-react';
+import { Settings, Cpu, Copy, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { formatDateTime } from '@/lib/format';
 import { SettingsNav } from './settings-nav';
 import type { SettingsNavItem } from './settings-nav';
 

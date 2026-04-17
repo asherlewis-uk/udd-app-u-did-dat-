@@ -161,7 +161,7 @@ router.post('/sessions/:id/start', requirePermission('session.start'), async (re
       payload: {
         sessionId: session.id,
         workspaceId: session.workspaceId,
-        fromState: session.state as 'creating' | 'idle',
+        fromState: session.state,
         toState: 'starting',
         reason: 'user_requested',
       },
