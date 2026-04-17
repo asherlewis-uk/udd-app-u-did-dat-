@@ -18,7 +18,8 @@ output "gateway_service_url" {
 
 output "session_reaper_job_name" {
   description = "Name of the session-reaper Cloud Run Job"
-  value       = google_cloud_run_v2_job.session_reaper.name
+  # TODO: Reconnect this output when the session-reaper job is restored.
+  value = null
 }
 
 output "worker_manager_service_url" {

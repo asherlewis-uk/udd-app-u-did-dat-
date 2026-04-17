@@ -90,7 +90,7 @@ resource "google_pubsub_subscription" "main" {
 
   dead_letter_policy {
     dead_letter_topic     = google_pubsub_topic.dead_letter[each.key].id
-    max_delivery_attempts = 3
+    max_delivery_attempts = 5
   }
 
   # Exponential backoff retry policy

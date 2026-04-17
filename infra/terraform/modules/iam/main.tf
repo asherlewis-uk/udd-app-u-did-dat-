@@ -128,14 +128,16 @@ resource "google_project_iam_member" "scheduler_run_invoker" {
 # GCP service accounts without key files.
 # ============================================================
 
-resource "google_service_account_iam_binding" "workload_identity" {
-  for_each = toset(local.services)
-
-  service_account_id = google_service_account.services[each.key].name
-  role               = "roles/iam.workloadIdentityUser"
-
-  members = [
-    # GKE Workload Identity: cluster namespace/KSA
-    "serviceAccount:${var.project_id}.svc.id.goog[${var.workload_identity_namespace}/${each.key}]",
-  ]
-}
+# TODO: Restore Workload Identity bindings only in environments that have a
+# valid GKE Workload Identity pool.
+# resource "google_service_account_iam_binding" "workload_identity" {
+#   for_each = toset(local.services)
+#
+#   service_account_id = google_service_account.services[each.key].name
+#   role               = "roles/iam.workloadIdentityUser"
+#
+#   members = [
+#     # GKE Workload Identity: cluster namespace/KSA
+#     "serviceAccount:${var.project_id}.svc.id.goog[${var.workload_identity_namespace}/${each.key}]",
+#   ]
+# }

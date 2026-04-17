@@ -8,11 +8,13 @@ terraform {
 # Enable Cloud SQL API
 # ============================================================
 
-resource "google_project_service" "sql" {
-  project            = var.project_id
-  service            = "sql.googleapis.com"
-  disable_on_destroy = false
-}
+# TODO: Enable sql.googleapis.com manually or via org-authorized automation,
+# then restore this resource.
+# resource "google_project_service" "sql" {
+#   project            = var.project_id
+#   service            = "sql.googleapis.com"
+#   disable_on_destroy = false
+# }
 
 # ============================================================
 # Cloud SQL for PostgreSQL 16
@@ -78,7 +80,6 @@ resource "google_sql_database_instance" "main" {
   }
 
   depends_on = [
-    google_project_service.sql,
     var.private_vpc_connection,
   ]
 }
