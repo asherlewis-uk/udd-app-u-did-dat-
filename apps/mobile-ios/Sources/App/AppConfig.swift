@@ -5,10 +5,9 @@ import Foundation
 //
 // Values are read from Info.plist keys populated by Xcode build
 // settings (e.g. UDD_API_BASE_URL, UDD_GATEWAY_BASE_URL,
-// UDD_WORKOS_CLIENT_ID).  When a key is absent — typically in
-// local-dev or SPM-only builds — the fallback is a localhost
-// default that matches the canonical port assignments in
-// docs/ENV_CONTRACT.md.
+// UDD_WORKOS_CLIENT_ID). DEBUG / local-dev builds may fall back
+// to localhost defaults. Non-debug builds fail fast if required
+// values are absent or unresolved.
 //
 // To configure for hosted/production:
 //   1. Set the build settings in the Xcode scheme or xcconfig.
@@ -18,45 +17,56 @@ import Foundation
 // ============================================================
 
 enum AppConfig {
+    private static func configuredValue(for key: String) -> String? {
+        guard let override = Bundle.main.infoDictionary?[key] as? String,
+              !override.isEmpty,
+              !override.hasPrefix("$(") else {
+            return nil
+        }
+        return override
+    }
+
+    private static func requiredURL(_ key: String, debugFallback: String) -> URL {
+        if let override = configuredValue(for: key),
+           let url = URL(string: override) {
+            return url
+        }
+
+#if DEBUG
+        return URL(string: debugFallback)!
+#else
+        preconditionFailure("Missing required iOS build setting: \(key)")
+#endif
+    }
+
+    private static func requiredString(_ key: String, debugFallback: String? = nil) -> String {
+        if let override = configuredValue(for: key) {
+            return override
+        }
+
+#if DEBUG
+        if let debugFallback {
+            return debugFallback
+        }
+#endif
+        preconditionFailure("Missing required iOS build setting: \(key)")
+    }
+
     // MARK: - API and Gateway URLs
 
     /// API base URL — hosted mode: set via `UDD_API_BASE_URL` build setting.
-    /// Local-dev fallback: `http://localhost:8080` (matches api service default port).
-    static let apiBaseURL: URL = {
-        if let override = Bundle.main.infoDictionary?["UDD_API_BASE_URL"] as? String,
-           !override.isEmpty,
-           !override.hasPrefix("$("),
-           let url = URL(string: override) {
-            return url
-        }
-        return URL(string: "http://localhost:8080")!
-    }()
+    /// DEBUG-only local fallback: `http://localhost:8080` (matches api service default port).
+    static let apiBaseURL = requiredURL("UDD_API_BASE_URL", debugFallback: "http://localhost:8080")
 
     /// Gateway base URL — hosted mode: set via `UDD_GATEWAY_BASE_URL` build setting.
-    /// Local-dev fallback: `http://localhost:3000` (matches gateway service default port).
-    static let gatewayBaseURL: URL = {
-        if let override = Bundle.main.infoDictionary?["UDD_GATEWAY_BASE_URL"] as? String,
-           !override.isEmpty,
-           !override.hasPrefix("$("),
-           let url = URL(string: override) {
-            return url
-        }
-        return URL(string: "http://localhost:3000")!
-    }()
+    /// DEBUG-only local fallback: `http://localhost:3000` (matches gateway service default port).
+    static let gatewayBaseURL = requiredURL("UDD_GATEWAY_BASE_URL", debugFallback: "http://localhost:3000")
 
     // MARK: - WorkOS AuthKit
 
-    /// WorkOS client ID — must be set via `UDD_WORKOS_CLIENT_ID` build setting
-    /// for any auth flow to work.  Falls back to empty string (auth will fail
-    /// gracefully rather than silently using a placeholder).
-    static let workosClientID: String = {
-        if let override = Bundle.main.infoDictionary?["UDD_WORKOS_CLIENT_ID"] as? String,
-           !override.isEmpty,
-           !override.hasPrefix("$(") {
-            return override
-        }
-        return ""
-    }()
+    /// WorkOS client ID — must be set via `UDD_WORKOS_CLIENT_ID` for hosted builds.
+    /// DEBUG / SPM-only builds may leave this empty to skip auth configuration locally.
+    static let workosClientID = requiredString("UDD_WORKOS_CLIENT_ID", debugFallback: "")
 
     static let workosRedirectScheme = "uddcompanion"
     static let workosRedirectURI = "uddcompanion://auth/callback"

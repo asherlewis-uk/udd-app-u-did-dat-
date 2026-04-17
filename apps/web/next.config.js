@@ -1,3 +1,12 @@
+function requiredInProduction(key, devFallback) {
+  const value = process.env[key];
+  if (value) return value;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(`Missing required production environment variable: ${key}`);
+  }
+  return devFallback;
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@udd/contracts'],
@@ -24,7 +33,7 @@ const nextConfig = {
       {
         source: '/preview/:path*',
         // GATEWAY_URL points to the gateway service (port 3000), not to this web app (port 3007).
-        destination: `${process.env.GATEWAY_URL ?? 'http://localhost:3000'}/preview/:path*`,
+        destination: `${requiredInProduction('GATEWAY_URL', 'http://localhost:3000')}/preview/:path*`,
       },
     ];
   },

@@ -25,7 +25,7 @@ if (__ENV.TARGET_ENV === 'production') {
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
-const BASE_URL = __ENV.API_BASE_URL ?? 'http://localhost:3001';
+const BASE_URL = __ENV.API_BASE_URL ?? 'http://localhost:8080';
 const AUTH_TOKEN = __ENV.AUTH_TOKEN ?? '';
 
 // Workspace / project IDs that must exist in the target environment.

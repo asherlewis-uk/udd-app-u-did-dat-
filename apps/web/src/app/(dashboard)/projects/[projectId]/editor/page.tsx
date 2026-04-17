@@ -173,7 +173,7 @@ export default function EditorPage() {
 
   // Fetch preview token for the active session
   const fetchPreviewToken = React.useCallback(async () => {
-    if (!activeSession || !token || !GATEWAY_BASE) return;
+    if (!activeSession || !token) return;
 
     try {
       // If we don't have a previewId yet, create a preview binding
@@ -213,7 +213,7 @@ export default function EditorPage() {
     } catch {
       setPreviewToken(null);
     }
-  }, [activeSession, token, GATEWAY_BASE, API_BASE, previewId]);
+  }, [activeSession, token, API_BASE, previewId]);
 
   // Fetch token when session becomes active
   React.useEffect(() => {

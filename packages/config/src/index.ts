@@ -104,7 +104,7 @@ export const config = {
   },
 
   services: {
-    apiBaseUrl: () => requiredInProduction('API_BASE_URL', 'http://localhost:3001'),
+    apiBaseUrl: () => requiredInProduction('API_BASE_URL', 'http://localhost:8080'),
     orchestratorBaseUrl: () => requiredInProduction('ORCHESTRATOR_BASE_URL', 'http://localhost:3002'),
     collaborationBaseUrl: () => requiredInProduction('COLLABORATION_BASE_URL', 'http://localhost:3003'),
     aiOrchestrationBaseUrl: () => requiredInProduction('AI_ORCHESTRATION_BASE_URL', 'http://localhost:3004'),
