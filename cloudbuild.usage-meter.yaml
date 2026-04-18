@@ -1,0 +1,11 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - apps/usage-meter/Dockerfile
+      - -t
+      - us-central1-docker.pkg.dev/acoustic-result-491711-t7/udd-images/usage-meter:latest
+      - .
+images:
+  - us-central1-docker.pkg.dev/acoustic-result-491711-t7/udd-images/usage-meter:latest

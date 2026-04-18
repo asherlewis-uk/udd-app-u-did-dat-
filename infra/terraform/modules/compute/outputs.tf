@@ -4,6 +4,7 @@ output "service_urls" {
   value = {
     "ai-orchestration" = google_cloud_run_v2_service.ai_orchestration.uri
     "orchestrator"     = google_cloud_run_v2_service.orchestrator.uri
+    "usage-meter"      = google_cloud_run_v2_service.usage_meter.uri
   }
 }
 
@@ -33,4 +34,9 @@ output "session_reaper_job_name" {
 output "worker_manager_service_url" {
   description = "URL of the worker-manager Cloud Run service"
   value       = google_cloud_run_v2_service.worker_manager.uri
+}
+
+output "usage_meter_service_url" {
+  description = "URL of the usage-meter Cloud Run service"
+  value       = google_cloud_run_v2_service.usage_meter.uri
 }

@@ -20,23 +20,9 @@ resource "google_project_service" "run" {
 # access to Cloud SQL, Memorystore, and internal services.
 # ============================================================
 
-# TODO: Re-enable the remaining control-plane Cloud Run services (collaboration,
-# usage-meter) after publishing their images to Artifact Registry.
-# Dockerfiles exist in apps/<service>/Dockerfile.
-# locals {
-#   control_plane_services = {
-#     collaboration = {
-#       port         = 3003
-#       public       = false
-#       description  = "Real-time collaboration service — internal only"
-#     }
-#     usage-meter = {
-#       port         = 3006
-#       public       = false
-#       description  = "Usage metering and billing events — internal only"
-#     }
-#   }
-# }
+# TODO: Re-enable the remaining control-plane Cloud Run service (collaboration)
+# after publishing its image to Artifact Registry.
+# Dockerfile exists in apps/collaboration/Dockerfile.
 
 locals {
   api_service = {
@@ -70,9 +56,17 @@ locals {
   }
 }
 
-# TODO: Re-enable the remaining control-plane Cloud Run services (collaboration,
-# usage-meter) after publishing their images to Artifact Registry.
-# Dockerfiles exist in apps/<service>/Dockerfile.
+locals {
+  usage_meter_service = {
+    port        = 3006
+    public      = false
+    description = "Usage metering and billing events — internal only"
+  }
+}
+
+# TODO: Re-enable the remaining control-plane Cloud Run service (collaboration)
+# after publishing its image to Artifact Registry.
+# Dockerfile exists in apps/collaboration/Dockerfile.
 # resource "google_cloud_run_v2_service" "control_plane" {
 #   for_each = local.control_plane_services
 #
@@ -340,6 +334,67 @@ resource "google_cloud_run_v2_service" "orchestrator" {
   depends_on = [google_project_service.run]
 }
 
+resource "google_cloud_run_v2_service" "usage_meter" {
+  project  = var.project_id
+  name     = "${var.name_prefix}-usage-meter"
+  location = var.region
+
+  description = local.usage_meter_service.description
+
+  ingress = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+
+  template {
+    service_account = var.service_account_emails["usage-meter"]
+
+    scaling {
+      min_instance_count = var.min_instances
+      max_instance_count = var.max_instances
+    }
+
+    vpc_access {
+      connector = var.vpc_connector_id
+      egress    = "ALL_TRAFFIC"
+    }
+
+    containers {
+      name  = "usage-meter"
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_registry_repo}/usage-meter:latest"
+
+      ports {
+        container_port = local.usage_meter_service.port
+      }
+
+      resources {
+        limits = {
+          cpu    = var.cpu_limit
+          memory = var.memory_limit
+        }
+        cpu_idle          = true
+        startup_cpu_boost = true
+      }
+
+      env {
+        name  = "NODE_ENV"
+        value = var.environment
+      }
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name  = "GCP_REGION"
+        value = var.region
+      }
+    }
+
+    labels = var.labels
+  }
+
+  labels = var.labels
+
+  depends_on = [google_project_service.run]
+}
+
 resource "google_cloud_run_v2_service" "ai_orchestration" {
   project  = var.project_id
   name     = "${var.name_prefix}-ai-orchestration"
@@ -401,9 +456,9 @@ resource "google_cloud_run_v2_service" "ai_orchestration" {
   depends_on = [google_project_service.run]
 }
 
-# TODO: Re-enable the remaining control-plane Cloud Run services (collaboration,
-# usage-meter) after publishing their images to Artifact Registry.
-# Dockerfiles exist in apps/<service>/Dockerfile.
+# TODO: Re-enable the remaining control-plane Cloud Run service (collaboration)
+# after publishing its image to Artifact Registry.
+# Dockerfile exists in apps/collaboration/Dockerfile.
 # # Allow unauthenticated access for public-facing services
 # # Internal services require Identity token authentication
 # resource "google_cloud_run_v2_service_iam_member" "public_invoker" {
