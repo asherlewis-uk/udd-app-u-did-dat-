@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  REGISTRY: gcr.io
+  REGISTRY: us-central1-docker.pkg.dev
 
 jobs:
   build:
@@ -18,18 +18,7 @@ jobs:
       id-token: write
     strategy:
       matrix:
-        service:
-          [
-            api,
-            gateway,
-            orchestrator,
-            collaboration,
-            ai-orchestration,
-            worker-manager,
-            host-agent,
-            session-reaper,
-            usage-meter,
-          ]
+        service: [ai-orchestration, worker-manager]
 
     steps:
       - uses: actions/checkout@v4
@@ -44,9 +33,9 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_CI_SERVICE_ACCOUNT }}
 
-      - name: Configure Docker for GCR
+      - name: Configure Docker for Artifact Registry
         if: github.event_name == 'push'
-        run: gcloud auth configure-docker gcr.io --quiet
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
       - name: Build and push image
         uses: docker/build-push-action@v5
@@ -54,7 +43,7 @@ jobs:
           context: .
           file: apps/${{ matrix.service }}/Dockerfile
           push: ${{ github.event_name == 'push' }}
-          tags: gcr.io/${{ secrets.GCP_PROJECT_ID }}/udd-${{ matrix.service }}:${{ github.sha }}
+          tags: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/udd-images/${{ matrix.service }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
