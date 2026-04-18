@@ -7,7 +7,7 @@ Back to [docs/\_INDEX.md](./_INDEX.md).
 - This file is the mandatory register for any meaningful doc or architecture drift.
 - If a file conflicts with [AGENTS.md](../AGENTS.md) or the canonical-doc priority in [docs/\_INDEX.md](./_INDEX.md), treat that file as stale and record the conflict here.
 - Do not smooth over gaps by rewriting canonical docs to match accidental implementation details.
-- Last refreshed: 2026-04-18, after deployment pipeline audit. Deployment and CI/CD gaps added. Overclaimed CI/CD completeness corrected.
+- Last refreshed: 2026-04-18, after deployment pipeline resolution. CI/CD and service activation gaps moved to resolved. ADR 015 baseline decision recorded.
 
 ---
 
@@ -39,6 +39,10 @@ These were previously open. Evidence confirms they are now closed. Kept here for
 | Deploy workflow service/job differentiation | Split `SERVICES` and `JOBS` env vars. Services deploy via `gcloud run deploy`, session-reaper via `gcloud run jobs deploy`. Applied to all 3 stages (dev, staging, prod). | `.github/workflows/deploy.yml`. |
 | Terraform workflow GCP auth | Replaced AWS `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` with GCP Workload Identity Federation via `google-github-actions/auth@v2`. Added `id-token: write` permission. | `.github/workflows/terraform.yml`. |
 | Build/deploy registry alignment | Changed `build.yml` from GHCR (`ghcr.io`) to GCR (`gcr.io`). Added GCP Workload Identity auth, `gcloud auth configure-docker`. Push gated on `github.event_name == 'push'`. | `.github/workflows/build.yml`. |
+| CI/CD service scope aligned with Terraform | Cloud Build configs created for all deployable services (`api`, `gateway`, `orchestrator`, `session-reaper`, `usage-meter`). `deploy.yml` service list aligned with Terraform-defined resources. Only dormant `collaboration` excluded. | `cloudbuild.api.yaml`, `cloudbuild.gateway.yaml`, `cloudbuild.orchestrator.yaml`, `cloudbuild.reaper.yaml`, `cloudbuild.usage-meter.yaml`, `.github/workflows/deploy.yml`. |
+| Build workflow registry corrected to Artifact Registry | `build.yml` updated to push to Artifact Registry (`us-central1-docker.pkg.dev`) instead of GCR (`gcr.io`). Registry mismatch between GitHub Actions and Cloud Build / Terraform resolved. | `.github/workflows/build.yml`, Cloud Build configs. |
+| Deployment region aligned | `deploy.yml` region corrected from `europe-west1` to `us-central1` to match Terraform defaults and existing Cloud Run services. | `.github/workflows/deploy.yml`, `infra/terraform/environments/dev/variables.tf`. |
+| Platform baseline committed to GCP Cloud Run | ADR 015 resolves the vendor-neutral ambiguity in ADR 014. GCP Cloud Run is the canonical hosted compute platform. All infrastructure investment is unambiguously justified. AWS migration rejected. | `docs/adr/015-*.md`, `docs/current-blockers-and-resolution-options.md`. |
 
 ---
 
@@ -86,14 +90,12 @@ No active gaps remain. 47 XCTest conformance tests enforce Swift model decode pa
 
 ## Active gaps — deployment and CI/CD
 
+All previously active CI/CD and service activation gaps have been resolved. Cloud Build configs exist for 7 of 8 deployable services. Registry, region, and service scope mismatches are fixed. Platform baseline committed to GCP Cloud Run via ADR 015. See Resolved Gaps table.
+
 | Desired source of truth | Current code reality | Gap | Severity | Decision status | Next step |
 | --- | --- | --- | --- | --- | --- |
-| All control-plane services deployed to Cloud Run | Only `ai-orchestration` and `worker-manager` have Cloud Build configs and published images. The other 5 services (`api`, `gateway`, `orchestrator`, `collaboration`, `usage-meter`) plus `session-reaper` have no Cloud Build configs and no images in Artifact Registry. Their Terraform resources are commented out. | 7 of 9 backend services cannot be deployed. The hosted platform runs only AI orchestration and worker capacity ingestion. | High | **Partially mitigated.** Broken services disabled in Terraform to unblock `terraform apply`. Root cause (missing images) unresolved. | Build and publish images for control-plane services, or formally scope hosted v1 to current 2-service footprint. See [current-blockers-and-resolution-options.md](./current-blockers-and-resolution-options.md). |
-| Deploy workflow deploys only active services | `deploy.yml` lists all 9 services. Terraform only defines 2. Deploy will fail or no-op for 7 services. | CI/CD scope does not match Terraform scope. | High | **Unresolved.** | Align `deploy.yml` service list with Terraform reality, or rebuild Terraform resources first. |
-| Build workflow pushes to Artifact Registry | `build.yml` pushes to GCR (`gcr.io`). Cloud Build and Terraform reference Artifact Registry (`us-central1-docker.pkg.dev/.../udd-images/`). | Image registry mismatch between GitHub Actions and Cloud Build / Terraform. | High | **Unresolved.** | Align on a single registry. Cloud Build configs already use Artifact Registry. |
-| Deployment region is consistent | `deploy.yml` hardcodes `europe-west1`. Terraform defaults to `us-central1`. | Region mismatch between CI/CD and infrastructure. | Medium | **Unresolved.** | Pick one region and align both. |
-| Load balancer provides public ingress | Load balancer module is disabled in Terraform (`dev/main.tf`). No public HTTPS ingress exists. | No public-facing entry point for `api` or `gateway` even if they were deployed. | Medium | **Blocked on Blocker 2.** Public ingress requires deployable public services. | Re-enable after `api` and `gateway` are deployable. |
-| Monitoring and alerting active | Monitoring module is disabled in Terraform. No alert policies are active. | No hosted observability. | Low | **Blocked on Blocker 2.** Monitoring depends on services to monitor. | Re-enable after control-plane services are deployed. |
+| Load balancer provides public ingress | Load balancer module is disabled in Terraform (`dev/main.tf`). No public HTTPS ingress exists. | No public-facing entry point for `api` or `gateway` even if they were deployed. | Medium | **Blocked on service validation.** Public ingress requires validated public services. | Re-enable after `api` and `gateway` are validated on Cloud Run. |
+| Monitoring and alerting active | Monitoring module is disabled in Terraform. No alert policies are active. | No hosted observability. | Low | **Blocked on service deployment.** Monitoring depends on services to monitor. | Re-enable after control-plane services are deployed. |
 | VPC connector stable across applies | Networking module VPC connector config drifts (`max_throughput` 1000 vs `min/max_instances` based config). Connector is force-replaced on every `terraform apply`. | Pre-existing infra drift. Not caused by recent changes. | Low | **Unresolved.** | Add `lifecycle { ignore_changes }` or align config. |
 
 ---
@@ -144,10 +146,10 @@ Items that cannot be verified without a deployed environment or external service
 | `docs/adr/003-workspace-tenancy.md` | Records the old workspace-owned canonical model                                          | [docs/domain-model.md](./domain-model.md), [ADR 010](./adr/010-project-centered-identity-model.md), [ADR 013](./adr/013-thin-workspace-migration-strategy.md) |
 | `docs/adr/004-microvm-isolation.md` | Records a stronger runtime-isolation approach than the repo currently provides           | [docs/runtime.md](./runtime.md), [ADR 008](./adr/008-hosted-execution-canonical.md), [ADR 014](./adr/014-container-per-session-isolation.md)                  |
 
-Previously stale workflow files (`.github/workflows/terraform.yml`) have been fixed (GCP Workload Identity auth). `build.yml` and `deploy.yml` have auth fixes but still contain deployment-reality mismatches — see Active gaps — deployment and CI/CD.
+Previously stale workflow files (`.github/workflows/terraform.yml`) have been fixed (GCP Workload Identity auth). `build.yml` and `deploy.yml` have been corrected — registry aligned to Artifact Registry, region to `us-central1`, service scope to match Terraform.
 
-| `.github/workflows/deploy.yml` | Lists 7 services + 1 job that are disabled in Terraform. Hardcodes `europe-west1` region. | Terraform `compute/main.tf` is source of truth for which services exist. |
-| `.github/workflows/build.yml` | Pushes to GCR (`gcr.io`) but Terraform and Cloud Build use Artifact Registry (`pkg.dev`). | Cloud Build configs (`cloudbuild.*.yaml`) are source of truth for image registry. |
+| `.github/workflows/deploy.yml` | Previously listed disabled services and wrong region. Now aligned with Terraform. | Terraform `compute/main.tf` is source of truth for which services exist. |
+| `.github/workflows/build.yml` | Previously pushed to GCR. Now targets Artifact Registry. | Cloud Build configs (`cloudbuild.*.yaml`) are source of truth for image registry. |
 
 ---
 
@@ -158,10 +160,10 @@ Previously stale workflow files (`.github/workflows/terraform.yml`) have been fi
 - Project-first migration (ADR 013) is complete: phase 1 (routes, contracts, UIs) and phase 2 (auth claims, policy layer) are both resolved.
 - Preview auth transport is complete. Preview becomes fully end-to-end once container-per-session isolation (ADR 014) is implemented.
 - Observability infrastructure is wired: Terraform alert policies exist, `prom-client` adapters and `/metrics` endpoint are in `packages/observability`. No service has opted into real metrics yet — noop remains default everywhere.
-- CI/CD workflows use GCP Workload Identity Federation. However, `deploy.yml` references 7 disabled services and the wrong region; `build.yml` pushes to GCR while Terraform uses Artifact Registry. The deployment pipeline is not end-to-end functional. See [current-blockers-and-resolution-options.md](./current-blockers-and-resolution-options.md).
-- Runtime topology is defined but only partially deployed: session-reaper (Cloud Run Job) and 5 control-plane services are disabled in Terraform. Only `ai-orchestration` and `worker-manager` are actively deployed.
+- CI/CD workflows use GCP Workload Identity Federation. `deploy.yml` and `build.yml` target Artifact Registry in `us-central1`. Cloud Build configs exist for 7 of 8 deployable services. Platform baseline committed to GCP Cloud Run (ADR 015). Three deployment blockers are resolved — see [current-blockers-and-resolution-options.md](./current-blockers-and-resolution-options.md).
+- Runtime topology: Cloud Build configs exist for `ai-orchestration`, `worker-manager`, `api`, `gateway`, `orchestrator`, `session-reaper`, and `usage-meter`. Only `collaboration` (dormant) lacks a config. Terraform resources for control-plane services can be re-enabled as images are published and validated.
 - Polyglot stack registry (`packages/stack-registry`) and scaffold engine (`packages/scaffold`) provide first-class project creation boundaries.
 - iOS conformance test suite (47 XCTests) enforces Swift model decode parity with TypeScript contracts.
-- Remaining active gaps: container-per-session isolation (High — designed but not implemented), host-agent container lifecycle (Medium — bookkeeping only), AI retrieval boundary (Medium — design needed), storage providers (Low — stubs), config type unions (Low — declare unsupported backends), observability opt-in (Low — no service has activated metrics). Three deployment blockers are documented with resolution options in [current-blockers-and-resolution-options.md](./current-blockers-and-resolution-options.md).
+- Remaining active gaps: container-per-session isolation (High — designed but not implemented), host-agent container lifecycle (Medium — bookkeeping only), AI retrieval boundary (Medium — design needed), storage providers (Low — stubs), config type unions (Low — declare unsupported backends), observability opt-in (Low — no service has activated metrics), load balancer (Medium — disabled pending service validation), monitoring (Low — disabled pending deployment), VPC connector drift (Low — config mismatch).
 - The codebase still carries internal workspace references as allowed by ADR 013. These are not gaps — they are intentional internal patterns.
 - `workspaceId`/`workspaceRole` fields on JWT types are `@deprecated`. New tokens carry `grantedPermissions` only. The `hasPermission` function's `workspaceRole` fallback handles pre-migration tokens gracefully.
