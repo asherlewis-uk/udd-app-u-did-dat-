@@ -438,49 +438,47 @@ resource "google_cloud_run_v2_service_iam_member" "api_public_invoker" {
 # Worker-plane Cloud Run resources (Jobs + Services)
 # ============================================================
 
-# TODO: Re-enable the session-reaper Cloud Run Job after publishing the
-# session-reaper image to Artifact Registry.
-# resource "google_cloud_run_v2_job" "session_reaper" {
-#   project  = var.project_id
-#   name     = "${var.name_prefix}-session-reaper"
-#   location = var.region
-#
-#   labels = var.labels
-#
-#   template {
-#     template {
-#       service_account = var.service_account_emails["session-reaper"]
-#
-#       vpc_access {
-#         connector = var.vpc_connector_id
-#         egress    = "ALL_TRAFFIC"
-#       }
-#
-#       containers {
-#         name  = "session-reaper"
-#         image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_registry_repo}/session-reaper:latest"
-#
-#         resources {
-#           limits = {
-#             cpu    = "1"
-#             memory = "512Mi"
-#           }
-#         }
-#
-#         env {
-#           name  = "GCP_PROJECT_ID"
-#           value = var.project_id
-#         }
-#         env {
-#           name  = "GCP_REGION"
-#           value = var.region
-#         }
-#       }
-#     }
-#   }
-#
-#   depends_on = [google_project_service.run]
-# }
+resource "google_cloud_run_v2_job" "session_reaper" {
+  project  = var.project_id
+  name     = "${var.name_prefix}-session-reaper"
+  location = var.region
+
+  labels = var.labels
+
+  template {
+    template {
+      service_account = var.service_account_emails["session-reaper"]
+
+      vpc_access {
+        connector = var.vpc_connector_id
+        egress    = "ALL_TRAFFIC"
+      }
+
+      containers {
+        name  = "session-reaper"
+        image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_registry_repo}/session-reaper:latest"
+
+        resources {
+          limits = {
+            cpu    = "1"
+            memory = "512Mi"
+          }
+        }
+
+        env {
+          name  = "GCP_PROJECT_ID"
+          value = var.project_id
+        }
+        env {
+          name  = "GCP_REGION"
+          value = var.region
+        }
+      }
+    }
+  }
+
+  depends_on = [google_project_service.run]
+}
 
 resource "google_cloud_run_v2_service" "worker_manager" {
   project  = var.project_id
@@ -553,28 +551,26 @@ resource "google_project_service" "cloudscheduler" {
   disable_on_destroy = false
 }
 
-# TODO: Re-enable the scheduler once the session-reaper Cloud Run Job is
-# restored with a published Artifact Registry image.
-# resource "google_cloud_scheduler_job" "session_reaper" {
-#   project          = var.project_id
-#   name             = "${var.name_prefix}-session-reaper-schedule"
-#   region           = var.region
-#   description      = "Trigger session-reaper Cloud Run Job every 5 minutes"
-#   schedule         = "*/5 * * * *"
-#   time_zone        = "UTC"
-#   attempt_deadline = "320s"
-#
-#   http_target {
-#     http_method = "POST"
-#     uri         = "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.project_id}/jobs/${google_cloud_run_v2_job.session_reaper.name}:run"
-#
-#     oauth_token {
-#       service_account_email = var.scheduler_service_account_email
-#     }
-#   }
-#
-#   depends_on = [
-#     google_project_service.cloudscheduler,
-#     google_cloud_run_v2_job.session_reaper,
-#   ]
-# }
+resource "google_cloud_scheduler_job" "session_reaper" {
+  project          = var.project_id
+  name             = "${var.name_prefix}-session-reaper-schedule"
+  region           = var.region
+  description      = "Trigger session-reaper Cloud Run Job every 5 minutes"
+  schedule         = "*/5 * * * *"
+  time_zone        = "UTC"
+  attempt_deadline = "320s"
+
+  http_target {
+    http_method = "POST"
+    uri         = "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.project_id}/jobs/${google_cloud_run_v2_job.session_reaper.name}:run"
+
+    oauth_token {
+      service_account_email = var.scheduler_service_account_email
+    }
+  }
+
+  depends_on = [
+    google_project_service.cloudscheduler,
+    google_cloud_run_v2_job.session_reaper,
+  ]
+}
