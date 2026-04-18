@@ -42,4 +42,4 @@ Local development is supported for engineering, debugging, and validation, but i
 
 - The product is polyglot by default.
 - Stack support belongs behind adapters, templates, and stack-specific modules rather than inside the product core.
-- The current repo does not yet expose a first-class scaffold or stack registry layer as code. That gap is tracked in [implementation-gaps.md](implementation-gaps.md).
+- Stack support is implemented via `packages/stack-registry/` (10 stacks, `getStack`/`getAllStacks`/`detectStack`) and `packages/scaffold/` (4 built-in templates, `scaffold`/`getTemplate`/`getAllTemplates`).

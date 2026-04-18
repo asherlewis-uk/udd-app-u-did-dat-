@@ -7,7 +7,7 @@ Back to [docs/\_INDEX.md](../_INDEX.md).
 
 Session reaper is a **scheduled single-invocation job** (not a long-running service). A scheduler trigger fires on a cadence; the reaper process runs once, cleans up idle sessions and orphaned leases, then exits. See [docs/runtime.md](../runtime.md) and [docs/service-catalog.md](../service-catalog.md).
 
-> **Current implementation note:** Code still runs as a long-lived interval loop. Until the scheduled-job refactor is applied, diagnosis steps below apply to both models. Where behavior differs, both paths are noted.
+> **Implementation note (2026-04-18):** Code has been refactored to single-cycle-and-exit mode: an async `main()` runs one cleanup cycle, closes the DB pool, and exits. Cloud Scheduler triggers every 5 min. The interval-loop model no longer applies.
 
 ## Use this runbook when
 
@@ -22,11 +22,11 @@ Session reaper is a **scheduled single-invocation job** (not a long-running serv
 
 Check your scheduler platform (Cloud Run Jobs scheduler, cron trigger, or equivalent) for recent invocations. If the trigger has not fired:
 
-- Confirm the scheduler is enabled and the schedule expression is correct.
+- Confirm the scheduler is enabled and the schedule expression is correct (currently disabled in Terraform — see deployment note below).
 - Confirm the job target (container image, service account, endpoint) is correctly configured.
 - Check scheduler platform logs for auth or quota errors.
 
-> **Interval-loop model (current code):** If session-reaper is still running as a long-lived process, check whether the process is alive and `SCAN_INTERVAL_MS` is set to a reasonable value (default: `60000` ms).
+> **Note:** The interval-loop model has been removed. The reaper now runs as a single-cycle-and-exit process. If the reaper is not running, check the Cloud Scheduler trigger and Cloud Run Job configuration.
 
 ### 2. Check for recent reaper activity
 
@@ -111,13 +111,13 @@ WHERE state = 'active'
 
 **Scheduled-job model:** Invoke the job manually through your container platform (e.g., `gcloud run jobs execute session-reaper` or equivalent).
 
-**Interval-loop model (current code):** Restart the session-reaper process:
+**Interval-loop model (removed):** The interval-loop model has been replaced by single-cycle-and-exit. To run a manual reaper cycle locally:
 
 ```bash
 pnpm --filter @udd/session-reaper dev
 ```
 
-The process will begin its scan loop immediately on startup.
+The process will run one cleanup cycle and exit.
 
 ## Verifying scheduler/job linkage
 
@@ -132,3 +132,5 @@ The process will begin its scan loop immediately on startup.
 - [worker-failure.md](./worker-failure.md) — if session cleanup failures are caused by underlying worker or runtime failures
 - [stale-preview-lease.md](./stale-preview-lease.md) — for individual stale preview diagnosis and manual revocation
 - [local-runtime-failure.md](./local-runtime-failure.md) — if reaper issues appear during local development
+
+**Deployment note (2026-04-18):** The session-reaper Cloud Run Job and Cloud Scheduler trigger are disabled in Terraform. The reaper code is refactored to single-cycle-and-exit but has no deployed infrastructure. This runbook applies to local development only until the job is re-enabled.

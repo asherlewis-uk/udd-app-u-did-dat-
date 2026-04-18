@@ -61,6 +61,8 @@ WHERE worker_host = '<failed-worker-host>'
 
 ## Notes
 
-- Current host-agent capacity reporting is stubbed, so operator confidence should stay low until container-per-session isolation ([ADR 014](../adr/014-container-per-session-isolation.md)) and capacity truth improve.
-- Session reaper canonical model: scheduled single-invocation job. Current code runs as a long-lived interval loop. If session-reaper cleanup appears stalled, check whether the scheduler trigger is firing rather than assuming the process is hung.
+- Host-agent capacity reporting is real: CPU via `os.cpus()`, memory via `os.freemem()`/`os.totalmem()`, port availability via TCP probing. Slot allocation (`allocateSlot`/`releaseSlot`/`allocatePort`/`releasePort`) is in-memory bookkeeping only — no actual container is created or destroyed. Container-per-session isolation ([ADR 014](../adr/014-container-per-session-isolation.md)) is designed but not implemented. Full hosted worker failure diagnosis requires container-per-session implementation.
+- Session reaper runs as a single-cycle-and-exit job (async `main()` that runs one cleanup cycle, closes the DB pool, and exits). Cloud Scheduler triggers every 5 min. If session-reaper cleanup appears stalled, check whether the scheduler trigger is firing.
 - If the failure is local rather than hosted, use [local-runtime-failure.md](./local-runtime-failure.md).
+
+**Deployment note (2026-04-18):** Only `ai-orchestration` and `worker-manager` are deployed to Cloud Run. Other runtime services (orchestrator, gateway, host-agent) are not deployed. This runbook applies primarily to local development and will become fully relevant once control-plane services are deployed.

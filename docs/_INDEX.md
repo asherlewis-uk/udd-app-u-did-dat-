@@ -23,10 +23,11 @@ This index defines the canonical documentation set, the reading order for humans
 15. [LOCAL_DEV.md](LOCAL_DEV.md)
 16. [repo-map.md](repo-map.md)
 17. [implementation-gaps.md](implementation-gaps.md)
-18. [change-protocol.md](change-protocol.md)
-19. [quality-gates.md](quality-gates.md)
-20. Relevant ADRs in [adr/](adr/) — see index below
-21. Relevant runbooks in [runbooks/](runbooks/)
+18. [current-blockers-and-resolution-options.md](current-blockers-and-resolution-options.md)
+19. [change-protocol.md](change-protocol.md)
+20. [quality-gates.md](quality-gates.md)
+21. Relevant ADRs in [adr/](adr/) — see index below
+22. Relevant runbooks in [runbooks/](runbooks/)
 
 ## ADR Index
 
@@ -67,6 +68,7 @@ This index defines the canonical documentation set, the reading order for humans
 - UI material system / hosted web rendering: [ui-material-system.md](ui-material-system.md)
 - Observability: [observability.md](observability.md)
 - Known implementation drift: [implementation-gaps.md](implementation-gaps.md)
+- Current blockers and resolution options: [current-blockers-and-resolution-options.md](current-blockers-and-resolution-options.md)
 
 ## Conflict Rules
 

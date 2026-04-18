@@ -56,7 +56,7 @@ Hosted runtime is the default runtime model for the product. Local runtime exist
 | `apps/gateway`          | `3000`                                      |
 | `apps/orchestrator`     | `3002`                                      |
 | `apps/collaboration`    | `3003`                                      |
-| `apps/ai-orchestration` | `3004`                                      |
+| `apps/ai-orchestration` | `8080`                                      |
 | `apps/worker-manager`   | `3005`                                      |
 | `apps/web`              | `3007`                                      |
 | `apps/usage-meter`      | `3006`                                      |
@@ -124,4 +124,5 @@ Hosted runtime is the default runtime model for the product. Local runtime exist
 - Runtime isolation approach: container-per-session ([ADR 014](./adr/014-container-per-session-isolation.md)). Implementation open.
 - Session reaper canonical model: scheduled single-invocation job. Code has been refactored to single-cycle-and-exit mode.
 - Runtime safety and hosted topology are only partially complete. See [docs/implementation-gaps.md](./implementation-gaps.md).
+- **Deployment reality (2026-04-18):** Only `ai-orchestration` and `worker-manager` are deployed to Cloud Run. All other runtime actors (orchestrator, host-agent, session-reaper, gateway) run only locally. The hosted runtime path described above is architecturally defined but not operationally complete. See [docs/current-blockers-and-resolution-options.md](./current-blockers-and-resolution-options.md).
 - Workflow files and Terraform still disagree with some runtime service shapes. That drift is documented, not fixed, in this pass.

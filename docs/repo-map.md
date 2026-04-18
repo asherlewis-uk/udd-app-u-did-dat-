@@ -37,7 +37,7 @@ Do not hand-edit generated output.
 
 ## Where templates live
 
-There is no first-class `templates/` or scaffold directory in the repo today. Decision made: built-in bundled templates will be repo-versioned. A dedicated scaffold package and templates directory are implementation tasks. See [docs/implementation-gaps.md](./implementation-gaps.md).
+Scaffold and templates live in `packages/scaffold/` with 4 built-in bundled templates (`node-starter`, `nextjs-starter`, `python-api`, `static-site`). Stack detection lives in `packages/stack-registry/` with 10 built-in stack definitions.
 
 ## Where runtime code lives
 
@@ -78,3 +78,5 @@ There is no first-class `templates/` or scaffold directory in the repo today. De
 | Shared entities and enums | `packages/contracts/src/`                   |
 | Schema and repositories   | `packages/database/src/`                    |
 | Observability helpers     | `packages/observability/src/`               |
+| Stack detection           | `packages/stack-registry/`                  |
+| Project scaffolding       | `packages/scaffold/`                        |
