@@ -5,7 +5,7 @@ import { config } from '@udd/config';
 const logger = createLogger('worker-manager');
 const PORT = config.port(3005);
 const app = createApp();
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info('Worker manager started', { port: PORT });
 });
 process.on('SIGTERM', () => {
