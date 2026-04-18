@@ -20,8 +20,7 @@
   "dependencies": {
     "@udd/config": "workspace:*",
     "@udd/contracts": "workspace:*",
-    "@google-cloud/pubsub": "^4.7.0",
-    "@aws-sdk/client-sqs": "^3.600.0"
+    "@google-cloud/pubsub": "^4.7.0"
   },
   "devDependencies": {
     "typescript": "*",
