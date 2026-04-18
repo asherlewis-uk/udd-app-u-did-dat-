@@ -37,5 +37,5 @@ COPY --from=build --chown=app:app /app/apps/usage-meter/dist ./apps/usage-meter/
 COPY --from=build --chown=app:app /app/apps/usage-meter/package.json ./apps/usage-meter/
 USER app
 ENV NODE_ENV=production
-# Usage-meter is a Cloud Run Job; no HTTP health endpoint.
+# Usage-meter is an Express service deployed to Cloud Run.
 CMD ["node", "/app/apps/usage-meter/dist/index.js"]

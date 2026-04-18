@@ -4,7 +4,7 @@ Back to [docs/_INDEX.md](./_INDEX.md).
 
 ## Purpose
 
-This is the canonical source of truth for the three active blockers preventing the UDD platform from reaching a stable hosted deployment. It presents evidence-based options and ranked recommendations. Every claim is traceable to files in this repo or to the verified GCP project state.
+This document records the three blockers that previously prevented the UDD platform from reaching a stable hosted deployment. All three are now **RESOLVED**. The document is retained for audit trail and historical context. Every claim is traceable to files in this repo or to the verified GCP project state.
 
 ## Last Updated
 
@@ -12,13 +12,15 @@ Date: 2026-04-18
 
 ## Current State Summary
 
-Two of nine backend services deploy to Cloud Run (`ai-orchestration`, `worker-manager`). Both are internal-only — there is no public ingress. The remaining seven services have Dockerfiles but no published images, no Cloud Build configs, and their Terraform resources are commented out. The load balancer and monitoring modules are disabled. GitHub Actions CI/CD references all nine services and targets the wrong registry (`gcr.io`) and the wrong region (`europe-west1`). No AWS infrastructure exists. The platform cannot serve traffic to users.
+Eight of nine backend services are activated and deployable to Cloud Run. Cloud Build configs exist for `ai-orchestration`, `worker-manager`, `api`, `gateway`, `orchestrator`, `session-reaper`, `usage-meter`, and `host-agent` (local agent, not Cloud Run). Only `collaboration` (frozen dormant) lacks a Cloud Build config. The deployment pipeline targets Artifact Registry (`us-central1-docker.pkg.dev`) in the correct region (`us-central1`). The platform baseline is committed to GCP Cloud Run (ADR 015). The load balancer and monitoring modules remain disabled pending public service validation.
 
 ---
 
-## Blocker 1: Broken Deployment Pipeline
+## Blocker 1: Broken Deployment Pipeline — ✅ RESOLVED
 
-### Evidence
+Cloud Build configs now exist for 7 of 8 deployable services (all except dormant `collaboration`). `build.yml` and `deploy.yml` target Artifact Registry in `us-central1`. Service/job differentiation is implemented. Registry and region mismatches are fixed.
+
+### Evidence (historical)
 
 1. **Registry mismatch.** GitHub Actions `build.yml` (line 10) and `deploy.yml` (line 10) push images to `gcr.io`. Cloud Build configs (`cloudbuild.ai.yaml`, `cloudbuild.worker.yaml`) and Terraform compute module (`modules/compute/main.tf` lines 163, 289) pull from `us-central1-docker.pkg.dev/acoustic-result-491711-t7/udd-images/`. These are different registries. Images built by GitHub Actions are invisible to Terraform-managed Cloud Run services.
 
@@ -101,9 +103,11 @@ There is no functioning end-to-end path from `git push` to a running Cloud Run s
 
 ---
 
-## Blocker 2: Control-Plane Services Not Deployable on Current Infra
+## Blocker 2: Control-Plane Services Not Deployable on Current Infra — ✅ RESOLVED
 
-### Evidence
+Cloud Build configs created for `api`, `gateway`, `orchestrator`, `session-reaper`, and `usage-meter`. All have Dockerfiles and can be built and pushed to Artifact Registry. Terraform resources can be re-enabled as images are published. Only `collaboration` (frozen dormant) remains without a Cloud Build config.
+
+### Evidence (historical)
 
 1. **Five services plus one job are commented out.** `modules/compute/main.tf` lines 26-54 (locals), 67-137 (Cloud Run resource), 205-215 (IAM), 223-263 (session-reaper job), 338-360 (scheduler). Each block has a TODO comment: *"Re-enable after publishing images to Artifact Registry."*
 
@@ -188,9 +192,11 @@ The platform has no public API (`api`), no preview gateway (`gateway`), and no s
 
 ---
 
-## Blocker 3: Platform Baseline Decision Still Unstable
+## Blocker 3: Platform Baseline Decision Still Unstable — ✅ RESOLVED
 
-### Evidence
+ADR 015 commits to GCP Cloud Run as the canonical hosted compute platform. Vendor-neutral ambiguity in ADR 014 is resolved. All infrastructure investment is unambiguously justified.
+
+### Evidence (historical)
 
 1. **Cloud Run is the only platform with any implementation.** All Terraform modules target GCP. Compute module uses `google_cloud_run_v2_service`. Networking uses GCP VPC, Cloud NAT, Serverless VPC Access connector. Database is Cloud SQL PostgreSQL 16. Cache is Memorystore Redis. Queues are Pub/Sub with dead-letter topics. Secrets use GCP Secret Manager API.
 
