@@ -22,7 +22,8 @@
     "@udd/contracts": "workspace:*",
     "@udd/observability": "workspace:*",
     "@google-cloud/secret-manager": "^5.6.0",
-    "@workos-inc/node": "^8.0.0"
+    "@workos-inc/node": "^8.0.0",
+    "pusher": "^5.2.0"
   },
   "devDependencies": {
     "@udd/testing": "workspace:*",

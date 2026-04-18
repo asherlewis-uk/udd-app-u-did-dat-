@@ -13,3 +13,4 @@ export * from './storage.js';
 export * from './billing.js';
 export * from './notification.js';
 export * from './telemetry.js';
+export * from './realtime.js';

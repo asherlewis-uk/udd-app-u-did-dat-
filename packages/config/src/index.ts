@@ -133,6 +133,13 @@ export const config = {
     tokenTtlSeconds: () => optionalInt('PREVIEW_TOKEN_TTL_SECONDS', 300),
   },
 
+  pusher: {
+    appId: () => required('PUSHER_APP_ID'),
+    key: () => required('PUSHER_KEY'),
+    secret: () => required('PUSHER_SECRET'),
+    cluster: () => optional('PUSHER_CLUSTER', 'eu'),
+  },
+
   gcp: {
     projectId: () => optional('GCP_PROJECT_ID', ''),
   },

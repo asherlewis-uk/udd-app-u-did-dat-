@@ -112,6 +112,15 @@ export interface SecretManagerProvider {
 }
 
 // ============================================================
+// Realtime Provider (Pusher boundary)
+// ============================================================
+
+export interface RealtimeProvider {
+  /** Push an event to a channel so connected clients receive it immediately. */
+  trigger(channel: string, event: string, data: unknown): Promise<void>;
+}
+
+// ============================================================
 // Telemetry Sink
 // ============================================================
 
