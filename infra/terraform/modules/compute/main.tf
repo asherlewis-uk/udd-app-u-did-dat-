@@ -20,16 +20,11 @@ resource "google_project_service" "run" {
 # access to Cloud SQL, Memorystore, and internal services.
 # ============================================================
 
-# TODO: Re-enable the remaining control-plane Cloud Run services (gateway,
-# collaboration, usage-meter) after publishing their images to Artifact Registry.
+# TODO: Re-enable the remaining control-plane Cloud Run services (collaboration,
+# usage-meter) after publishing their images to Artifact Registry.
 # Dockerfiles exist in apps/<service>/Dockerfile.
 # locals {
 #   control_plane_services = {
-#     gateway = {
-#       port         = 3000
-#       public       = true
-#       description  = "UDD Gateway — public-facing, preview proxying"
-#     }
 #     collaboration = {
 #       port         = 3003
 #       public       = false
@@ -60,6 +55,14 @@ locals {
 }
 
 locals {
+  gateway_service = {
+    port        = 3000
+    public      = true
+    description = "UDD Gateway — public-facing, preview proxying"
+  }
+}
+
+locals {
   ai_orchestration_service = {
     port        = 8080
     public      = false
@@ -67,8 +70,8 @@ locals {
   }
 }
 
-# TODO: Re-enable the remaining control-plane Cloud Run services (gateway,
-# collaboration, usage-meter) after publishing their images to Artifact Registry.
+# TODO: Re-enable the remaining control-plane Cloud Run services (collaboration,
+# usage-meter) after publishing their images to Artifact Registry.
 # Dockerfiles exist in apps/<service>/Dockerfile.
 # resource "google_cloud_run_v2_service" "control_plane" {
 #   for_each = local.control_plane_services
@@ -141,6 +144,71 @@ locals {
 #
 #   depends_on = [google_project_service.run]
 # }
+
+resource "google_cloud_run_v2_service" "gateway" {
+  project  = var.project_id
+  name     = "${var.name_prefix}-gateway"
+  location = var.region
+
+  description = local.gateway_service.description
+
+  ingress = "INGRESS_TRAFFIC_ALL"
+
+  template {
+    service_account = var.service_account_emails["gateway"]
+
+    scaling {
+      min_instance_count = var.min_instances
+      max_instance_count = var.max_instances
+    }
+
+    vpc_access {
+      connector = var.vpc_connector_id
+      egress    = "ALL_TRAFFIC"
+    }
+
+    containers {
+      name  = "gateway"
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_registry_repo}/gateway:latest"
+
+      ports {
+        container_port = local.gateway_service.port
+      }
+
+      resources {
+        limits = {
+          cpu    = var.cpu_limit
+          memory = var.memory_limit
+        }
+        cpu_idle          = true
+        startup_cpu_boost = true
+      }
+
+      env {
+        name  = "NODE_ENV"
+        value = var.environment
+      }
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name  = "GCP_REGION"
+        value = var.region
+      }
+      env {
+        name  = "API_BASE_URL"
+        value = google_cloud_run_v2_service.api.uri
+      }
+    }
+
+    labels = var.labels
+  }
+
+  labels = var.labels
+
+  depends_on = [google_project_service.run]
+}
 
 resource "google_cloud_run_v2_service" "api" {
   project  = var.project_id
@@ -333,10 +401,10 @@ resource "google_cloud_run_v2_service" "ai_orchestration" {
   depends_on = [google_project_service.run]
 }
 
-# TODO: Re-enable the remaining control-plane Cloud Run services (gateway,
-# collaboration, usage-meter) after publishing their images to Artifact Registry.
+# TODO: Re-enable the remaining control-plane Cloud Run services (collaboration,
+# usage-meter) after publishing their images to Artifact Registry.
 # Dockerfiles exist in apps/<service>/Dockerfile.
-# # Allow unauthenticated access for public-facing services (gateway)
+# # Allow unauthenticated access for public-facing services
 # # Internal services require Identity token authentication
 # resource "google_cloud_run_v2_service_iam_member" "public_invoker" {
 #   for_each = {
@@ -349,6 +417,14 @@ resource "google_cloud_run_v2_service" "ai_orchestration" {
 #   role     = "roles/run.invoker"
 #   member   = "allUsers"
 # }
+
+resource "google_cloud_run_v2_service_iam_member" "gateway_public_invoker" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.gateway.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
 
 resource "google_cloud_run_v2_service_iam_member" "api_public_invoker" {
   project  = var.project_id
