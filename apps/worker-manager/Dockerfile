@@ -22,27 +22,16 @@ RUN pnpm --filter @udd/contracts build \
  && pnpm --filter @udd/database build \
  && pnpm --filter @udd/events build \
  && pnpm --filter @udd/worker-manager build
+RUN pnpm --filter @udd/worker-manager deploy /app/deploy --prod
 
 # ─── Stage 3: runtime ─────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime
 WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
-COPY --from=build --chown=app:app /app/node_modules ./node_modules
-COPY --from=build --chown=app:app /app/packages/config/package.json ./packages/config/
-COPY --from=build --chown=app:app /app/packages/config/dist ./packages/config/dist
-COPY --from=build --chown=app:app /app/packages/contracts/package.json ./packages/contracts/
-COPY --from=build --chown=app:app /app/packages/contracts/dist ./packages/contracts/dist
-COPY --from=build --chown=app:app /app/packages/database/package.json ./packages/database/
-COPY --from=build --chown=app:app /app/packages/database/dist ./packages/database/dist
-COPY --from=build --chown=app:app /app/packages/events/package.json ./packages/events/
-COPY --from=build --chown=app:app /app/packages/events/dist ./packages/events/dist
-COPY --from=build --chown=app:app /app/packages/observability/package.json ./packages/observability/
-COPY --from=build --chown=app:app /app/packages/observability/dist ./packages/observability/dist
-COPY --from=build --chown=app:app /app/apps/worker-manager/dist ./apps/worker-manager/dist
-COPY --from=build --chown=app:app /app/apps/worker-manager/package.json ./apps/worker-manager/
+COPY --from=build --chown=app:app /app/deploy ./
 USER app
 ENV NODE_ENV=production
 EXPOSE 3005
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:${PORT:-3005}/ready || exit 1
-CMD ["node", "/app/apps/worker-manager/dist/index.js"]
+CMD ["node", "dist/index.js"]

@@ -150,41 +150,47 @@ module "compute" {
 # Load Balancer — global HTTPS LB with serverless NEGs
 # ============================================================
 
-module "loadbalancer" {
-  source      = "../../modules/loadbalancer"
-  project_id  = var.project_id
-  name_prefix = local.name_prefix
-  region      = var.region
-
-  api_cloud_run_service_name     = "${local.name_prefix}-api"
-  gateway_cloud_run_service_name = "${local.name_prefix}-gateway"
-
-  ssl_domains = var.ssl_domains
-
-  labels = local.common_labels
-
-  depends_on = [module.compute]
-}
+# TODO: Re-enable the load balancer module after the api and gateway
+# Cloud Run services are restored with published Artifact Registry images.
+#
+# module "loadbalancer" {
+#   source      = "../../modules/loadbalancer"
+#   project_id  = var.project_id
+#   name_prefix = local.name_prefix
+#   region      = var.region
+#
+#   api_cloud_run_service_name     = "${local.name_prefix}-api"
+#   gateway_cloud_run_service_name = "${local.name_prefix}-gateway"
+#
+#   ssl_domains = var.ssl_domains
+#
+#   labels = local.common_labels
+#
+#   depends_on = [module.compute]
+# }
 
 # ============================================================
 # Monitoring — uptime checks + alert policies
 # ============================================================
 
-module "monitoring" {
-  source      = "../../modules/monitoring"
-  project_id  = var.project_id
-  name_prefix = local.name_prefix
-  region      = var.region
-  labels      = local.common_labels
-
-  notification_email   = var.alert_notification_email
-  error_rate_threshold = 0.05
-
-  http_services = {
-    api       = "https://${local.name_prefix}-api-${var.cloud_run_url_suffix}"
-    gateway   = "https://${local.name_prefix}-gateway-${var.cloud_run_url_suffix}"
-    orchestrator = "https://${local.name_prefix}-orchestrator-${var.cloud_run_url_suffix}"
-  }
-
-  depends_on = [module.compute]
-}
+# TODO: Re-enable the monitoring module after the control-plane Cloud Run
+# services (api, gateway, orchestrator) are restored with published images.
+#
+# module "monitoring" {
+#   source      = "../../modules/monitoring"
+#   project_id  = var.project_id
+#   name_prefix = local.name_prefix
+#   region      = var.region
+#   labels      = local.common_labels
+#
+#   notification_email   = var.alert_notification_email
+#   error_rate_threshold = 0.05
+#
+#   http_services = {
+#     api       = "https://${local.name_prefix}-api-${var.cloud_run_url_suffix}"
+#     gateway   = "https://${local.name_prefix}-gateway-${var.cloud_run_url_suffix}"
+#     orchestrator = "https://${local.name_prefix}-orchestrator-${var.cloud_run_url_suffix}"
+#   }
+#
+#   depends_on = [module.compute]
+# }

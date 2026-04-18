@@ -26,31 +26,16 @@ RUN pnpm --filter @udd/contracts build \
  && pnpm --filter @udd/adapters build \
  && pnpm --filter @udd/events build \
  && pnpm --filter @udd/ai-orchestration build
+RUN pnpm --filter @udd/ai-orchestration deploy /app/deploy --prod
 
 # ─── Stage 3: runtime ─────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime
 WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
-COPY --from=build --chown=app:app /app/node_modules ./node_modules
-COPY --from=build --chown=app:app /app/packages/adapters/package.json ./packages/adapters/
-COPY --from=build --chown=app:app /app/packages/adapters/dist ./packages/adapters/dist
-COPY --from=build --chown=app:app /app/packages/auth/package.json ./packages/auth/
-COPY --from=build --chown=app:app /app/packages/auth/dist ./packages/auth/dist
-COPY --from=build --chown=app:app /app/packages/config/package.json ./packages/config/
-COPY --from=build --chown=app:app /app/packages/config/dist ./packages/config/dist
-COPY --from=build --chown=app:app /app/packages/contracts/package.json ./packages/contracts/
-COPY --from=build --chown=app:app /app/packages/contracts/dist ./packages/contracts/dist
-COPY --from=build --chown=app:app /app/packages/database/package.json ./packages/database/
-COPY --from=build --chown=app:app /app/packages/database/dist ./packages/database/dist
-COPY --from=build --chown=app:app /app/packages/events/package.json ./packages/events/
-COPY --from=build --chown=app:app /app/packages/events/dist ./packages/events/dist
-COPY --from=build --chown=app:app /app/packages/observability/package.json ./packages/observability/
-COPY --from=build --chown=app:app /app/packages/observability/dist ./packages/observability/dist
-COPY --from=build --chown=app:app /app/apps/ai-orchestration/dist ./apps/ai-orchestration/dist
-COPY --from=build --chown=app:app /app/apps/ai-orchestration/package.json ./apps/ai-orchestration/
+COPY --from=build --chown=app:app /app/deploy ./
 USER app
 ENV NODE_ENV=production
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:${PORT:-8080}/ready || exit 1
-CMD ["node", "/app/apps/ai-orchestration/dist/index.js"]
+CMD ["node", "dist/index.js"]

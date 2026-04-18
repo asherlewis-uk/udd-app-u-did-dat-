@@ -3,7 +3,7 @@ import { createLogger } from '@udd/observability';
 import { config } from '@udd/config';
 
 const logger = createLogger('ai-orchestration');
-const PORT = config.port(3004);
+const PORT = config.port(8080);
 const app = createApp();
 const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info('AI orchestration service started', { port: PORT });
