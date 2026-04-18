@@ -18,7 +18,7 @@ jobs:
       id-token: write
     strategy:
       matrix:
-        service: [ai-orchestration, worker-manager, orchestrator]
+        service: [ai-orchestration, worker-manager, orchestrator, api]
 
     steps:
       - uses: actions/checkout@v4

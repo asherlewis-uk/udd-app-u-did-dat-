@@ -20,16 +20,11 @@ resource "google_project_service" "run" {
 # access to Cloud SQL, Memorystore, and internal services.
 # ============================================================
 
-# TODO: Re-enable the remaining control-plane Cloud Run services (api, gateway,
+# TODO: Re-enable the remaining control-plane Cloud Run services (gateway,
 # collaboration, usage-meter) after publishing their images to Artifact Registry.
 # Dockerfiles exist in apps/<service>/Dockerfile.
 # locals {
 #   control_plane_services = {
-#     api = {
-#       port         = 8080
-#       public       = true
-#       description  = "UDD REST API — public-facing"
-#     }
 #     gateway = {
 #       port         = 3000
 #       public       = true
@@ -49,6 +44,14 @@ resource "google_project_service" "run" {
 # }
 
 locals {
+  api_service = {
+    port        = 8080
+    public      = true
+    description = "UDD REST API — public-facing"
+  }
+}
+
+locals {
   orchestrator_service = {
     port        = 3002
     public      = false
@@ -64,7 +67,7 @@ locals {
   }
 }
 
-# TODO: Re-enable the remaining control-plane Cloud Run services (api, gateway,
+# TODO: Re-enable the remaining control-plane Cloud Run services (gateway,
 # collaboration, usage-meter) after publishing their images to Artifact Registry.
 # Dockerfiles exist in apps/<service>/Dockerfile.
 # resource "google_cloud_run_v2_service" "control_plane" {
@@ -138,6 +141,75 @@ locals {
 #
 #   depends_on = [google_project_service.run]
 # }
+
+resource "google_cloud_run_v2_service" "api" {
+  project  = var.project_id
+  name     = "${var.name_prefix}-api"
+  location = var.region
+
+  description = local.api_service.description
+
+  ingress = "INGRESS_TRAFFIC_ALL"
+
+  template {
+    service_account = var.service_account_emails["api"]
+
+    scaling {
+      min_instance_count = var.min_instances
+      max_instance_count = var.max_instances
+    }
+
+    vpc_access {
+      connector = var.vpc_connector_id
+      egress    = "ALL_TRAFFIC"
+    }
+
+    containers {
+      name  = "api"
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_registry_repo}/api:latest"
+
+      ports {
+        container_port = local.api_service.port
+      }
+
+      resources {
+        limits = {
+          cpu    = var.cpu_limit
+          memory = var.memory_limit
+        }
+        cpu_idle          = true
+        startup_cpu_boost = true
+      }
+
+      env {
+        name  = "NODE_ENV"
+        value = var.environment
+      }
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name  = "GCP_REGION"
+        value = var.region
+      }
+      env {
+        name  = "AI_ORCHESTRATION_BASE_URL"
+        value = google_cloud_run_v2_service.ai_orchestration.uri
+      }
+      env {
+        name  = "ORCHESTRATOR_BASE_URL"
+        value = google_cloud_run_v2_service.orchestrator.uri
+      }
+    }
+
+    labels = var.labels
+  }
+
+  labels = var.labels
+
+  depends_on = [google_project_service.run]
+}
 
 resource "google_cloud_run_v2_service" "orchestrator" {
   project  = var.project_id
@@ -261,10 +333,10 @@ resource "google_cloud_run_v2_service" "ai_orchestration" {
   depends_on = [google_project_service.run]
 }
 
-# TODO: Re-enable the remaining control-plane Cloud Run services (api, gateway,
+# TODO: Re-enable the remaining control-plane Cloud Run services (gateway,
 # collaboration, usage-meter) after publishing their images to Artifact Registry.
 # Dockerfiles exist in apps/<service>/Dockerfile.
-# # Allow unauthenticated access for public-facing services (api, gateway)
+# # Allow unauthenticated access for public-facing services (gateway)
 # # Internal services require Identity token authentication
 # resource "google_cloud_run_v2_service_iam_member" "public_invoker" {
 #   for_each = {
@@ -277,6 +349,14 @@ resource "google_cloud_run_v2_service" "ai_orchestration" {
 #   role     = "roles/run.invoker"
 #   member   = "allUsers"
 # }
+
+resource "google_cloud_run_v2_service_iam_member" "api_public_invoker" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.api.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
 
 # ============================================================
 # Worker-plane Cloud Run resources (Jobs + Services)
