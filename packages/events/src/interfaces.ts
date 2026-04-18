@@ -5,7 +5,7 @@ import type { PlatformEvent, Topic } from '@udd/contracts';
 // ============================================================
 
 export interface PublishOptions {
-  /** Optional deduplication key (maps to message deduplication ID in SQS FIFO) */
+  /** Optional deduplication key */
   deduplicationKey?: string;
   /** Optional message group key */
   groupKey?: string;

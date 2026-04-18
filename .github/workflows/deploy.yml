@@ -9,7 +9,7 @@ on:
 env:
   REGISTRY: us-central1-docker.pkg.dev
   GCP_REGION: us-central1
-  SERVICES: ai-orchestration worker-manager
+  SERVICES: ai-orchestration worker-manager orchestrator
 
 jobs:
   build-and-push:

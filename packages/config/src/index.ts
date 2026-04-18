@@ -72,28 +72,21 @@ export const config = {
     /**
      * Secret manager backend.
      * @remarks Only `'gcp'` (`GCPSecretManagerProvider`) and `'memory'` (`InMemorySecretManagerProvider`) are currently implemented.
-     *          `'aws'` is accepted for forward-compatibility but has no runtime provider yet.
      */
-    provider: () => optional('SECRET_MANAGER_PROVIDER', 'gcp') as 'gcp' | 'aws' | 'memory',
-    awsRegion: () => optional('AWS_REGION', 'us-east-1'),
-    awsSecretsPrefix: () => optional('AWS_SECRETS_PREFIX', '/udd/'),
+    provider: () => optional('SECRET_MANAGER_PROVIDER', 'gcp') as 'gcp' | 'memory',
   },
 
   storage: {
     /**
      * Object storage backend.
      * @remarks Only `'gcs'` (`GCSObjectStorageProvider`) and `'local'` (`LocalObjectStorageProvider`) are currently implemented.
-     *          `'aws'` is accepted for forward-compatibility but `AWSS3StorageProvider` throws "not implemented" at runtime.
      */
-    provider: () => optional('OBJECT_STORAGE_PROVIDER', 'gcs') as 'gcs' | 'aws' | 'local',
+    provider: () => optional('OBJECT_STORAGE_PROVIDER', 'gcs') as 'gcs' | 'local',
     bucket: () => required('OBJECT_STORAGE_BUCKET'),
-    awsRegion: () => optional('AWS_REGION', 'us-east-1'),
   },
 
   queue: {
-    provider: () => optional('QUEUE_PROVIDER', 'pubsub') as 'pubsub' | 'sqs' | 'noop',
-    awsRegion: () => optional('AWS_REGION', 'us-east-1'),
-    queueUrlPrefix: () => optional('SQS_QUEUE_URL_PREFIX', ''),
+    provider: () => optional('QUEUE_PROVIDER', 'pubsub') as 'pubsub' | 'noop',
     pubsubTopicPrefix: () => optional('PUBSUB_TOPIC_PREFIX', 'udd'),
   },
 

@@ -20,9 +20,9 @@ resource "google_project_service" "run" {
 # access to Cloud SQL, Memorystore, and internal services.
 # ============================================================
 
-# TODO: Re-enable the control-plane Cloud Run services (api, gateway,
-# orchestrator, collaboration, usage-meter) after publishing their images
-# to Artifact Registry. Dockerfiles exist in apps/<service>/Dockerfile.
+# TODO: Re-enable the remaining control-plane Cloud Run services (api, gateway,
+# collaboration, usage-meter) after publishing their images to Artifact Registry.
+# Dockerfiles exist in apps/<service>/Dockerfile.
 # locals {
 #   control_plane_services = {
 #     api = {
@@ -34,11 +34,6 @@ resource "google_project_service" "run" {
 #       port         = 3000
 #       public       = true
 #       description  = "UDD Gateway — public-facing, preview proxying"
-#     }
-#     orchestrator = {
-#       port         = 3002
-#       public       = false
-#       description  = "Session orchestration — internal only"
 #     }
 #     collaboration = {
 #       port         = 3003
@@ -54,6 +49,14 @@ resource "google_project_service" "run" {
 # }
 
 locals {
+  orchestrator_service = {
+    port        = 3002
+    public      = false
+    description = "Session orchestration — internal only"
+  }
+}
+
+locals {
   ai_orchestration_service = {
     port        = 8080
     public      = false
@@ -61,9 +64,9 @@ locals {
   }
 }
 
-# TODO: Re-enable the control-plane Cloud Run services (api, gateway,
-# orchestrator, collaboration, usage-meter) after publishing their images
-# to Artifact Registry. Dockerfiles exist in apps/<service>/Dockerfile.
+# TODO: Re-enable the remaining control-plane Cloud Run services (api, gateway,
+# collaboration, usage-meter) after publishing their images to Artifact Registry.
+# Dockerfiles exist in apps/<service>/Dockerfile.
 # resource "google_cloud_run_v2_service" "control_plane" {
 #   for_each = local.control_plane_services
 #
@@ -136,6 +139,67 @@ locals {
 #   depends_on = [google_project_service.run]
 # }
 
+resource "google_cloud_run_v2_service" "orchestrator" {
+  project  = var.project_id
+  name     = "${var.name_prefix}-orchestrator"
+  location = var.region
+
+  description = local.orchestrator_service.description
+
+  ingress = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+
+  template {
+    service_account = var.service_account_emails["orchestrator"]
+
+    scaling {
+      min_instance_count = var.min_instances
+      max_instance_count = var.max_instances
+    }
+
+    vpc_access {
+      connector = var.vpc_connector_id
+      egress    = "ALL_TRAFFIC"
+    }
+
+    containers {
+      name  = "orchestrator"
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_registry_repo}/orchestrator:latest"
+
+      ports {
+        container_port = local.orchestrator_service.port
+      }
+
+      resources {
+        limits = {
+          cpu    = var.cpu_limit
+          memory = var.memory_limit
+        }
+        cpu_idle          = true
+        startup_cpu_boost = true
+      }
+
+      env {
+        name  = "NODE_ENV"
+        value = var.environment
+      }
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name  = "GCP_REGION"
+        value = var.region
+      }
+    }
+
+    labels = var.labels
+  }
+
+  labels = var.labels
+
+  depends_on = [google_project_service.run]
+}
+
 resource "google_cloud_run_v2_service" "ai_orchestration" {
   project  = var.project_id
   name     = "${var.name_prefix}-ai-orchestration"
@@ -197,9 +261,9 @@ resource "google_cloud_run_v2_service" "ai_orchestration" {
   depends_on = [google_project_service.run]
 }
 
-# TODO: Re-enable the control-plane Cloud Run services (api, gateway,
-# orchestrator, collaboration, usage-meter) after publishing their images
-# to Artifact Registry. Dockerfiles exist in apps/<service>/Dockerfile.
+# TODO: Re-enable the remaining control-plane Cloud Run services (api, gateway,
+# collaboration, usage-meter) after publishing their images to Artifact Registry.
+# Dockerfiles exist in apps/<service>/Dockerfile.
 # # Allow unauthenticated access for public-facing services (api, gateway)
 # # Internal services require Identity token authentication
 # resource "google_cloud_run_v2_service_iam_member" "public_invoker" {

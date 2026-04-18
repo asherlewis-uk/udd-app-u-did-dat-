@@ -3,7 +3,13 @@ output "service_urls" {
   # TODO: Reconnect this output when the control-plane services are restored.
   value = {
     "ai-orchestration" = google_cloud_run_v2_service.ai_orchestration.uri
+    "orchestrator"     = google_cloud_run_v2_service.orchestrator.uri
   }
+}
+
+output "orchestrator_service_url" {
+  description = "URL of the orchestrator Cloud Run service"
+  value       = google_cloud_run_v2_service.orchestrator.uri
 }
 
 output "api_service_url" {
