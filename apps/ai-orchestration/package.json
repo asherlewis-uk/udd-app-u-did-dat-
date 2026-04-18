@@ -17,6 +17,7 @@
     "@udd/database": "workspace:*",
     "@udd/events": "workspace:*",
     "@udd/observability": "workspace:*",
+    "@udd/retrieval": "workspace:*",
     "express": "^4.19.0",
     "helmet": "^7.1.0"
   },
