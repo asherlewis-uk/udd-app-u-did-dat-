@@ -47,6 +47,7 @@ This index defines the canonical documentation set, the reading order for humans
 | [012](adr/012-web-and-ios-first-class-client-surfaces.md) | Web and iOS first-class client surfaces | Canonical                       |
 | [013](adr/013-thin-workspace-migration-strategy.md)       | Thin-workspace migration strategy       | Canonical                       |
 | [014](adr/014-container-per-session-isolation.md)         | Container-per-session isolation         | Canonical                       |
+| [015](adr/015-canonical-hosted-baseline-and-middleware.md) | Canonical hosted baseline and middleware | Canonical                       |
 
 ## Canonical vs Historical
 
