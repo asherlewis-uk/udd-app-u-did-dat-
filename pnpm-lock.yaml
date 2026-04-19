@@ -631,7 +631,14 @@ importers:
         version: 5.9.3
 
   packages/retrieval:
+    dependencies:
+      '@udd/database':
+        specifier: workspace:*
+        version: link:../database
     devDependencies:
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.20.0
       typescript:
         specifier: '*'
         version: 5.9.3
