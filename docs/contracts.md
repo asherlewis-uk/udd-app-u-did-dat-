@@ -93,6 +93,27 @@ This file defines the stable internal boundaries the rest of the docs rely on. W
 | Errors       | Unsupported target, auth failure, external provider failure                                            |
 | Current code | Partial via git, storage, billing, and notification adapters; not a first-class deploy product surface |
 
+## AI retrieval contract (Hybrid Retrieval Boundary)
+
+| Item         | Contract                                                                                                               |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Purpose      | Provide AI workflows with accurate, verified project context via a hybrid semantic + structural retrieval boundary     |
+| Approach     | **Semantic RAG** for concept discovery and natural language queries, **GitNexus Graph** for structural verification, symbol tracing, and blast-radius analysis ([ADR 015](./adr/015-canonical-hosted-baseline-and-middleware.md)) |
+| Inputs       | Natural language query, project identity, retrieval scope, optional symbol filter                                       |
+| Outputs      | Ranked context chunks verified against GitNexus ground truth, source locations, confidence scores                      |
+| Errors       | No index available, stale index, no relevant results, graph verification failure                                       |
+| Current code | No dedicated subsystem yet. Canonical boundary defined; implementation incomplete. See [docs/implementation-gaps.md](./implementation-gaps.md). |
+
+## Realtime middleware contract (Pusher)
+
+| Item         | Contract                                                                                                               |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Purpose      | Provide managed real-time state synchronization, presence, and event fan-out for web and iOS surfaces                  |
+| Inputs       | Channel name, event type, payload, auth context                                                                        |
+| Outputs      | Real-time event delivery to subscribed clients, presence state                                                         |
+| Errors       | Auth failure, channel limit exceeded, Pusher service unavailable                                                       |
+| Current code | `apps/collaboration` (pending refactor to Pusher SDK per [ADR 015](./adr/015-canonical-hosted-baseline-and-middleware.md)) |
+
 ## Error envelope rules
 
 - Client-facing errors must expose a stable code and a human-usable message.

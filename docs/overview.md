@@ -32,10 +32,12 @@ Local development is supported for engineering, debugging, and validation, but i
 - Hosted web surface
 - First-class iOS surface
 - Public API and auth surface
-- Hosted runtime and session orchestration
+- Hosted runtime and session orchestration on GCP Cloud Run ([ADR 015](./adr/015-canonical-hosted-baseline-and-middleware.md))
 - Hosted preview system
 - AI orchestration and provider configuration
-- Provider, secret, storage, queue, billing, and notification adapters
+- Hybrid AI retrieval boundary (Semantic RAG + Structural GitNexus) ([ADR 015](./adr/015-canonical-hosted-baseline-and-middleware.md))
+- Real-time state synchronization via managed Pusher ([ADR 015](./adr/015-canonical-hosted-baseline-and-middleware.md))
+- GCP-native adapters: Secret Manager, GCS, Pub/Sub
 - Supported local development path for builders and operators
 
 ## Supported Stack Philosophy

@@ -24,7 +24,7 @@ The product is **hosted-first**. Product docs, architecture docs, and client-sur
 ### Characteristics
 
 - Web and iOS are first-class clients.
-- Runtime sessions are expected to execute on hosted infrastructure.
+- Runtime sessions are expected to execute on hosted infrastructure (GCP Cloud Run per [ADR 015](./adr/015-canonical-hosted-baseline-and-middleware.md)).
 - Previews are expected to resolve through the hosted gateway.
 - AI calls are expected to route through `apps/ai-orchestration` and the provider adapter boundary.
 - Secrets are expected to resolve through the external secret manager path in production.
@@ -84,4 +84,6 @@ The product is **hosted-first**. Product docs, architecture docs, and client-sur
 
 - The repo strongly reflects hosted services, gateway previews, and internal orchestration. That aligns with the hosted-first product story.
 - Local development is possible. All services have unique default ports; no port collisions remain.
-- Runtime isolation approach: container-per-session ([ADR 014](./adr/014-container-per-session-isolation.md)). Implementation is open. Host-agent capacity reporting is real (OS-level CPU, memory, port probing). Container-per-session provisioning is not yet implemented.
+- Runtime isolation approach: container-per-session on GCP Cloud Run ([ADR 014](./adr/014-container-per-session-isolation.md), [ADR 015](./adr/015-canonical-hosted-baseline-and-middleware.md)). Implementation is open. Host-agent capacity reporting is real (OS-level CPU, memory, port probing). Container-per-session provisioning is not yet implemented.
+- AI retrieval: Hybrid Retrieval Boundary (Semantic RAG + Structural GitNexus) is the canonical approach ([ADR 015](./adr/015-canonical-hosted-baseline-and-middleware.md)). RAG results are filtered by GitNexus graph ground truth. Implementation incomplete.
+- Real-time middleware: Pusher is the canonical realtime layer ([ADR 015](./adr/015-canonical-hosted-baseline-and-middleware.md)), replacing raw WebSocket fan-out in `apps/collaboration`.
