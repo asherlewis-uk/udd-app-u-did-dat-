@@ -44,27 +44,6 @@ variable "pusher_cluster" {
   description = "Pusher cluster region (e.g. us2, eu, ap1)"
 }
 
-variable "pusher_app_id" {
-  type        = string
-  description = "Pusher application ID"
-}
-
-variable "pusher_key" {
-  type        = string
-  description = "Pusher application key"
-}
-
-variable "pusher_secret" {
-  type        = string
-  description = "Pusher application secret"
-  sensitive   = true
-}
-
-variable "pusher_cluster" {
-  type        = string
-  description = "Pusher cluster region (e.g. eu, us2, ap1)"
-}
-
 variable "ssl_domains" {
   type        = list(string)
   description = "Domains for the Google-managed SSL certificate"
