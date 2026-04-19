@@ -101,11 +101,26 @@ Local development exists to build and operate the product, and to validate stack
 4. Results are returned to the client surface and logged without leaking secrets.
 5. Canonical architecture expects project memory, retrieval, and stack-aware edit safety. Those boundaries are only partially present in code today.
 
+## Environment Target State
+
+All environments — **DEV**, **STAGING**, and **PROD** — target a strictly GCP-native stack:
+
+| Concern           | Technology                        |
+| ----------------- | --------------------------------- |
+| Compute           | GCP Cloud Run (container-per-service, container-per-session) |
+| Object storage    | GCS                               |
+| Secrets           | GCP Secret Manager                |
+| Async messaging   | GCP Pub/Sub                       |
+| Realtime          | Managed Pusher                    |
+| Structural context| GitNexus (code intelligence index)|
+
+No AWS, Azure, or non-GCP compute targets are part of the canonical hosted stack. If an environment deviates, record it in [docs/implementation-gaps.md](./implementation-gaps.md).
+
 ## Current implementation notes
 
 - The canonical model is project-centered and solo-first. ADR 013 Phase 2 is complete: project-first routes are active, new tokens use `grantedPermissions`, and `workspaceId` is retained only as an internal tenancy key. See [docs/domain-model.md](./domain-model.md).
 - Hosted runtime is canonical. Isolation: container-per-session on GCP Cloud Run ([ADR 014](./adr/014-container-per-session-isolation.md), [ADR 015](./adr/015-canonical-hosted-baseline-and-middleware.md)). Implementation is open. Stack registry (`packages/stack-registry/`) and scaffold engine (`packages/scaffold/`) are implemented.
-- **Deployment reality (2026-04-18):** `ai-orchestration` and `worker-manager` are deployed to Cloud Run. `api`, `gateway`, `orchestrator`, `session-reaper`, and `usage-meter` have Cloud Build configs and Dockerfiles but no published images yet. Terraform resources and dependent infrastructure (load balancer, monitoring) remain disabled pending image publication. See [docs/current-blockers-and-resolution-options.md](./current-blockers-and-resolution-options.md).
+- **Deployment reality (2026-04-18):** `api`, `gateway`, `orchestrator`, `session-reaper`, and `usage-meter` are **active and deployed** to GCP Cloud Run with published container images. `ai-orchestration` and `worker-manager` are also deployed. All seven services have Cloud Build pipelines, Dockerfiles, and live Cloud Run revisions.
 - Real-time middleware: Pusher is the canonical realtime layer ([ADR 015](./adr/015-canonical-hosted-baseline-and-middleware.md)). `apps/collaboration` is pending refactor to Pusher SDK.
 - AI retrieval: Hybrid Retrieval Boundary (Semantic RAG + Structural GitNexus) is the canonical approach ([ADR 015](./adr/015-canonical-hosted-baseline-and-middleware.md)). Implementation incomplete.
 - Workflow files are intentionally out of scope for this pass. Any architecture drift encoded there is tracked in [docs/implementation-gaps.md](./implementation-gaps.md).
