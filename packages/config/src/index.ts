@@ -102,6 +102,7 @@ export const config = {
     collaborationBaseUrl: () => requiredInProduction('COLLABORATION_BASE_URL', 'http://localhost:3003'),
     aiOrchestrationBaseUrl: () => requiredInProduction('AI_ORCHESTRATION_BASE_URL', 'http://localhost:3004'),
     workerManagerBaseUrl: () => requiredInProduction('WORKER_MANAGER_BASE_URL', 'http://localhost:3005'),
+    usageMeterBaseUrl: () => requiredInProduction('USAGE_METER_BASE_URL', 'http://localhost:3006'),
     gatewayBaseUrl: () => requiredInProduction('GATEWAY_BASE_URL', 'http://localhost:3000'),
   },
 

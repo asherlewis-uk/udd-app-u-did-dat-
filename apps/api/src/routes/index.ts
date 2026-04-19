@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authMiddleware } from '@udd/auth';
 import { config } from '@udd/config';
 import authRouter from './auth.js';
+import healthzRouter from './healthz.js';
 import workspacesRouter from './workspaces.js';
 import projectsRouter from './projects.js';
 import sessionsRouter from './sessions.js';
@@ -14,6 +15,7 @@ const router: Router = Router();
 // Public routes (no auth required)
 // -------------------------------------------------------
 router.use(authRouter);
+router.use(healthzRouter);
 
 // -------------------------------------------------------
 // Authenticated routes

@@ -192,6 +192,18 @@ resource "google_cloud_run_v2_service" "api" {
         name  = "ORCHESTRATOR_BASE_URL"
         value = google_cloud_run_v2_service.orchestrator.uri
       }
+      env {
+        name  = "COLLABORATION_BASE_URL"
+        value = google_cloud_run_v2_service.collaboration.uri
+      }
+      env {
+        name  = "WORKER_MANAGER_BASE_URL"
+        value = google_cloud_run_v2_service.worker_manager.uri
+      }
+      env {
+        name  = "USAGE_METER_BASE_URL"
+        value = google_cloud_run_v2_service.usage_meter.uri
+      }
     }
 
     labels = var.labels
