@@ -78,4 +78,9 @@ export function mountHealthRoutes(router: Router): void {
     const statusCode = health.status === 'ok' ? 200 : 503;
     res.status(statusCode).json(health);
   });
+
+  // /healthz — lightweight probe used by the connectivity audit and Cloud Run
+  router.get('/healthz', (_req: Request, res: Response) => {
+    res.status(200).json({ status: 'ok' });
+  });
 }

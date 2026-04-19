@@ -204,6 +204,10 @@ resource "google_cloud_run_v2_service" "api" {
         name  = "USAGE_METER_BASE_URL"
         value = google_cloud_run_v2_service.usage_meter.uri
       }
+      env {
+        name  = "GATEWAY_BASE_URL"
+        value = google_cloud_run_v2_service.gateway.uri
+      }
     }
 
     labels = var.labels
