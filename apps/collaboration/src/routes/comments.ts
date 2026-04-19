@@ -1,12 +1,14 @@
 import { Router, type Router as RouterType } from 'express';
 import { authMiddleware, requirePermission } from '@udd/auth';
 import { PgProjectRepository, PgCommentRepository } from '@udd/database';
+import { PusherRealtimeProvider } from '@udd/adapters';
 
 const router: RouterType = Router();
 router.use(authMiddleware);
 
 const projects = new PgProjectRepository();
 const comments = new PgCommentRepository();
+const realtime = new PusherRealtimeProvider();
 
 router.get('/projects/:id/comments', requirePermission('comment.read'), async (req, res, next) => {
   try {
@@ -86,6 +88,8 @@ router.post(
         authorUserId: req.auth!.userId,
         body,
       });
+
+      await realtime.trigger(`project-${project.id}`, 'comment.created', comment);
 
       return res.status(201).json({ data: comment, correlationId: req.correlationId });
     } catch (err) {

@@ -42,5 +42,9 @@ jobs:
           TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
           TF_VAR_db_username: "uddadmin"
           TF_VAR_db_password: "placeholder-for-plan"
+          TF_VAR_pusher_app_id: ${{ secrets.PUSHER_APP_ID }}
+          TF_VAR_pusher_key: ${{ secrets.PUSHER_KEY }}
+          TF_VAR_pusher_secret: ${{ secrets.PUSHER_SECRET }}
+          TF_VAR_pusher_cluster: ${{ secrets.PUSHER_CLUSTER }}
         run: terraform plan -no-color
         continue-on-error: true

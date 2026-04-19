@@ -57,14 +57,16 @@ export class PostgresVectorStore implements VectorStore {
     const vectorLiteral = pgVector(query);
     const threshold = opts.scoreThreshold ?? 0;
 
-    // 1 - cosine_distance = cosine_similarity
-    const { rows } = await this.pool.query<{
+    interface EmbeddingRow {
       id: string;
       content: string;
       embedding: string;
       metadata: Record<string, unknown>;
       score: number;
-    }>(
+    }
+
+    // 1 - cosine_distance = cosine_similarity
+    const { rows } = await this.pool.query<EmbeddingRow>(
       `SELECT id, content, embedding, metadata,
               1 - (embedding <=> $1::vector) AS score
          FROM project_embeddings
@@ -74,7 +76,7 @@ export class PostgresVectorStore implements VectorStore {
       [vectorLiteral, threshold, opts.topK],
     );
 
-    return rows.map((r) => ({
+    return rows.map((r: EmbeddingRow) => ({
       chunk: {
         id: r.id,
         content: r.content,

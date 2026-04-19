@@ -3,6 +3,7 @@ output "service_urls" {
   # TODO: Reconnect this output when the control-plane services are restored.
   value = {
     "ai-orchestration" = google_cloud_run_v2_service.ai_orchestration.uri
+    "collaboration"    = google_cloud_run_v2_service.collaboration.uri
     "orchestrator"     = google_cloud_run_v2_service.orchestrator.uri
     "usage-meter"      = google_cloud_run_v2_service.usage_meter.uri
   }
@@ -39,4 +40,9 @@ output "worker_manager_service_url" {
 output "usage_meter_service_url" {
   description = "URL of the usage-meter Cloud Run service"
   value       = google_cloud_run_v2_service.usage_meter.uri
+}
+
+output "collaboration_service_url" {
+  description = "URL of the collaboration Cloud Run service"
+  value       = google_cloud_run_v2_service.collaboration.uri
 }

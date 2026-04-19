@@ -133,6 +133,9 @@ importers:
 
   apps/collaboration:
     dependencies:
+      '@udd/adapters':
+        specifier: workspace:*
+        version: link:../../packages/adapters
       '@udd/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -635,6 +638,9 @@ importers:
       '@udd/database':
         specifier: workspace:*
         version: link:../database
+      pg:
+        specifier: ^8.12.0
+        version: 8.20.0
     devDependencies:
       '@types/pg':
         specifier: ^8.11.0

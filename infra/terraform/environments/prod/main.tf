@@ -150,6 +150,11 @@ module "compute" {
   cpu_limit     = "4"
   memory_limit  = "2Gi"
 
+  pusher_app_id  = var.pusher_app_id
+  pusher_key     = var.pusher_key
+  pusher_secret  = var.pusher_secret
+  pusher_cluster = var.pusher_cluster
+
   labels = local.common_labels
 }
 

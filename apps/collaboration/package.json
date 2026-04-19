@@ -10,6 +10,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@udd/adapters": "workspace:*",
     "@udd/auth": "workspace:*",
     "@udd/config": "workspace:*",
     "@udd/contracts": "workspace:*",

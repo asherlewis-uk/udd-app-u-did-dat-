@@ -73,3 +73,48 @@ variable "labels" {
   description = "Labels to apply to all Cloud Run resources"
   default     = {}
 }
+
+# ---- Pusher (collaboration service) ----
+
+variable "pusher_app_id" {
+  type        = string
+  description = "Pusher application ID for realtime events"
+}
+
+variable "pusher_key" {
+  type        = string
+  description = "Pusher application key"
+}
+
+variable "pusher_secret" {
+  type        = string
+  description = "Pusher application secret"
+  sensitive   = true
+}
+
+variable "pusher_cluster" {
+  type        = string
+  description = "Pusher cluster region (e.g. us2, eu, ap1)"
+}
+
+variable "pusher_app_id" {
+  type        = string
+  description = "Pusher application ID for realtime events"
+}
+
+variable "pusher_key" {
+  type        = string
+  description = "Pusher API key"
+}
+
+variable "pusher_secret" {
+  type        = string
+  description = "Pusher API secret"
+  sensitive   = true
+}
+
+variable "pusher_cluster" {
+  type        = string
+  description = "Pusher cluster region"
+  default     = "eu"
+}

@@ -3,6 +3,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/adapters/package.json packages/adapters/
 COPY packages/auth/package.json packages/auth/
 COPY packages/config/package.json packages/config/
 COPY packages/contracts/package.json packages/contracts/
@@ -20,6 +21,7 @@ COPY apps/collaboration/ apps/collaboration/
 RUN pnpm --filter @udd/contracts build \
  && pnpm --filter @udd/config build \
  && pnpm --filter @udd/observability build \
+ && pnpm --filter @udd/adapters build \
  && pnpm --filter @udd/database build \
  && pnpm --filter @udd/auth build \
  && pnpm --filter @udd/events build \
@@ -30,6 +32,7 @@ FROM node:20-alpine AS runtime
 WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=build --chown=app:app /app/node_modules ./node_modules
+COPY --from=build --chown=app:app /app/packages/adapters/dist ./packages/adapters/dist
 COPY --from=build --chown=app:app /app/packages/auth/dist ./packages/auth/dist
 COPY --from=build --chown=app:app /app/packages/config/dist ./packages/config/dist
 COPY --from=build --chown=app:app /app/packages/contracts/dist ./packages/contracts/dist

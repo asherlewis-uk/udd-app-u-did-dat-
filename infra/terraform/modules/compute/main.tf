@@ -20,10 +20,6 @@ resource "google_project_service" "run" {
 # access to Cloud SQL, Memorystore, and internal services.
 # ============================================================
 
-# TODO: Re-enable the remaining control-plane Cloud Run service (collaboration)
-# after publishing its image to Artifact Registry.
-# Dockerfile exists in apps/collaboration/Dockerfile.
-
 locals {
   api_service = {
     port        = 8080
@@ -64,80 +60,13 @@ locals {
   }
 }
 
-# TODO: Re-enable the remaining control-plane Cloud Run service (collaboration)
-# after publishing its image to Artifact Registry.
-# Dockerfile exists in apps/collaboration/Dockerfile.
-# resource "google_cloud_run_v2_service" "control_plane" {
-#   for_each = local.control_plane_services
-#
-#   project  = var.project_id
-#   name     = "${var.name_prefix}-${each.key}"
-#   location = var.region
-#
-#   description = each.value.description
-#
-#   ingress = each.value.public ? "INGRESS_TRAFFIC_ALL" : "INGRESS_TRAFFIC_INTERNAL_ONLY"
-#
-#   template {
-#     service_account = var.service_account_emails[each.key]
-#
-#     scaling {
-#       min_instance_count = var.min_instances
-#       max_instance_count = var.max_instances
-#     }
-#
-#     vpc_access {
-#       connector = var.vpc_connector_id
-#       egress    = "ALL_TRAFFIC"
-#     }
-#
-#     containers {
-#       name  = each.key
-#       image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_registry_repo}/${each.key}:latest"
-#
-#       ports {
-#         container_port = each.value.port
-#       }
-#
-#       resources {
-#         limits = {
-#           cpu    = var.cpu_limit
-#           memory = var.memory_limit
-#         }
-#         cpu_idle          = true
-#         startup_cpu_boost = true
-#       }
-#
-#       env {
-#         name  = "NODE_ENV"
-#         value = var.environment
-#       }
-#       env {
-#         name  = "GCP_PROJECT_ID"
-#         value = var.project_id
-#       }
-#       env {
-#         name  = "GCP_REGION"
-#         value = var.region
-#       }
-#
-#       # Service discovery — wire cross-service URLs where needed
-#       dynamic "env" {
-#         for_each = each.key == "api" ? [1] : []
-#         content {
-#           name  = "AI_ORCHESTRATION_BASE_URL"
-#           value = google_cloud_run_v2_service.ai_orchestration.uri
-#         }
-#       }
-#     }
-#
-#     labels = var.labels
-#   }
-#
-#   labels = var.labels
-#
-#   depends_on = [google_project_service.run]
-# }
+locals {
+  collaboration_service = {
+    port        = 3003
+    public      = false
+    description = "Collaboration and commenting — internal only"
+  }
+}
 
 resource "google_cloud_run_v2_service" "gateway" {
   project  = var.project_id
@@ -456,22 +385,82 @@ resource "google_cloud_run_v2_service" "ai_orchestration" {
   depends_on = [google_project_service.run]
 }
 
-# TODO: Re-enable the remaining control-plane Cloud Run service (collaboration)
-# after publishing its image to Artifact Registry.
-# Dockerfile exists in apps/collaboration/Dockerfile.
-# # Allow unauthenticated access for public-facing services
-# # Internal services require Identity token authentication
-# resource "google_cloud_run_v2_service_iam_member" "public_invoker" {
-#   for_each = {
-#     for k, v in local.control_plane_services : k => v if v.public
-#   }
-#
-#   project  = var.project_id
-#   location = var.region
-#   name     = google_cloud_run_v2_service.control_plane[each.key].name
-#   role     = "roles/run.invoker"
-#   member   = "allUsers"
-# }
+resource "google_cloud_run_v2_service" "collaboration" {
+  project  = var.project_id
+  name     = "${var.name_prefix}-collaboration"
+  location = var.region
+
+  description = local.collaboration_service.description
+
+  ingress = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+
+  template {
+    service_account = var.service_account_emails["collaboration"]
+
+    scaling {
+      min_instance_count = var.min_instances
+      max_instance_count = var.max_instances
+    }
+
+    vpc_access {
+      connector = var.vpc_connector_id
+      egress    = "ALL_TRAFFIC"
+    }
+
+    containers {
+      name  = "collaboration"
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_registry_repo}/collaboration:latest"
+
+      ports {
+        container_port = local.collaboration_service.port
+      }
+
+      resources {
+        limits = {
+          cpu    = var.cpu_limit
+          memory = var.memory_limit
+        }
+        cpu_idle          = true
+        startup_cpu_boost = true
+      }
+
+      env {
+        name  = "NODE_ENV"
+        value = var.environment
+      }
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name  = "GCP_REGION"
+        value = var.region
+      }
+      env {
+        name  = "PUSHER_APP_ID"
+        value = var.pusher_app_id
+      }
+      env {
+        name  = "PUSHER_KEY"
+        value = var.pusher_key
+      }
+      env {
+        name  = "PUSHER_SECRET"
+        value = var.pusher_secret
+      }
+      env {
+        name  = "PUSHER_CLUSTER"
+        value = var.pusher_cluster
+      }
+    }
+
+    labels = var.labels
+  }
+
+  labels = var.labels
+
+  depends_on = [google_project_service.run]
+}
 
 resource "google_cloud_run_v2_service_iam_member" "gateway_public_invoker" {
   project  = var.project_id

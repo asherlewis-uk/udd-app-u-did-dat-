@@ -9,7 +9,7 @@ on:
 env:
   REGISTRY: us-central1-docker.pkg.dev
   GCP_REGION: us-central1
-  SERVICES: ai-orchestration worker-manager orchestrator api gateway usage-meter
+  SERVICES: ai-orchestration worker-manager orchestrator api gateway usage-meter collaboration
   JOBS: session-reaper
 
 jobs:

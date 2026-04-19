@@ -143,6 +143,11 @@ module "compute" {
   min_instances = 0   # scale-to-zero in dev
   max_instances = 10
 
+  pusher_app_id  = var.pusher_app_id
+  pusher_key     = var.pusher_key
+  pusher_secret  = var.pusher_secret
+  pusher_cluster = var.pusher_cluster
+
   labels = local.common_labels
 }
 
