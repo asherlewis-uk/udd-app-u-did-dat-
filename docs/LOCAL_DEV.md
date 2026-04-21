@@ -18,7 +18,7 @@ This guide is for developers and operators working on the hosted product locally
 
 - macOS
 - Xcode `15+`
-- iOS Simulator support
+- iOS Simulator support, or a physical device paired with Xcode
 
 ## Install
 
@@ -154,10 +154,44 @@ pnpm test
 
 ### iOS surface
 
-1. On macOS, open `apps/mobile-ios/Package.swift` in Xcode.
-2. Confirm `AppConfig.swift` points DEBUG builds at the local API and gateway. **Note:** Current AppConfig.swift contains placeholder values; these will be replaced with real environment-specific compile-time config using Xcode build-phase parameterization. See [docs/implementation-gaps.md](./implementation-gaps.md).
-3. Run the generated `UDDCompanion` scheme in Simulator.
-4. Sign in and verify the iOS client can load workspaces, projects, sessions, and previews against the local stack.
+#### Repo-side readiness
+
+The repo's iOS app is already parameterized for local and hosted builds:
+
+- Open `apps/mobile-ios/UDDCompanion.xcodeproj` in Xcode when you need an installable iOS app bundle.
+- Keep `apps/mobile-ios/Package.swift` for package-only source and test workflows.
+- `Info.plist` exposes `UDD_API_BASE_URL`, `UDD_GATEWAY_BASE_URL`, and `UDD_WORKOS_CLIENT_ID` as Xcode build settings.
+- `AppConfig.swift` reads those values from `Bundle.main.infoDictionary`.
+- DEBUG / local-dev fallback behavior is already implemented:
+  - `UDD_API_BASE_URL` falls back to `http://localhost:8080`
+  - `UDD_GATEWAY_BASE_URL` falls back to `http://localhost:3000`
+  - `UDD_WORKOS_CLIENT_ID` falls back to an empty string, which is sufficient only for unsigned / no-auth local launch paths
+- Non-debug builds fail fast if required values are missing or unresolved.
+
+See [docs/ENV_CONTRACT.md](./ENV_CONTRACT.md) for the canonical iOS config contract.
+
+#### Machine-side readiness
+
+The repo being ready for iOS work is not the same as the Mac being ready for iOS work. Before local iOS development is usable on a given Mac, confirm these machine prerequisites:
+
+1. Full Xcode is installed.
+2. The active developer directory points at full Xcode, not Command Line Tools:
+
+```bash
+sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+```
+
+3. If you plan to use Simulator, install at least one iOS Simulator runtime in Xcode and ensure at least one simulator device exists.
+4. If you plan to use a physical iPhone instead, pair the device with Xcode, trust the computer/device prompts, and enable Developer Mode on the phone when prompted.
+
+#### Local run path
+
+1. Start the local services needed by the iOS app, especially API and gateway.
+2. On macOS, open `apps/mobile-ios/UDDCompanion.xcodeproj` in Xcode.
+3. Choose either Simulator or a paired physical iPhone as the run destination.
+4. For unsigned / no-auth local launch in Simulator, the DEBUG fallbacks above are sufficient.
+5. For physical-device testing, do not rely on `localhost` fallbacks. Set `UDD_API_BASE_URL` and `UDD_GATEWAY_BASE_URL` as Xcode target build settings or in an `.xcconfig` to reachable HTTPS endpoints or secure tunneled URLs that the phone can access. `localhost` on a phone resolves to the phone itself, not to the Mac running the local stack.
+6. For signed-in local validation, also provide a real `UDD_WORKOS_CLIENT_ID` as an Xcode target build setting or in an `.xcconfig`, then verify the iOS client can load projects, sessions, and previews against the configured API and gateway.
 
 ## Validate AI provider configuration locally
 

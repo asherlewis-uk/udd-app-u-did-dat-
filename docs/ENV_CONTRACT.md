@@ -118,4 +118,4 @@ The iOS client uses Xcode build-phase parameterization via `Info.plist` keys bac
 | `UDD_GATEWAY_BASE_URL` | `UDD_GATEWAY_BASE_URL` | Yes                 | `http://localhost:3000` | Gateway base URL for preview routing                |
 | `UDD_WORKOS_CLIENT_ID` | `UDD_WORKOS_CLIENT_ID` | Yes for auth flows  | Empty string (DEBUG only) | WorkOS client ID for PKCE auth                      |
 
-To configure for hosted/production builds, set these values in the Xcode scheme environment or an `.xcconfig` file. SPM-only DEBUG builds without Xcode scheme overrides use local-dev fallbacks automatically.
+To configure for hosted/production builds, set these values as Xcode target build settings or in an `.xcconfig` file. SPM-only DEBUG builds without Xcode build-setting overrides use local-dev fallbacks automatically.

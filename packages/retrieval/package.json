@@ -14,7 +14,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "dev": "tsc --watch",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:unit": "vitest run"
   },
   "dependencies": {

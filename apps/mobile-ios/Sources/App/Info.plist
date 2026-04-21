@@ -4,7 +4,7 @@
   iOS App Configuration — Build-Phase Parameterization
 
   Each UDD_* key references an Xcode build setting of the same name.
-  Set these in the active scheme (or an xcconfig file) to inject
+  Set these in the active target build settings (or an xcconfig file) to inject
   environment-specific values at compile time.
 
   When building via SPM without Xcode schemes, these keys resolve to
@@ -15,6 +15,24 @@
 -->
 <plist version="1.0">
 <dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
 	<key>UDD_API_BASE_URL</key>
 	<string>$(UDD_API_BASE_URL)</string>
 	<key>UDD_GATEWAY_BASE_URL</key>

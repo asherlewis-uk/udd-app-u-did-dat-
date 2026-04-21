@@ -1,0 +1,287 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		8E7A89D1274A100100000001 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A000100000001 /* APIClient.swift */; };
+		8E7A89D1274A100100000002 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A000100000002 /* App.swift */; };
+		8E7A89D1274A100100000003 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A000100000003 /* AppConfig.swift */; };
+		8E7A89D1274A100100000004 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A000100000004 /* AuthManager.swift */; };
+		8E7A89D1274A100100000005 /* CommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A000100000005 /* CommentsView.swift */; };
+		8E7A89D1274A100100000006 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A000100000006 /* ContentView.swift */; };
+		8E7A89D1274A100100000007 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A000100000007 /* LoginView.swift */; };
+		8E7A89D1274A100100000008 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A000100000008 /* Models.swift */; };
+		8E7A89D1274A100100000009 /* PreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A000100000009 /* PreviewView.swift */; };
+		8E7A89D1274A10010000000A /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A00010000000A /* ProjectDetailView.swift */; };
+		8E7A89D1274A10010000000B /* RunsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A00010000000B /* RunsView.swift */; };
+		8E7A89D1274A10010000000C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A00010000000C /* SettingsView.swift */; };
+		8E7A89D1274A10010000000D /* WorkspacesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E7A89D1274A00010000000D /* WorkspacesView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		8E7A89D1274A000100000001 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		8E7A89D1274A000100000002 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		8E7A89D1274A000100000003 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		8E7A89D1274A000100000004 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+		8E7A89D1274A000100000005 /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsView.swift; sourceTree = "<group>"; };
+		8E7A89D1274A000100000006 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		8E7A89D1274A000100000007 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		8E7A89D1274A000100000008 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		8E7A89D1274A000100000009 /* PreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewView.swift; sourceTree = "<group>"; };
+		8E7A89D1274A00010000000A /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
+		8E7A89D1274A00010000000B /* RunsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunsView.swift; sourceTree = "<group>"; };
+		8E7A89D1274A00010000000C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		8E7A89D1274A00010000000D /* WorkspacesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacesView.swift; sourceTree = "<group>"; };
+		8E7A89D1274A00010000000E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		8E7A89D1274A00010000000F /* UDDCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UDDCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8E7A89D1274A200100000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		8E7A89D1274A300100000001 = {
+			isa = PBXGroup;
+			children = (
+				8E7A89D1274A300100000002 /* Sources */,
+				8E7A89D1274A300100000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		8E7A89D1274A300100000002 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				8E7A89D1274A300100000004 /* App */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		8E7A89D1274A300100000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8E7A89D1274A00010000000F /* UDDCompanion.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8E7A89D1274A300100000004 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				8E7A89D1274A000100000001 /* APIClient.swift */,
+				8E7A89D1274A000100000002 /* App.swift */,
+				8E7A89D1274A000100000003 /* AppConfig.swift */,
+				8E7A89D1274A000100000004 /* AuthManager.swift */,
+				8E7A89D1274A000100000005 /* CommentsView.swift */,
+				8E7A89D1274A000100000006 /* ContentView.swift */,
+				8E7A89D1274A00010000000E /* Info.plist */,
+				8E7A89D1274A000100000007 /* LoginView.swift */,
+				8E7A89D1274A000100000008 /* Models.swift */,
+				8E7A89D1274A000100000009 /* PreviewView.swift */,
+				8E7A89D1274A00010000000A /* ProjectDetailView.swift */,
+				8E7A89D1274A00010000000B /* RunsView.swift */,
+				8E7A89D1274A00010000000C /* SettingsView.swift */,
+				8E7A89D1274A00010000000D /* WorkspacesView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8E7A89D1274A400100000001 /* UDDCompanion */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8E7A89D1274A600100000002 /* Build configuration list for PBXNativeTarget "UDDCompanion" */;
+			buildPhases = (
+				8E7A89D1274A200100000002 /* Sources */,
+				8E7A89D1274A200100000001 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = UDDCompanion;
+			productName = UDDCompanion;
+			productReference = 8E7A89D1274A00010000000F /* UDDCompanion.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		8E7A89D1274A500100000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					8E7A89D1274A400100000001 = {
+						CreatedOnToolsVersion = 26.4.1;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 8E7A89D1274A600100000001 /* Build configuration list for PBXProject "UDDCompanion" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 8E7A89D1274A300100000001;
+			productRefGroup = 8E7A89D1274A300100000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8E7A89D1274A400100000001 /* UDDCompanion */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8E7A89D1274A200100000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8E7A89D1274A100100000001 /* APIClient.swift in Sources */,
+				8E7A89D1274A100100000002 /* App.swift in Sources */,
+				8E7A89D1274A100100000003 /* AppConfig.swift in Sources */,
+				8E7A89D1274A100100000004 /* AuthManager.swift in Sources */,
+				8E7A89D1274A100100000005 /* CommentsView.swift in Sources */,
+				8E7A89D1274A100100000006 /* ContentView.swift in Sources */,
+				8E7A89D1274A100100000007 /* LoginView.swift in Sources */,
+				8E7A89D1274A100100000008 /* Models.swift in Sources */,
+				8E7A89D1274A100100000009 /* PreviewView.swift in Sources */,
+				8E7A89D1274A10010000000A /* ProjectDetailView.swift in Sources */,
+				8E7A89D1274A10010000000B /* RunsView.swift in Sources */,
+				8E7A89D1274A10010000000C /* SettingsView.swift in Sources */,
+				8E7A89D1274A10010000000D /* WorkspacesView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		8E7A89D1274A700100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		8E7A89D1274A700100000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		8E7A89D1274A700100000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sources/App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.uddplatform.companion;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				UDD_API_BASE_URL = "";
+				UDD_GATEWAY_BASE_URL = "";
+				UDD_WORKOS_CLIENT_ID = "";
+			};
+			name = Debug;
+		};
+		8E7A89D1274A700100000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sources/App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.uddplatform.companion;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				UDD_API_BASE_URL = "";
+				UDD_GATEWAY_BASE_URL = "";
+				UDD_WORKOS_CLIENT_ID = "";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		8E7A89D1274A600100000001 /* Build configuration list for PBXProject "UDDCompanion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8E7A89D1274A700100000001 /* Debug */,
+				8E7A89D1274A700100000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8E7A89D1274A600100000002 /* Build configuration list for PBXNativeTarget "UDDCompanion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8E7A89D1274A700100000003 /* Debug */,
+				8E7A89D1274A700100000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 8E7A89D1274A500100000001 /* Project object */;
+}
