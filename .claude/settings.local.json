@@ -6,7 +6,13 @@
       "Bash(gh run:*)",
       "Bash(node -e \"require\\('fs'\\).cpSync || console.log\\('no cpSync'\\)\")",
       "Bash(pnpm --filter @udd/database build)",
-      "Bash(pnpm lint:*)"
+      "Bash(pnpm lint:*)",
+      "Bash(wrangler whoami *)",
+      "Bash(curl -s -H \"Authorization: Bearer $\\(wrangler whoami)",
+      "Bash(pnpm --filter @udd/web typecheck)",
+      "Bash(gcloud --version)",
+      "Bash(terraform --version)",
+      "Bash(wrangler --version)"
     ]
   }
 }

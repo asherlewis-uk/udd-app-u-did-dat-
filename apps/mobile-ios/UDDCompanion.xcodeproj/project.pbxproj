@@ -215,6 +215,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = S58MT4ATKM;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -240,6 +241,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = S58MT4ATKM;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -254,8 +256,8 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				UDD_API_BASE_URL = "";
-				UDD_GATEWAY_BASE_URL = "";
+				UDD_API_BASE_URL = "https://api.asherlewis.org";
+				UDD_GATEWAY_BASE_URL = "https://api.asherlewis.org";
 				UDD_WORKOS_CLIENT_ID = "";
 			};
 			name = Release;

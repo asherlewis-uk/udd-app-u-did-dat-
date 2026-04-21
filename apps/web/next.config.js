@@ -31,6 +31,13 @@ const nextConfig = {
   async rewrites() {
     return [
       {
+        source: '/v1/:path*',
+        // API_BASE_URL points to the api service origin. Keeping /v1 traffic
+        // same-origin with the web host avoids cross-origin CORS on every API
+        // call from the browser (the api service has no CORS middleware).
+        destination: `${requiredInProduction('API_BASE_URL', 'http://localhost:8080')}/v1/:path*`,
+      },
+      {
         source: '/preview/:path*',
         // GATEWAY_URL points to the gateway service (port 3000), not to this web app (port 3007).
         destination: `${requiredInProduction('GATEWAY_URL', 'http://localhost:3000')}/preview/:path*`,

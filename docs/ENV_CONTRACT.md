@@ -112,10 +112,30 @@ These are not authoritative architecture inputs, but they are relevant because t
 
 The iOS client uses Xcode build-phase parameterization via `Info.plist` keys backed by build settings. `AppConfig.swift` reads from `Bundle.main.infoDictionary`. DEBUG / local-dev builds may fall back to local defaults when keys are absent or unresolved; non-debug builds fail fast instead of silently targeting localhost.
 
-| Build Setting          | Info.plist Key         | Required for hosted | Local-dev fallback      | Effect                                              |
-| ---------------------- | ---------------------- | ------------------- | ----------------------- | --------------------------------------------------- |
-| `UDD_API_BASE_URL`     | `UDD_API_BASE_URL`     | Yes                 | `http://localhost:8080` | API base URL for all iOS API calls                  |
-| `UDD_GATEWAY_BASE_URL` | `UDD_GATEWAY_BASE_URL` | Yes                 | `http://localhost:3000` | Gateway base URL for preview routing                |
-| `UDD_WORKOS_CLIENT_ID` | `UDD_WORKOS_CLIENT_ID` | Yes for auth flows  | Empty string (DEBUG only) | WorkOS client ID for PKCE auth                      |
+| Build Setting          | Info.plist Key         | Required for hosted | Hardened-v1 Release default   | Local-dev fallback      | Effect                                              |
+| ---------------------- | ---------------------- | ------------------- | ----------------------------- | ----------------------- | --------------------------------------------------- |
+| `UDD_API_BASE_URL`     | `UDD_API_BASE_URL`     | Yes                 | `https://api.asherlewis.org`  | `http://localhost:8080` | API base URL for all iOS API calls                  |
+| `UDD_GATEWAY_BASE_URL` | `UDD_GATEWAY_BASE_URL` | Yes                 | `https://api.asherlewis.org`  | `http://localhost:3000` | Gateway base URL for preview routing (preview is path-routed under `/preview/*` behind the API host) |
+| `UDD_WORKOS_CLIENT_ID` | `UDD_WORKOS_CLIENT_ID` | Yes for auth flows  | Not baked; set per build      | Empty string (DEBUG only) | WorkOS client ID for PKCE auth                      |
 
-To configure for hosted/production builds, set these values as Xcode target build settings or in an `.xcconfig` file. SPM-only DEBUG builds without Xcode build-setting overrides use local-dev fallbacks automatically.
+`UDDCompanion.xcodeproj` ships the Release build config with `UDD_API_BASE_URL` and `UDD_GATEWAY_BASE_URL` set to the hardened-v1 canonical host. Debug is intentionally left blank so local-dev fallbacks remain unchanged. Override in an `.xcconfig` or target build setting if a non-canonical environment is needed. SPM-only DEBUG builds without Xcode build-setting overrides use local-dev fallbacks automatically.
+
+## Hardened-v1 canonical public hosts
+
+These are the canonical public hostnames for the hosted product. The load-balancer and DNS cutover runbook lives at [runbooks/domain-cutover.md](./runbooks/domain-cutover.md).
+
+| Host                         | Role                                          | Backend                                                                                                                  | Status                                                                                      |
+| ---------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `api.asherlewis.org`         | Public API + preview gateway                  | GCP global HTTPS LB → serverless NEGs → `apps/api` (default) + `apps/gateway` (`/preview/*`)                             | Repo-ready. LB, URL map, and managed cert already defined in `infra/terraform`. DNS pending. |
+| `app.asherlewis.org`         | Primary web origin (Next.js)                  | No deployment target exists yet (see [implementation-gaps.md](./implementation-gaps.md))                                 | Reserved. DNS intentionally unpointed until a web host (Cloud Run service, Cloudflare Pages, etc.) is chosen. |
+| `www.asherlewis.org`         | 301 redirect to `app.asherlewis.org`          | Cloudflare Bulk Redirect / Page Rule (no origin)                                                                         | Reserved. Wire once `app.asherlewis.org` resolves.                                          |
+
+### Browser-side host behaviour
+
+- `apps/web` expects `/v1/*` and `/preview/*` to be same-origin to the web host. `next.config.js` rewrites both to `API_BASE_URL` and `GATEWAY_URL` (server-side env vars). Keeping API traffic same-origin avoids cross-origin calls — `apps/api` has no CORS middleware.
+- `apps/mobile-ios` calls `https://api.asherlewis.org/v1/*` and `https://api.asherlewis.org/preview/*` directly.
+- WorkOS redirect URIs: web uses `https://app.asherlewis.org/auth/callback` (dynamic `window.location.origin + /auth/callback`); iOS uses `uddcompanion://auth/callback` (PKCE with `ASWebAuthenticationSession`). Both must be registered in the WorkOS dashboard.
+
+### Staging counterpart
+
+For symmetry, staging uses `staging-api.asherlewis.org` (API host) and reserves `staging-app.asherlewis.org` (web origin, not yet wired). The prod-domain commitment is the canonical hardened-v1 surface; staging is operational scaffolding.
