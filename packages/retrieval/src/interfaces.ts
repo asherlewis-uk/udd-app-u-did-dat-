@@ -83,6 +83,27 @@ export interface GraphStore {
 }
 
 // ============================================================
+// Embedding Provider — automated embedding boundary
+// ============================================================
+
+/**
+ * EmbeddingProvider — generates embedding vectors from text.
+ *
+ * Implementations wrap a concrete embedding API (OpenAI, Cohere, etc.)
+ * but consumers only depend on this interface.
+ */
+export interface EmbeddingProvider {
+  /** Generate an embedding vector for a single text input. */
+  embed(text: string): Promise<readonly number[]>;
+
+  /** The model identifier used for embedding (e.g. 'text-embedding-3-small'). */
+  readonly model: string;
+
+  /** Dimensionality of the output vectors. */
+  readonly dimensions: number;
+}
+
+// ============================================================
 // Retrieval Boundary — unified retrieval contract
 // ============================================================
 
@@ -94,6 +115,8 @@ export interface RetrievalResult {
   score: number;
   source: 'vector' | 'graph';
   metadata: Record<string, unknown>;
+  /** Whether this result was verified against graph ground truth. */
+  graphVerified?: boolean | undefined;
 }
 
 export interface RetrievalQuery {
