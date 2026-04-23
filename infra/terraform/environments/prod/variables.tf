@@ -46,8 +46,18 @@ variable "pusher_cluster" {
 
 variable "ssl_domains" {
   type        = list(string)
-  description = "Domains for the Google-managed SSL certificate"
-  default     = ["udd.example.com", "www.udd.example.com"]
+  description = <<-EOT
+    Domains on the Google-managed SSL certificate attached to the global HTTPS
+    load balancer. Only domains that actually resolve to the LB IP will finish
+    provisioning; others stay in PROVISIONING indefinitely.
+
+    Hardened-v1 canonical: `api.asherlewis.org` is the public API + gateway
+    host (gateway is path-routed under `/preview/*` behind this same host).
+    `app.asherlewis.org` is the canonical web origin but is NOT added here
+    until a web-deploy target exists — adding it before DNS resolves would
+    block cert provisioning.
+  EOT
+  default     = ["api.asherlewis.org"]
 }
 
 variable "alert_notification_email" {

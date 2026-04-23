@@ -16,6 +16,16 @@ terraform {
 #
 # /preview/* routes → gateway Cloud Run service
 # /* (default)     → api Cloud Run service
+#
+# Hardened-v1 canonical hosts (see docs/ENV_CONTRACT.md):
+#   - prod API host:     api.asherlewis.org     (this LB)
+#   - staging API host:  staging-api.asherlewis.org
+#   - web origin:        app.asherlewis.org     (NOT this LB; web deploy
+#                        target TBD — see docs/implementation-gaps.md)
+#
+# URL map hosts = ["*"] is intentional: only hostnames that actually DNS
+# to `google_compute_global_address.lb_ip` reach this LB, and path routing
+# (api default + /preview/* → gateway) is uniform across them.
 # ============================================================
 
 # ---- Serverless NEGs (one per Cloud Run service) -----------

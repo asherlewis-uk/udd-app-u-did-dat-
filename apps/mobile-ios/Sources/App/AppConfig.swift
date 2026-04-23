@@ -10,7 +10,7 @@ import Foundation
 // values are absent or unresolved.
 //
 // To configure for hosted/production:
-//   1. Set the build settings in the Xcode scheme or xcconfig.
+//   1. Set the build settings in the Xcode target or xcconfig.
 //   2. Info.plist references them via $(UDD_API_BASE_URL) etc.
 //
 // See docs/ENV_CONTRACT.md § "Non-env configuration note".

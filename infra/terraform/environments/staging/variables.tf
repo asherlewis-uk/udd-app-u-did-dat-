@@ -46,8 +46,14 @@ variable "pusher_cluster" {
 
 variable "ssl_domains" {
   type        = list(string)
-  description = "Domains for the Google-managed SSL certificate"
-  default     = ["staging.udd.example.com"]
+  description = <<-EOT
+    Domains on the Google-managed SSL certificate for the staging load
+    balancer. Hardened-v1 canonical: staging API host is
+    `staging-api.asherlewis.org`; staging web host is reserved as
+    `staging-app.asherlewis.org` but only added once a web-deploy target
+    exists.
+  EOT
+  default     = ["staging-api.asherlewis.org"]
 }
 
 variable "alert_notification_email" {
